@@ -3,327 +3,65 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quản Lý Phiếu Gửi Tồn Phát - Trạng Thái 500</title>
-<meta name="description" content="Công cụ quản lý phiếu gửi tồn phát trạng thái 500 — ViettelPost">
+<title>Quản Lý Phiếu Gửi Tồn Phát - ViettelPost</title>
+<meta name="description" content="Công cụ quản lý phiếu gửi tồn phát trạng thái 500 và cảnh báo DO_7/DO_8/DO_9 — ViettelPost">
+
+<!-- ===== EXTERNAL FONTS & ICONS ===== -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- ===== APP STYLESHEET ===== -->
+<link rel="stylesheet" href="assets/css/style.css">
+
+<!-- ===== THIRD-PARTY LIBS ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-  :root {
-    --vtp-red: #EE0033;
-    --vtp-red-dark: #CC002B;
-    --vtp-red-light: #FFF0F3;
-    --vtp-red-bg: #FFEAEF;
-    --red: #EE0033;
-    --red-dark: #CC002B;
-    --red-light: #FFEAEF;
-    --orange: #F97316;
-    --orange-light: #FFF7ED;
-    --zalo: #0068FF;
-    --zalo-dark: #0052CC;
-    --green: #22C55E;
-    --green-light: #DCFCE7;
-    --gray: #6B7280;
-    --gray-light: #F3F4F6;
-    --white: #FFFFFF;
-    --bg: #F7F8FA;
-    --text: #1F2937;
-    --border: #E5E7EB;
-    --shadow: 0 2px 12px rgba(0,0,0,0.06);
-    --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
-    --radius: 12px;
-    --radius-sm: 8px;
-    --transition: all 0.2s ease;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Be Vietnam Pro', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    line-height: 1.6;
-  }
-
-  /* ===== HEADER — ViettelPost ===== */
-  .site-header {
-    background: linear-gradient(135deg, #CC002B 0%, #EE0033 50%, #FF1744 100%);
-    color: white;
-    padding: 20px 20px 24px;
-    box-shadow: 0 4px 20px rgba(238,0,51,0.3);
-    position: sticky; top: 0; z-index: 100;
-  }
-  .site-header h1 {
-    font-size: clamp(15px, 3.5vw, 21px);
-    font-weight: 800; letter-spacing: -0.3px; margin-bottom: 12px;
-  }
-  .site-header h1 span { opacity: 0.8; font-weight: 500; font-size: 0.75em; }
-  .header-badges { display: flex; flex-wrap: wrap; gap: 8px; }
-  .hbadge {
-    background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.35); border-radius: 999px;
-    padding: 5px 14px; font-size: 13px; font-weight: 600;
-    display: flex; align-items: center; gap: 6px; transition: var(--transition);
-  }
-  .hbadge:hover { background: rgba(255,255,255,0.3); }
-  .hbadge .num { font-size: 16px; font-weight: 800; }
-  .hbadge.danger { background: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.5); }
-
-  /* ===== CONTAINER ===== */
-  .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
-
-  /* ===== SECTION CARD ===== */
-  .section-card {
-    background: white; border-radius: var(--radius); box-shadow: var(--shadow);
-    margin-bottom: 20px; border: 1px solid var(--border); overflow: hidden;
-  }
-  .section-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; background: white; border-bottom: 1px solid var(--border);
-    cursor: pointer; user-select: none; transition: var(--transition);
-  }
-  .section-header:hover { background: #FAFBFC; }
-  .section-title {
-    font-size: 14px; font-weight: 700; color: var(--vtp-red);
-    display: flex; align-items: center; gap: 8px;
-    text-transform: uppercase; letter-spacing: 0.3px;
-  }
-  .section-body { padding: 20px; }
-  .collapse-icon { font-size: 12px; color: var(--gray); transition: transform 0.3s ease; }
-  .collapsed .collapse-icon { transform: rotate(-90deg); }
-  .collapsible-content { max-height: 1000px; overflow: hidden; transition: max-height 0.35s ease; }
-  .collapsed .collapsible-content { max-height: 0; }
-
-  /* ===== CONFIG TABLE ===== */
-  .config-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .config-table th {
-    background: var(--vtp-red); color: white; padding: 10px 14px;
-    text-align: left; font-weight: 600; font-size: 13px;
-  }
-  .config-table th:first-child { border-radius: 8px 0 0 0; }
-  .config-table th:last-child { border-radius: 0 8px 0 0; }
-  .config-table td { padding: 9px 14px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
-  .config-table tr:last-child td { border-bottom: none; }
-  .config-table tr:hover td { background: var(--vtp-red-light); }
-  .config-table input[type="text"],
-  .config-table input[type="tel"] {
-    width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
-    padding: 7px 10px; font-family: inherit; font-size: 13px;
-    transition: var(--transition); color: var(--text);
-  }
-  .config-table input:focus { outline: none; border-color: var(--vtp-red); box-shadow: 0 0 0 3px rgba(238,0,51,0.1); }
-  .stt-cell { text-align: center; color: var(--gray); font-weight: 600; width: 48px; }
-  .del-cell { text-align: center; width: 52px; }
-
-  /* ===== BUTTONS ===== */
-  .btn {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 9px 18px; border: none; border-radius: var(--radius-sm);
-    font-family: inherit; font-size: 13.5px; font-weight: 600;
-    cursor: pointer; transition: var(--transition); text-decoration: none; white-space: nowrap;
-  }
-  .btn:active { transform: scale(0.97); }
-  .btn-red { background: var(--vtp-red); color: white; }
-  .btn-red:hover { background: var(--vtp-red-dark); box-shadow: 0 4px 14px rgba(238,0,51,0.35); }
-  .btn-orange { background: var(--orange); color: white; }
-  .btn-orange:hover { background: #EA580C; box-shadow: 0 4px 14px rgba(249,115,22,0.35); }
-  .btn-zalo { background: var(--zalo); color: white; }
-  .btn-zalo:hover { background: var(--zalo-dark); box-shadow: 0 4px 14px rgba(0,104,255,0.3); }
-  .btn-green { background: var(--green); color: white; }
-  .btn-green:hover { background: #16A34A; }
-  .btn-ghost { background: var(--gray-light); color: var(--text); }
-  .btn-ghost:hover { background: #E5E7EB; }
-  .btn-icon {
-    background: none; border: none; cursor: pointer; padding: 6px; border-radius: 6px;
-    font-size: 16px; transition: var(--transition);
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .btn-icon:hover { background: var(--vtp-red-light); transform: scale(1.1); }
-  .btn-sm { padding: 6px 12px; font-size: 12.5px; }
-  .btn-xs { padding: 4px 9px; font-size: 12px; }
-  .config-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-
-  /* ===== UPLOAD ZONE ===== */
-  .upload-zone {
-    border: 2.5px dashed #D1D5DB; border-radius: var(--radius);
-    padding: 48px 24px; text-align: center; cursor: pointer;
-    transition: var(--transition); background: #FAFBFC;
-  }
-  .upload-zone.dragover { border-color: var(--vtp-red); background: var(--vtp-red-light); box-shadow: 0 0 0 4px rgba(238,0,51,0.08); }
-  .upload-icon { font-size: 52px; margin-bottom: 12px; display: block; }
-  .upload-text-main { font-size: 17px; font-weight: 700; color: var(--vtp-red); margin-bottom: 6px; }
-  .upload-text-sub { font-size: 13px; color: var(--gray); margin-bottom: 20px; }
-  #file-input { display: none; }
-  .upload-reset { display: none; align-items: center; gap: 10px; padding: 8px 0; }
-
-  /* ===== SPINNER ===== */
-  .spinner-wrap { display: none; flex-direction: column; align-items: center; gap: 14px; padding: 40px; }
-  .spinner {
-    width: 48px; height: 48px; border: 5px solid var(--vtp-red-bg);
-    border-top-color: var(--vtp-red); border-radius: 50%; animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ===== RESULTS ===== */
-  #section-results { display: none; }
-  .group-card {
-    border: 1px solid var(--border); border-radius: var(--radius);
-    margin-bottom: 16px; overflow: hidden; transition: var(--transition); background: white;
-  }
-  .group-card:hover { box-shadow: var(--shadow-lg); }
-  .group-header {
-    background: var(--vtp-red); color: white; padding: 14px 20px;
-    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
-  }
-  .group-name { font-size: 15px; font-weight: 800; flex: 1; min-width: 0; }
-  .group-phone { font-size: 13px; opacity: 0.9; font-weight: 500; }
-  .badge-count { background: white; color: var(--vtp-red); font-weight: 800; font-size: 13px; padding: 3px 12px; border-radius: 999px; }
-  .group-table-wrap { overflow-x: auto; }
-  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .data-table th {
-    background: #FAFBFC; color: var(--text); padding: 10px 14px;
-    text-align: left; font-weight: 700; font-size: 12px;
-    text-transform: uppercase; letter-spacing: 0.4px;
-    border-bottom: 2px solid var(--vtp-red); white-space: nowrap;
-  }
-  .data-table td { padding: 10px 14px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; white-space: nowrap; }
-  .data-table tr:last-child td { border-bottom: none; }
-  .data-table tr:hover td { background: var(--vtp-red-light); }
-  .ma-phieu { font-weight: 700; color: var(--vtp-red); font-size: 12.5px; }
-  .hanh-trinh { color: #6B7280; font-size: 12px; }
-  .badge-overdue {
-    background: var(--vtp-red-bg); color: var(--vtp-red-dark); border-radius: 999px;
-    padding: 3px 10px; font-size: 11.5px; font-weight: 700;
-    display: inline-flex; align-items: center; gap: 4px;
-  }
-  .badge-ontime {
-    background: var(--green-light); color: #15803D; border-radius: 999px;
-    padding: 3px 10px; font-size: 11.5px; font-weight: 700;
-    display: inline-flex; align-items: center; gap: 4px;
-  }
-  .lan-phat-none { color: var(--gray); font-style: italic; }
-
-  /* ===== NỘI TỈNH BADGE ===== */
-  .badge-noi-tinh {
-    background: linear-gradient(135deg, #FB923C, #F97316); color: white; border-radius: 999px;
-    padding: 3px 9px; font-size: 11px; font-weight: 700;
-    display: inline-flex; align-items: center; gap: 3px; margin-left: 4px; white-space: nowrap;
-  }
-  .row-noi-tinh td { background: #FFF7ED !important; border-left: 3px solid #F97316; }
-  .row-noi-tinh:hover td { background: #FFEDD5 !important; }
-
-  /* ===== EMPTY STATE ===== */
-  .empty-state { text-align: center; padding: 48px 20px; color: var(--gray); }
-  .empty-state .big-icon { font-size: 56px; margin-bottom: 12px; }
-
-  /* ===== STATS ===== */
-  #section-stats { display: none; }
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; }
-  .stat-card {
-    background: white; border-radius: var(--radius); padding: 20px 22px;
-    box-shadow: var(--shadow); border: 1px solid var(--border);
-    display: flex; align-items: center; gap: 16px; transition: var(--transition);
-  }
-  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-  .stat-icon {
-    width: 48px; height: 48px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
-  }
-  .stat-icon.red { background: var(--vtp-red-bg); }
-  .stat-icon.orange { background: var(--orange-light); }
-  .stat-icon.green { background: var(--green-light); }
-  .stat-icon.blue { background: #EFF6FF; }
-  .stat-label { font-size: 12px; color: var(--gray); font-weight: 500; margin-bottom: 2px; }
-  .stat-value { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1.1; }
-  .stat-value.red { color: var(--vtp-red); }
-  .stat-value.orange { color: var(--orange); }
-  .stat-value.green { color: var(--green); }
-  .stat-value.blue { color: var(--zalo); }
-  .stats-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-
-  /* ===== MODAL ===== */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-    z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px;
-    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
-  }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal {
-    background: white; border-radius: 16px; width: 100%; max-width: 640px; max-height: 92vh;
-    display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,0.2);
-    transform: scale(0.93) translateY(12px); transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
-  }
-  .modal-overlay.open .modal { transform: scale(1) translateY(0); }
-  .modal-header {
-    padding: 18px 22px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-  }
-  .modal-title { font-size: 15px; font-weight: 700; color: var(--text); }
-  .modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
-  .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }
-  .modal-note { font-size: 12px; color: var(--gray); margin-top: 10px; display: flex; align-items: center; gap: 5px; }
-  .modal-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-  .modal-tab {
-    padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
-    cursor: pointer; border: 1.5px solid var(--border); background: white;
-    color: var(--gray); transition: var(--transition); font-family: inherit;
-  }
-  .modal-tab:hover { border-color: var(--vtp-red); color: var(--vtp-red); }
-  .modal-tab.active { background: var(--vtp-red); color: white; border-color: var(--vtp-red); }
-  .msg-textarea {
-    width: 100%; height: 280px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-    padding: 14px; font-family: 'Be Vietnam Pro', monospace; font-size: 13.5px; line-height: 1.7;
-    resize: vertical; transition: var(--transition); color: var(--text); background: #FAFBFC;
-  }
-  .msg-textarea:focus { outline: none; border-color: var(--zalo); box-shadow: 0 0 0 3px rgba(0,104,255,0.1); background: white; }
-
-  /* ===== TOAST ===== */
-  #toast {
-    position: fixed; bottom: 24px; right: 24px; background: var(--vtp-red); color: white;
-    padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
-    box-shadow: 0 8px 28px rgba(238,0,51,0.3); z-index: 2000;
-    transform: translateY(20px); opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-    pointer-events: none;
-  }
-  #toast.show { transform: translateY(0); opacity: 1; }
-  hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
-
-  /* ===== RESPONSIVE ===== */
-  @media (max-width: 640px) {
-    .site-header { padding: 14px 14px 18px; }
-    .container { padding: 16px 12px; }
-    .section-body { padding: 14px; }
-    .group-header { flex-direction: column; align-items: flex-start; }
-    .data-table th, .data-table td { padding: 8px 10px; }
-  }
-  .flex { display: flex; }
-  .items-center { align-items: center; }
-  .gap-2 { gap: 8px; }
-  .gap-3 { gap: 12px; }
-  .text-gray { color: var(--gray); }
-  .text-sm { font-size: 13px; }
-  .fw-bold { font-weight: 700; }
-  .mt-2 { margin-top: 8px; }
-  .mt-3 { margin-top: 12px; }
-  .inline-block { display: inline-block; }
-</style>
 </head>
 <body>
 
 <!-- ===== HEADER ===== -->
 <header class="site-header">
-  <h1>🚨 QUẢN LÝ PHIẾU GỬI TỒN PHÁT <span>— TRẠNG THÁI 500</span></h1>
-  <div class="header-badges">
-    <div class="hbadge">
-      <span>📦</span><span>Tổng phiếu:</span><span class="num" id="h-total-phieu">0</span>
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="vtp-logo-box">
+        <i class="fa-solid fa-truck-fast logo-icon"></i>
+        <div class="logo-text">VIETTEL<span>POST</span></div>
+      </div>
+      <div class="header-title-group">
+        <div class="header-title">🚨 QUẢN LÝ PHIẾU GỬI TỒN PHÁT</div>
+        <div class="header-subtitle">Hệ thống cảnh báo &amp; theo dõi trạng thái TT500 / DO_7 / DO_8 / DO_9</div>
+      </div>
     </div>
-    <div class="hbadge">
-      <span>👤</span><span>Bưu tá:</span><span class="num" id="h-total-buuta">0</span>
-    </div>
-    <div class="hbadge danger">
-      <span>⚠️</span><span>Quá hạn:</span><span class="num" id="h-total-quahan">0</span>
+    <div class="header-badges">
+      <div class="hbadge">
+        <i class="fa-solid fa-box-open"></i>
+        <span>TT500:</span>
+        <span class="num" id="h-total-tt500">0</span>
+      </div>
+      <div class="hbadge danger">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>DO_9:</span>
+        <span class="num" id="h-total-do9">0</span>
+      </div>
+      <div class="hbadge hb-orange">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>DO_8:</span>
+        <span class="num" id="h-total-do8">0</span>
+      </div>
+      <div class="hbadge hb-yellow">
+        <i class="fa-solid fa-bell"></i>
+        <span>DO_7:</span>
+        <span class="num" id="h-total-do7">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-clock"></i>
+        <span>Quá hạn:</span>
+        <span class="num" id="h-total-quahan">0</span>
+      </div>
     </div>
   </div>
+  <div class="header-accent-bar"></div>
 </header>
 
 <div class="container">
@@ -331,8 +69,11 @@
   <!-- ===== SECTION A: CẤU HÌNH BƯU TÁ ===== -->
   <div class="section-card" id="panel-config">
     <div class="section-header" onclick="toggleCollapse('panel-config')">
-      <span class="section-title">⚙️ CẤU HÌNH DANH SÁCH BƯU TÁ</span>
-      <span class="collapse-icon">▼</span>
+      <span class="section-title">
+        <i class="fa-solid fa-gear"></i>
+        CẤU HÌNH DANH SÁCH BƯU TÁ
+      </span>
+      <div class="collapse-icon"><i class="fa-solid fa-chevron-down"></i></div>
     </div>
     <div class="collapsible-content">
       <div class="section-body">
@@ -341,27 +82,36 @@
             <thead>
               <tr>
                 <th class="stt-cell">STT</th>
-                <th>Tên bưu tá</th>
-                <th>Số điện thoại Zalo</th>
-                <th class="del-cell">Xóa</th>
+                <th><i class="fa-solid fa-user" style="margin-right:6px;opacity:.8;"></i>Tên bưu tá</th>
+                <th><i class="fa-solid fa-mobile-screen" style="margin-right:6px;opacity:.8;"></i>Số điện thoại Zalo</th>
+                <th class="del-cell"><i class="fa-solid fa-trash-can" style="opacity:.7;"></i></th>
               </tr>
             </thead>
             <tbody id="buuta-tbody"></tbody>
           </table>
         </div>
         <div class="config-actions">
-          <button class="btn btn-orange" onclick="addBuutaRow()">➕ Thêm bưu tá</button>
-          <button class="btn btn-red" onclick="saveBuuta()">💾 Lưu danh sách</button>
-          <button class="btn btn-ghost" onclick="clearBuuta()">🗑️ Xóa tất cả</button>
+          <button class="btn btn-orange" onclick="addBuutaRow(); addRipple(event)">
+            <i class="fa-solid fa-plus"></i> Thêm bưu tá
+          </button>
+          <button class="btn btn-red" onclick="saveBuuta(); addRipple(event)">
+            <i class="fa-solid fa-floppy-disk"></i> Lưu danh sách
+          </button>
+          <button class="btn btn-ghost" onclick="clearBuuta()">
+            <i class="fa-solid fa-trash"></i> Xóa tất cả
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ===== SECTION B: UPLOAD ===== -->
+  <!-- ===== SECTION B: UPLOAD EXCEL ===== -->
   <div class="section-card">
-    <div class="section-header" style="cursor:default;">
-      <span class="section-title">📂 UPLOAD FILE EXCEL</span>
+    <div class="section-header no-click">
+      <span class="section-title">
+        <i class="fa-solid fa-file-excel"></i>
+        UPLOAD FILE EXCEL
+      </span>
     </div>
     <div class="section-body">
       <div id="upload-zone" class="upload-zone"
@@ -369,19 +119,91 @@
            ondragover="handleDragOver(event)"
            ondragleave="handleDragLeave(event)"
            ondrop="handleDrop(event)">
-        <span class="upload-icon">📁</span>
+        <div class="upload-icon-wrap">📁</div>
         <div class="upload-text-main">Kéo thả file Excel vào đây</div>
         <div class="upload-text-sub">hoặc nhấn để chọn file từ máy tính</div>
-        <button class="btn btn-red" onclick="event.stopPropagation(); document.getElementById('file-input').click()">📂 Chọn file .xlsx</button>
+        <button class="btn btn-red" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+          <i class="fa-solid fa-file-arrow-up"></i> Chọn file .xlsx
+        </button>
         <input type="file" id="file-input" accept=".xlsx" onchange="handleFileChange(event)">
       </div>
       <div id="spinner-wrap" class="spinner-wrap">
-        <div class="spinner"></div>
-        <span style="color:var(--gray); font-weight:600;">Đang xử lý file Excel...</span>
+        <div class="spinner-ring"></div>
+        <span class="spinner-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Đang xử lý file Excel...</span>
       </div>
       <div id="upload-reset" class="upload-reset">
-        <button class="btn btn-ghost" onclick="resetUpload()">🔄 Tải file khác</button>
-        <span class="text-gray text-sm" id="file-name-display"></span>
+        <button class="btn btn-ghost btn-sm" onclick="resetUpload()">
+          <i class="fa-solid fa-rotate-left"></i> Tải file khác
+        </button>
+        <span class="file-chip" id="file-name-display">
+          <i class="fa-solid fa-circle-check"></i>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION B.5: CHỌN CHẾ ĐỘ CẢNH BÁO ===== -->
+  <div id="section-mode-select" style="display:none;">
+    <div class="section-card">
+      <div class="section-header no-click">
+        <span class="section-title">
+          <i class="fa-solid fa-sliders"></i>
+          CHỌN LOẠI DỮ LIỆU CẦN CẢNH BÁO
+        </span>
+        <div class="mode-actions">
+          <button class="btn-link" onclick="selectAllModes(true)">
+            <i class="fa-solid fa-check-double"></i> Chọn tất cả
+          </button>
+          <span style="color:var(--gray-300)">|</span>
+          <button class="btn-link" onclick="selectAllModes(false)">
+            <i class="fa-solid fa-xmark"></i> Bỏ chọn
+          </button>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="mode-grid">
+          <!-- TT500 -->
+          <div class="mode-card mode-tt500 selected" id="mode-card-tt500" onclick="toggleMode('tt500')">
+            <div class="mode-header-row">
+              <div class="mode-card-check" id="mode-check-tt500"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
+              <div class="mode-card-title">TRẠNG THÁI 500</div>
+            </div>
+            <div class="mode-card-sub">Phiếu hoàn/tồn phát chưa xử lý</div>
+            <div class="mode-card-badge" id="mode-badge-tt500">0 phiếu</div>
+          </div>
+          <!-- DO_9 -->
+          <div class="mode-card mode-do9 selected" id="mode-card-do9" onclick="toggleMode('do9')">
+            <div class="mode-header-row">
+              <div class="mode-card-check" id="mode-check-do9"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
+              <div class="mode-card-title">🔴 DO_9 — Tồn nặng</div>
+            </div>
+            <div class="mode-card-sub">Ưu tiên xử lý cao nhất</div>
+            <div class="mode-card-badge" id="mode-badge-do9">0 phiếu</div>
+          </div>
+          <!-- DO_8 -->
+          <div class="mode-card mode-do8 selected" id="mode-card-do8" onclick="toggleMode('do8')">
+            <div class="mode-header-row">
+              <div class="mode-card-check" id="mode-check-do8"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
+              <div class="mode-card-title">🟠 DO_8 — Tồn trung bình</div>
+            </div>
+            <div class="mode-card-sub">Cần xử lý sớm</div>
+            <div class="mode-card-badge" id="mode-badge-do8">0 phiếu</div>
+          </div>
+          <!-- DO_7 -->
+          <div class="mode-card mode-do7 selected" id="mode-card-do7" onclick="toggleMode('do7')">
+            <div class="mode-header-row">
+              <div class="mode-card-check" id="mode-check-do7"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
+              <div class="mode-card-title">🟡 DO_7 — Tồn nhẹ</div>
+            </div>
+            <div class="mode-card-sub">Theo dõi và xử lý</div>
+            <div class="mode-card-badge" id="mode-badge-do7">0 phiếu</div>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button class="btn btn-red" onclick="applyModesAndRender(); addRipple(event)">
+            <i class="fa-solid fa-magnifying-glass-chart"></i> Xem kết quả
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -389,407 +211,138 @@
   <!-- ===== SECTION C: KẾT QUẢ ===== -->
   <div id="section-results">
     <div class="section-card">
-      <div class="section-header" style="cursor:default;">
-        <span class="section-title" id="results-title">📋 KẾT QUẢ</span>
+      <div class="section-header no-click">
+        <span class="section-title" id="results-title">
+          <i class="fa-solid fa-clipboard-list"></i> KẾT QUẢ
+        </span>
       </div>
-      <div class="section-body" id="results-body"></div>
+      <div class="section-body">
+        <div id="result-tab-bar" class="result-tab-bar" style="display:none;"></div>
+        <div id="results-body"></div>
+      </div>
     </div>
   </div>
 
   <!-- ===== SECTION D: THỐNG KÊ ===== -->
   <div id="section-stats">
-    <div class="stats-grid">
+    <div class="section-sep">📊 Thống kê tổng quan</div>
+    <!-- Base stats -->
+    <div class="stats-grid" id="base-stats-row">
       <div class="stat-card">
-        <div class="stat-icon red">📦</div>
-        <div><div class="stat-label">Tổng phiếu tồn</div><div class="stat-value red" id="stat-total">0</div></div>
+        <div class="stat-icon red"><i class="fa-solid fa-box-open"></i></div>
+        <div>
+          <div class="stat-label">Phiếu TT 500</div>
+          <div class="stat-value red" id="stat-total-tt500">0</div>
+        </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon orange">👤</div>
-        <div><div class="stat-label">Bưu tá liên quan</div><div class="stat-value orange" id="stat-buuta">0</div></div>
+        <div class="stat-icon orange"><i class="fa-solid fa-users"></i></div>
+        <div>
+          <div class="stat-label">Bưu tá liên quan</div>
+          <div class="stat-value orange" id="stat-buuta">0</div>
+        </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon red">⚠️</div>
-        <div><div class="stat-label">Phiếu quá hạn</div><div class="stat-value red" id="stat-quahan">0</div></div>
+        <div class="stat-icon red"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        <div>
+          <div class="stat-label">Phiếu quá hạn</div>
+          <div class="stat-value red" id="stat-quahan">0</div>
+        </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green">💰</div>
-        <div><div class="stat-label">Tổng tiền COD tồn</div><div class="stat-value green" id="stat-cod">0đ</div></div>
+        <div class="stat-icon green"><i class="fa-solid fa-sack-dollar"></i></div>
+        <div>
+          <div class="stat-label">Tổng COD TT500</div>
+          <div class="stat-value green" id="stat-cod">0đ</div>
+        </div>
+      </div>
+    </div>
+    <!-- DO stats row -->
+    <div class="stats-grid" id="do-stats-row" style="display:none;">
+      <div class="stat-card" id="stat-card-do9">
+        <div class="stat-icon do9"><i class="fa-solid fa-circle-exclamation"></i></div>
+        <div>
+          <div class="stat-label">Tổng phiếu DO_9</div>
+          <div class="stat-value do9" id="stat-do9">0</div>
+        </div>
+      </div>
+      <div class="stat-card" id="stat-card-do8">
+        <div class="stat-icon do8"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div>
+          <div class="stat-label">Tổng phiếu DO_8</div>
+          <div class="stat-value do8" id="stat-do8">0</div>
+        </div>
+      </div>
+      <div class="stat-card" id="stat-card-do7">
+        <div class="stat-icon do7"><i class="fa-solid fa-bell"></i></div>
+        <div>
+          <div class="stat-label">Tổng phiếu DO_7</div>
+          <div class="stat-value do7" id="stat-do7">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><i class="fa-solid fa-money-bill-wave"></i></div>
+        <div>
+          <div class="stat-label">Tổng COD (DO_7+8+9)</div>
+          <div class="stat-value orange" id="stat-cod-do">0đ</div>
+        </div>
       </div>
     </div>
     <div class="stats-actions">
-      <button class="btn btn-zalo" onclick="openAllModal()">📤 Gửi cảnh báo tất cả bưu tá</button>
+      <button class="btn btn-zalo btn-lg" onclick="openAllModal(); addRipple(event)">
+        <i class="fa-brands fa-rocketchat"></i> Gửi cảnh báo tất cả bưu tá
+      </button>
     </div>
   </div>
 
-</div>
+</div><!-- end .container -->
 
-<!-- ===== MODAL ===== -->
+<!-- ===== MODAL ZALO ===== -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOnOverlay(event)">
   <div class="modal" id="modal">
     <div class="modal-header">
-      <div class="modal-title" id="modal-title">📤 Gửi cảnh báo Zalo</div>
-      <button class="btn-icon" onclick="closeModal()">✖</button>
+      <div class="modal-title" id="modal-title">
+        <i class="fa-brands fa-rocketchat" style="color:var(--zalo);"></i>
+        Gửi cảnh báo Zalo
+      </div>
+      <button class="modal-close-btn" onclick="closeModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
     <div class="modal-body">
       <div class="modal-tabs" id="modal-tabs"></div>
       <textarea class="msg-textarea" id="modal-textarea" placeholder="Nội dung tin nhắn..."></textarea>
-      <div class="modal-note">ℹ️ Sau khi Zalo mở, hãy dán nội dung đã copy vào khung chat.</div>
+      <div class="modal-note">
+        <i class="fa-solid fa-circle-info" style="color:var(--zalo);"></i>
+        Sau khi Zalo mở, hãy dán nội dung đã copy vào khung chat.
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="copyModal()">📋 Copy nội dung</button>
-      <button class="btn btn-zalo" id="btn-open-zalo" onclick="openZalo()">💬 Mở Zalo</button>
-      <button class="btn btn-ghost" onclick="closeModal()">✖ Đóng</button>
+      <button class="btn btn-ghost" onclick="copyModal()">
+        <i class="fa-solid fa-copy"></i> Copy nội dung
+      </button>
+      <button class="btn btn-zalo" id="btn-open-zalo" onclick="openZalo()">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Zalo
+      </button>
+      <button class="btn btn-ghost" onclick="closeModal()" style="margin-left:auto;">
+        <i class="fa-solid fa-xmark"></i> Đóng
+      </button>
     </div>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- ===== TOAST CONTAINER ===== -->
+<div id="toast-container"></div>
 
-<script>
-// ================================================================
-// GLOBAL STATE
-// ================================================================
-let groupedData = [];
-let currentModalGroups = [];
-let currentModalIdx = 0;
+<!-- ===== APP SCRIPTS (thứ tự quan trọng) ===== -->
+<script src="assets/js/state.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/buuta.js"></script>
+<script src="assets/js/mode.js"></script>
+<script src="assets/js/upload.js"></script>
+<script src="assets/js/render.js"></script>
+<script src="assets/js/modal.js"></script>
+<script src="assets/js/app.js"></script>
 
-window.addEventListener('DOMContentLoaded', () => { loadBuuta(); });
-
-// ================================================================
-// SECTION A — BƯU TÁ
-// ================================================================
-function loadBuuta() {
-  const saved = localStorage.getItem('buuta_list');
-  const list = saved ? JSON.parse(saved) : [];
-  const tbody = document.getElementById('buuta-tbody');
-  tbody.innerHTML = '';
-  list.forEach(bt => addBuutaRow(bt.name, bt.phone));
-}
-
-function syncBuutaFromFile(groups) {
-  const existing = getBuutaList();
-  let added = 0;
-  groups.forEach(g => {
-    const name = g.parsedName.toUpperCase();
-    if (!name) return;
-    const alreadyIn = existing.some(bt =>
-      bt.name.toLowerCase() === name.toLowerCase() ||
-      (g.parsedPhone && bt.phone && bt.phone === g.parsedPhone)
-    );
-    if (!alreadyIn) { addBuutaRow(name, g.parsedPhone || ''); added++; }
-  });
-  // KHÔNG tự động lưu localStorage
-  if (added > 0) showToast(`🔄 Đã đồng bộ ${added} bưu tá mới từ file! Nhấn 💾 Lưu để giữ lại.`);
-}
-
-function clearBuuta() {
-  document.getElementById('buuta-tbody').innerHTML = '';
-  localStorage.removeItem('buuta_list');
-  showToast('🗑️ Đã xóa toàn bộ danh sách bưu tá!');
-}
-
-function addBuutaRow(name = '', phone = '') {
-  const tbody = document.getElementById('buuta-tbody');
-  const idx = tbody.rows.length + 1;
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td class="stt-cell">${idx}</td>
-    <td><input type="text" placeholder="Nhập tên bưu tá..." value="${escHtml(name)}" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></td>
-    <td><input type="tel" placeholder="0xxxxxxxxx (10 số)" value="${escHtml(phone)}" maxlength="11"></td>
-    <td class="del-cell"><button class="btn-icon" onclick="deleteRow(this)" title="Xóa">🗑️</button></td>
-  `;
-  tbody.appendChild(tr);
-  updateStt();
-}
-
-function deleteRow(btn) { btn.closest('tr').remove(); updateStt(); }
-
-function updateStt() {
-  document.querySelectorAll('#buuta-tbody tr').forEach((tr, i) => { tr.cells[0].textContent = i + 1; });
-}
-
-function getBuutaList() {
-  return Array.from(document.querySelectorAll('#buuta-tbody tr')).map(tr => ({
-    name: tr.cells[1].querySelector('input').value.trim().toUpperCase(),
-    phone: tr.cells[2].querySelector('input').value.trim()
-  })).filter(bt => bt.name);
-}
-
-function saveBuuta() {
-  const list = getBuutaList();
-  localStorage.setItem('buuta_list', JSON.stringify(list));
-  showToast('💾 Đã lưu danh sách bưu tá!');
-  if (groupedData.length > 0) matchAndRender();
-}
-
-function toggleCollapse(id) { document.getElementById(id).classList.toggle('collapsed'); }
-
-// ================================================================
-// SECTION B — UPLOAD EXCEL
-// ================================================================
-function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
-function handleDragLeave(e) { document.getElementById('upload-zone').classList.remove('dragover'); }
-function handleDrop(e) {
-  e.preventDefault(); document.getElementById('upload-zone').classList.remove('dragover');
-  const file = e.dataTransfer.files[0]; if (file) processFile(file);
-}
-function handleFileChange(e) { const file = e.target.files[0]; if (file) processFile(file); }
-
-function processFile(file) {
-  if (!file.name.endsWith('.xlsx')) { showToast('⚠️ Vui lòng chọn file .xlsx'); return; }
-  document.getElementById('upload-zone').style.display = 'none';
-  document.getElementById('spinner-wrap').style.display = 'flex';
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    setTimeout(() => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const raw = XLSX.utils.sheet_to_json(ws, { range: 1, defval: '' });
-        const filtered = raw.filter(r => {
-          const tt = r['TRANG_THAI'];
-          return tt == 500 || tt === '500' || Number(tt) === 500;
-        });
-        document.getElementById('spinner-wrap').style.display = 'none';
-        if (filtered.length === 0) {
-          document.getElementById('results-body').innerHTML = `
-            <div class="empty-state">
-              <div class="big-icon">✅</div>
-              <div style="font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;">Không tìm thấy phiếu tồn phát</div>
-              <div class="text-gray">Tất cả phiếu gửi đang trong trạng thái bình thường.</div>
-            </div>`;
-          document.getElementById('section-results').style.display = 'block';
-          document.getElementById('section-stats').style.display = 'none';
-        } else {
-          const groups = {};
-          filtered.forEach(row => { const key = (row['BUU_TA_PHAT'] || '').trim(); if (!groups[key]) groups[key] = []; groups[key].push(row); });
-          const sortedKeys = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'vi'));
-          groupedData = sortedKeys.map(k => ({ rawName: k, parsedName: parseBuutaName(k), parsedPhone: parseBuutaPhone(k), rows: groups[k] }));
-          syncBuutaFromFile(groupedData);
-          matchAndRender();
-        }
-        document.getElementById('upload-reset').style.display = 'flex';
-        document.getElementById('file-name-display').textContent = file.name;
-      } catch(err) {
-        document.getElementById('spinner-wrap').style.display = 'none';
-        document.getElementById('upload-zone').style.display = 'block';
-        showToast('❌ Lỗi đọc file: ' + err.message);
-      }
-    }, 300);
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function resetUpload() {
-  document.getElementById('upload-zone').style.display = 'block';
-  document.getElementById('upload-reset').style.display = 'none';
-  document.getElementById('file-input').value = '';
-  document.getElementById('section-results').style.display = 'none';
-  document.getElementById('section-stats').style.display = 'none';
-  document.getElementById('file-name-display').textContent = '';
-  groupedData = [];
-  updateHeaderBadges(0, 0, 0);
-}
-
-// ================================================================
-// PARSE & MATCH
-// ================================================================
-function parseBuutaName(raw) { const idx = raw.indexOf('('); return idx >= 0 ? raw.substring(0, idx).trim() : raw.trim(); }
-function parseBuutaPhone(raw) { const m = raw.match(/\((\d+)\)/); if (!m) return ''; let ph = m[1]; if (ph.startsWith('84')) ph = '0' + ph.substring(2); return ph; }
-
-function matchBuuta(parsedName, parsedPhone) {
-  const list = getBuutaList();
-  const byName = list.find(bt => bt.name.trim().toLowerCase() === parsedName.trim().toLowerCase());
-  if (byName) return byName;
-  if (parsedPhone) { const byPhone = list.find(bt => bt.phone.trim() === parsedPhone.trim()); if (byPhone) return byPhone; }
-  return null;
-}
-
-// ================================================================
-// RENDER
-// ================================================================
-function matchAndRender() {
-  const body = document.getElementById('results-body');
-  body.innerHTML = '';
-  let totalPhieu = 0, totalQuahan = 0, totalCod = 0;
-
-  groupedData.forEach((group, idx) => {
-    const matched = matchBuuta(group.parsedName, group.parsedPhone);
-    const configPhone = matched ? matched.phone : '';
-    const displayName = group.parsedName || group.rawName;
-    const rows = group.rows;
-    totalPhieu += rows.length;
-
-    const card = document.createElement('div');
-    card.className = 'group-card';
-    const sent = matched && configPhone;
-    card.innerHTML = `
-      <div class="group-header">
-        <div>
-          <div class="group-name">👤 ${escHtml(displayName)}</div>
-          ${configPhone ? `<div class="group-phone">📞 ${escHtml(configPhone)}</div>` : '<div class="group-phone" style="opacity:0.7">⚠️ Chưa có số điện thoại</div>'}
-        </div>
-        <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-          <span class="badge-count">${rows.length} phiếu</span>
-          <button class="btn btn-zalo btn-sm" onclick="openSingleModal(${idx})">${sent ? '📤' : '⚠️'} Gửi cảnh báo Zalo</button>
-        </div>
-      </div>
-      <div class="group-table-wrap">
-        <table class="data-table">
-          <thead><tr><th>Mã phiếu gửi</th><th>Hành trình</th><th>Ngày gửi BP</th><th>Lần phát</th><th>Tiền COD</th><th>TG quy định</th><th>TG thực tế (lũy kế)</th><th>Trạng thái</th></tr></thead>
-          <tbody>${rows.map(r => renderRow(r)).join('')}</tbody>
-        </table>
-      </div>`;
-    body.appendChild(card);
-    rows.forEach(r => {
-      totalCod += parseFloat(r['TIEN_COD']) || 0;
-      const tqd = parseFloat(r['TG_QUYDINH']) || 0, ttt = parseFloat(r['TG_TT_LUYKE']) || 0;
-      if (ttt > tqd) totalQuahan++;
-    });
-  });
-
-  const groupCount = groupedData.length;
-  document.getElementById('results-title').textContent = `📋 KẾT QUẢ — ${totalPhieu} phiếu / ${groupCount} bưu tá`;
-  document.getElementById('section-results').style.display = 'block';
-  document.getElementById('section-stats').style.display = 'block';
-  document.getElementById('stat-total').textContent = totalPhieu;
-  document.getElementById('stat-buuta').textContent = groupCount;
-  document.getElementById('stat-quahan').textContent = totalQuahan;
-  document.getElementById('stat-cod').textContent = formatMoney(totalCod) + 'đ';
-  updateHeaderBadges(totalPhieu, groupCount, totalQuahan);
-}
-
-function renderRow(r) {
-  const ma = r['MA_PHIEUGUI'] || '', huyen_nhan = r['TEN_HUYEN_NHAN'] || '', huyen_phat = r['TEN_HUYEN_PHAT'] || '';
-  const tinh_nhan = (r['TINH_NHAN'] || '').trim().toUpperCase();
-  const ngay_gui = formatDate(r['NGAY_GUI_BP'] || r['TIME_PCP'] || '');
-  const lan_phat = r['LAN_PHAT'], cod = parseFloat(r['TIEN_COD']) || 0;
-  const tqd = parseFloat(r['TG_QUYDINH']) || 0, ttt = parseFloat(r['TG_TT_LUYKE']) || 0;
-  const isOverdue = ttt > tqd, isNoiTinh = tinh_nhan === 'CTO';
-  const lanPhatHtml = (lan_phat === 0 || lan_phat === '0' || lan_phat === '') ? '<span class="lan-phat-none">Chưa phát</span>' : `<strong>${lan_phat}</strong>`;
-  const statusBadge = isOverdue ? '<span class="badge-overdue">🔴 QUÁ HẠN</span>' : '<span class="badge-ontime">🟢 ĐÚNG HẠN</span>';
-  const noiTinhBadge = isNoiTinh ? '<span class="badge-noi-tinh">🏠 NỘI TỈNH</span>' : '';
-  return `<tr class="${isNoiTinh ? 'row-noi-tinh' : ''}">
-    <td><span class="ma-phieu">${escHtml(ma)}</span>${noiTinhBadge}</td>
-    <td><span class="hanh-trinh">${escHtml(huyen_nhan)} → ${escHtml(huyen_phat)}</span></td>
-    <td>${escHtml(ngay_gui)}</td><td>${lanPhatHtml}</td>
-    <td>${cod > 0 ? formatMoney(cod) + 'đ' : '—'}</td>
-    <td>${tqd > 0 ? tqd + ' giờ' : '—'}</td><td>${ttt > 0 ? ttt + ' giờ' : '—'}</td>
-    <td>${statusBadge}</td></tr>`;
-}
-
-// ================================================================
-// MODAL
-// ================================================================
-function buildMessage(groupName, rows) {
-  const now = new Date(), hhmm = now.toTimeString().slice(0,5), date = now.toLocaleDateString('vi-VN');
-  const noiTinhRows = rows.filter(r => (r['TINH_NHAN'] || '').trim().toUpperCase() === 'CTO');
-  const bienTinhRows = rows.filter(r => (r['TINH_NHAN'] || '').trim().toUpperCase() !== 'CTO');
-  function rowLine(r) {
-    const ma = r['MA_PHIEUGUI'] || '', cod = parseFloat(r['TIEN_COD']) || 0, lp = r['LAN_PHAT'];
-    const tqd = parseFloat(r['TG_QUYDINH']) || 0, ttt = parseFloat(r['TG_TT_LUYKE']) || 0;
-    const status = ttt > tqd ? 'QUÁ HẠN' : 'ĐÚNG HẠN';
-    const lpStr = (lp === 0 || lp === '0' || lp === '') ? 'Chưa phát' : `Lần ${lp}`;
-    return `- ${ma} | COD: ${cod > 0 ? formatMoney(cod) + 'đ' : '0đ'} | ${lpStr} | ${status}`;
-  }
-  let body = '';
-  if (bienTinhRows.length > 0) { body += `📦 DANH SÁCH PHIẾU TỒN (${bienTinhRows.length} phiếu):\n` + bienTinhRows.map(rowLine).join('\n'); }
-  if (noiTinhRows.length > 0) {
-    if (body) body += '\n\n';
-    body += `⚡ NỘI TỈNH - CẦN TRẢ TRẠNG THÁI 500 SỚM (${noiTinhRows.length} phiếu):\n` + noiTinhRows.map(rowLine).join('\n');
-    body += `\n\n⚠️ Các phiếu nội tỉnh CTO cần được xử lý TRẢ SỚM để đảm bảo chỉ tiêu nội tỉnh.`;
-  }
-  return `🚨 CẢNH BÁO TỒN PHÁT - TRẠNG THÁI 500\n\nXin chào anh/chị ${groupName},\n\nHiện tại anh/chị đang có ${rows.length} phiếu tồn phát chưa xử lý:\n\n${body}\n\n📌 Vui lòng xử lý sớm để tránh ảnh hưởng chỉ tiêu.\n⏰ Thời gian báo cáo: ${hhmm} ${date}\n\nTrân trọng.`;
-}
-
-function openSingleModal(groupIdx) {
-  const group = groupedData[groupIdx]; if (!group) return;
-  const matched = matchBuuta(group.parsedName, group.parsedPhone);
-  const phone = matched ? matched.phone : '', name = group.parsedName || group.rawName;
-  if (!phone) { showToast('⚠️ Chưa có số điện thoại, vui lòng thêm ở phần ⚙️ Cấu hình'); return; }
-  currentModalGroups = [{ name, phone, rows: group.rows }]; currentModalIdx = 0;
-  renderModal(false); openModal();
-}
-
-function openAllModal() {
-  currentModalGroups = groupedData.map(g => {
-    const matched = matchBuuta(g.parsedName, g.parsedPhone);
-    return { name: g.parsedName || g.rawName, phone: matched ? matched.phone : '', rows: g.rows };
-  }).filter(g => g.phone);
-  if (currentModalGroups.length === 0) { showToast('⚠️ Không có bưu tá nào có số điện thoại.'); return; }
-  currentModalIdx = 0; renderModal(true); openModal();
-}
-
-function renderModal(multiTab) {
-  const tabsEl = document.getElementById('modal-tabs'); tabsEl.innerHTML = '';
-  if (multiTab && currentModalGroups.length > 1) {
-    currentModalGroups.forEach((g, i) => {
-      const tab = document.createElement('button');
-      tab.className = 'modal-tab' + (i === 0 ? ' active' : '');
-      tab.textContent = g.name; tab.onclick = () => switchTab(i); tabsEl.appendChild(tab);
-    });
-    tabsEl.style.display = 'flex';
-  } else { tabsEl.style.display = 'none'; }
-  loadTabContent(currentModalIdx);
-}
-
-function switchTab(idx) {
-  currentModalIdx = idx;
-  document.querySelectorAll('.modal-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
-  loadTabContent(idx);
-}
-
-function loadTabContent(idx) {
-  const group = currentModalGroups[idx];
-  document.getElementById('modal-title').textContent = `📤 Gửi cảnh báo Zalo — ${group.name}`;
-  document.getElementById('modal-textarea').value = buildMessage(group.name, group.rows);
-  document.getElementById('btn-open-zalo').disabled = !group.phone;
-}
-
-function openModal() { document.getElementById('modal-overlay').classList.add('open'); }
-function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
-function closeModalOnOverlay(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
-
-function copyModal() {
-  const ta = document.getElementById('modal-textarea');
-  navigator.clipboard.writeText(ta.value).then(() => showToast('✅ Đã copy nội dung!')).catch(() => { ta.select(); document.execCommand('copy'); showToast('✅ Đã copy nội dung!'); });
-}
-
-function openZalo() {
-  const group = currentModalGroups[currentModalIdx];
-  if (!group.phone) { showToast('⚠️ Bưu tá này chưa có số điện thoại'); return; }
-  window.open('https://zalo.me/' + group.phone, '_blank');
-}
-
-// ================================================================
-// HELPERS
-// ================================================================
-function formatDate(val) {
-  if (!val) return '';
-  if (typeof val === 'number') {
-    const d = XLSX.SSF.parse_date_code(val); if (!d) return '';
-    const dt = new Date(d.y, d.m - 1, d.d, d.H || 0, d.M || 0);
-    return padZ(dt.getDate()) + '/' + padZ(dt.getMonth()+1) + '/' + dt.getFullYear() + ' ' + padZ(dt.getHours()) + ':' + padZ(dt.getMinutes());
-  }
-  const str = String(val);
-  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) return str;
-  try { const d = new Date(str); if (!isNaN(d.getTime())) return padZ(d.getDate()) + '/' + padZ(d.getMonth()+1) + '/' + d.getFullYear() + ' ' + padZ(d.getHours()) + ':' + padZ(d.getMinutes()); } catch(e) {}
-  return str;
-}
-function padZ(n) { return String(n).padStart(2, '0'); }
-function formatMoney(n) { return Math.round(n).toLocaleString('vi-VN'); }
-function escHtml(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-function updateHeaderBadges(total, buuta, quahan) {
-  document.getElementById('h-total-phieu').textContent = total;
-  document.getElementById('h-total-buuta').textContent = buuta;
-  document.getElementById('h-total-quahan').textContent = quahan;
-}
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
-}
-</script>
 </body>
 </html>
