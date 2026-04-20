@@ -40,19 +40,9 @@
         <span class="num" id="h-total-tt500">0</span>
       </div>
       <div class="hbadge danger">
-        <i class="fa-solid fa-circle-exclamation"></i>
-        <span>DO_9:</span>
-        <span class="num" id="h-total-do9">0</span>
-      </div>
-      <div class="hbadge hb-orange">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        <span>DO_8:</span>
-        <span class="num" id="h-total-do8">0</span>
-      </div>
-      <div class="hbadge hb-yellow">
-        <i class="fa-solid fa-bell"></i>
-        <span>DO_7:</span>
-        <span class="num" id="h-total-do7">0</span>
+        <span>Cảnh báo DO:</span>
+        <span class="num" id="h-total-do">0</span>
       </div>
       <div class="hbadge">
         <i class="fa-solid fa-clock"></i>
@@ -161,7 +151,7 @@
         </div>
       </div>
       <div class="section-body">
-        <div class="mode-grid">
+        <div class="mode-grid" style="grid-template-columns:1fr 1fr;">
           <!-- TT500 -->
           <div class="mode-card mode-tt500 selected" id="mode-card-tt500" onclick="toggleMode('tt500')">
             <div class="mode-header-row">
@@ -171,32 +161,14 @@
             <div class="mode-card-sub">Phiếu hoàn/tồn phát chưa xử lý</div>
             <div class="mode-card-badge" id="mode-badge-tt500">0 phiếu</div>
           </div>
-          <!-- DO_9 -->
-          <div class="mode-card mode-do9 selected" id="mode-card-do9" onclick="toggleMode('do9')">
+          <!-- DO_7 + DO_8 + DO_9 gộp -->
+          <div class="mode-card mode-do selected" id="mode-card-do" onclick="toggleMode('do')">
             <div class="mode-header-row">
-              <div class="mode-card-check" id="mode-check-do9"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
-              <div class="mode-card-title">🔴 DO_9 — Tồn nặng</div>
+              <div class="mode-card-check" id="mode-check-do"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
+              <div class="mode-card-title">⚠️ DO_7 + DO_8 + DO_9</div>
             </div>
-            <div class="mode-card-sub">Ưu tiên xử lý cao nhất</div>
-            <div class="mode-card-badge" id="mode-badge-do9">0 phiếu</div>
-          </div>
-          <!-- DO_8 -->
-          <div class="mode-card mode-do8 selected" id="mode-card-do8" onclick="toggleMode('do8')">
-            <div class="mode-header-row">
-              <div class="mode-card-check" id="mode-check-do8"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
-              <div class="mode-card-title">🟠 DO_8 — Tồn trung bình</div>
-            </div>
-            <div class="mode-card-sub">Cần xử lý sớm</div>
-            <div class="mode-card-badge" id="mode-badge-do8">0 phiếu</div>
-          </div>
-          <!-- DO_7 -->
-          <div class="mode-card mode-do7 selected" id="mode-card-do7" onclick="toggleMode('do7')">
-            <div class="mode-header-row">
-              <div class="mode-card-check" id="mode-check-do7"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
-              <div class="mode-card-title">🟡 DO_7 — Tồn nhẹ</div>
-            </div>
-            <div class="mode-card-sub">Theo dõi và xử lý</div>
-            <div class="mode-card-badge" id="mode-badge-do7">0 phiếu</div>
+            <div class="mode-card-sub">Cảnh báo tồn hàng theo mức độ</div>
+            <div class="mode-card-badge" id="mode-badge-do">0 phiếu</div>
           </div>
         </div>
         <div class="flex gap-2 flex-wrap">

@@ -1,6 +1,6 @@
 /**
  * render.js — Render kết quả và thống kê
- * Lọc dữ liệu, build tab bar, render group cards, render rows, cập nhật stats
+ * Lọc dữ liệu, build tab bar (tt500 / do / all), render group cards, render rows, cập nhật stats
  */
 
 // ================================================================
@@ -8,24 +8,22 @@
 // ================================================================
 
 /**
- * Lọc dữ liệu theo selectedModes,
+ * Lọc dữ liệu theo selectedModes {tt500, do},
  * build tab bar, render kết quả, cập nhật stats
  */
 function applyModesAndRender() {
-  const rowsForTab = { tt500: [], do9: [], do8: [], do7: [], all: [] };
+  const rowsForTab = { tt500: [], do: [], all: [] };
   const seenForAll = new Set();
 
   allRawRows.forEach((r, idx) => {
     const c = classifyRow(r);
     let included = false;
-    if (selectedModes.tt500 && c.isTT500) { rowsForTab.tt500.push({ row: r, cls: c }); included = true; }
-    if (selectedModes.do9   && c.isDO9)   { rowsForTab.do9.push(  { row: r, cls: c }); included = true; }
-    if (selectedModes.do8   && c.isDO8)   { rowsForTab.do8.push(  { row: r, cls: c }); included = true; }
-    if (selectedModes.do7   && c.isDO7)   { rowsForTab.do7.push(  { row: r, cls: c }); included = true; }
+    if (selectedModes.tt500 && c.isTT500)                       { rowsForTab.tt500.push({ row: r, cls: c }); included = true; }
+    if (selectedModes.do   && (c.isDO9 || c.isDO8 || c.isDO7)) { rowsForTab.do.push(  { row: r, cls: c }); included = true; }
     if (included && !seenForAll.has(idx)) { rowsForTab.all.push({ row: r, cls: c }); seenForAll.add(idx); }
   });
 
-  const activeModes = ['tt500', 'do9', 'do8', 'do7'].filter(m => selectedModes[m] && rowsForTab[m].length > 0);
+  const activeModes = ['tt500', 'do'].filter(m => selectedModes[m] && rowsForTab[m].length > 0);
 
   // --- Empty state ---
   if (rowsForTab.all.length === 0) {
@@ -45,11 +43,9 @@ function applyModesAndRender() {
   const groupMap = {};
   rowsForTab.all.forEach(({ row, cls }) => {
     const key = (row['BUU_TA_PHAT'] || '').trim();
-    if (!groupMap[key]) groupMap[key] = { tt500: [], do9: [], do8: [], do7: [], all: [] };
-    if (cls.isTT500 && selectedModes.tt500) groupMap[key].tt500.push(row);
-    if (cls.isDO9   && selectedModes.do9)   groupMap[key].do9.push(row);
-    if (cls.isDO8   && selectedModes.do8)   groupMap[key].do8.push(row);
-    if (cls.isDO7   && selectedModes.do7)   groupMap[key].do7.push(row);
+    if (!groupMap[key]) groupMap[key] = { tt500: [], do: [], all: [] };
+    if (cls.isTT500 && selectedModes.tt500)                       groupMap[key].tt500.push(row);
+    if ((cls.isDO9 || cls.isDO8 || cls.isDO7) && selectedModes.do) groupMap[key].do.push(row);
     groupMap[key].all.push({ row, cls });
   });
 
@@ -72,11 +68,9 @@ function applyModesAndRender() {
   if (showTabs) {
     tabBar.style.display = 'flex';
     const tabDefs = [
-      { id: 'tt500', label: 'TT 500',  colorClass: 'active-tt500', icon: 'fa-box-open' },
-      { id: 'do9',   label: 'DO_9',    colorClass: 'active-do9',   icon: 'fa-circle-exclamation' },
-      { id: 'do8',   label: 'DO_8',    colorClass: 'active-do8',   icon: 'fa-triangle-exclamation' },
-      { id: 'do7',   label: 'DO_7',    colorClass: 'active-do7',   icon: 'fa-bell' },
-      { id: 'all',   label: 'Tất cả',  colorClass: 'active-all',   icon: 'fa-layer-group' },
+      { id: 'tt500', label: 'TT 500',      colorClass: 'active-tt500', icon: 'fa-box-open' },
+      { id: 'do',    label: 'Cảnh báo DO', colorClass: 'active-do',    icon: 'fa-triangle-exclamation' },
+      { id: 'all',   label: 'Tất cả',      colorClass: 'active-all',   icon: 'fa-layer-group' },
     ];
     tabDefs.forEach(td => {
       if (td.id !== 'all' && (!selectedModes[td.id] || rowsForTab[td.id].length === 0)) return;
@@ -110,7 +104,7 @@ function applyModesAndRender() {
 function switchResultTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.result-tab').forEach(btn => {
-    btn.classList.remove('active-tt500', 'active-do9', 'active-do8', 'active-do7', 'active-all');
+    btn.classList.remove('active-tt500', 'active-do', 'active-all');
     if (btn.dataset.tab === tab) btn.classList.add(btn.dataset.colorClass);
   });
   applyModesAndRenderFromSaved();
@@ -139,12 +133,20 @@ function renderResultsForTab(tab, groupMap, sortedKeys, rowsForTab, showTabs) {
     const configPhone = matched ? matched.phone : '';
     const displayName = parsedName || key;
 
+    // Lấy rows cho tab hiện tại
     let tabRows = [];
-    if      (tab === 'tt500') tabRows = gm.tt500;
-    else if (tab === 'do9')   tabRows = gm.do9;
-    else if (tab === 'do8')   tabRows = gm.do8;
-    else if (tab === 'do7')   tabRows = gm.do7;
-    else                      tabRows = gm.all.map(x => x.row);
+    if (tab === 'tt500') {
+      tabRows = gm.tt500;
+    } else if (tab === 'do') {
+      // Sắp xếp theo mức độ ưu tiên: DO_9 → DO_8 → DO_7
+      tabRows = [
+        ...gm.do.filter(r => classifyRow(r).isDO9),
+        ...gm.do.filter(r => classifyRow(r).isDO8),
+        ...gm.do.filter(r => classifyRow(r).isDO7),
+      ];
+    } else {
+      tabRows = gm.all.map(x => x.row);
+    }
     if (tabRows.length === 0) return;
 
     const showLevelCol  = tab !== 'tt500';
@@ -153,13 +155,16 @@ function renderResultsForTab(tab, groupMap, sortedKeys, rowsForTab, showTabs) {
     const card = document.createElement('div');
     card.className = 'group-card fade-in-up';
 
-    // Badges tóm tắt mức cảnh báo ở header
-    const tt500c = gm.tt500.length, do9c = gm.do9.length, do8c = gm.do8.length, do7c = gm.do7.length;
+    // Badges tóm tắt mức cảnh báo ở header group
+    const tt500c = gm.tt500.length;
+    const do9c   = gm.do.filter(r => classifyRow(r).isDO9).length;
+    const do8c   = gm.do.filter(r => classifyRow(r).isDO8).length;
+    const do7c   = gm.do.filter(r => classifyRow(r).isDO7).length;
     let levelBadgesHtml = '';
     if (selectedModes.tt500 && tt500c > 0) levelBadgesHtml += `<span class="badge-level badge-tt500">TT500: ${tt500c}</span>`;
-    if (selectedModes.do9   && do9c > 0)   levelBadgesHtml += `<span class="badge-level badge-do9">🔴 DO9: ${do9c}</span>`;
-    if (selectedModes.do8   && do8c > 0)   levelBadgesHtml += `<span class="badge-level badge-do8">🟠 DO8: ${do8c}</span>`;
-    if (selectedModes.do7   && do7c > 0)   levelBadgesHtml += `<span class="badge-level badge-do7">🟡 DO7: ${do7c}</span>`;
+    if (selectedModes.do    && do9c   > 0) levelBadgesHtml += `<span class="badge-level badge-do9">🔴 DO9: ${do9c}</span>`;
+    if (selectedModes.do    && do8c   > 0) levelBadgesHtml += `<span class="badge-level badge-do8">🟠 DO8: ${do8c}</span>`;
+    if (selectedModes.do    && do7c   > 0) levelBadgesHtml += `<span class="badge-level badge-do7">🟡 DO7: ${do7c}</span>`;
 
     card.innerHTML = `
       <div class="group-header">
@@ -234,21 +239,16 @@ function renderRow(r, tab, showLevelCol, showStatusCol) {
 
   if (tab === 'all') {
     if (cls.isTT500 && selectedModes.tt500) levelBadgesHtml += '<span class="badge-level badge-tt500">TT500</span> ';
-    if (cls.isDO9   && selectedModes.do9)   levelBadgesHtml += '<span class="badge-level badge-do9">🔴 DO_9</span> ';
-    if (cls.isDO8   && selectedModes.do8)   levelBadgesHtml += '<span class="badge-level badge-do8">🟠 DO_8</span> ';
-    if (cls.isDO7   && selectedModes.do7)   levelBadgesHtml += '<span class="badge-level badge-do7">🟡 DO_7</span> ';
-    if      (cls.isDO9 && selectedModes.do9) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do9';
-    else if (cls.isDO8 && selectedModes.do8) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do8';
-    else if (cls.isDO7 && selectedModes.do7) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do7';
-  } else if (tab === 'do9') {
-    levelBadgesHtml = '<span class="badge-level badge-do9">🔴 DO_9</span>';
-    rowClass = 'row-do9';
-  } else if (tab === 'do8') {
-    levelBadgesHtml = '<span class="badge-level badge-do8">🟠 DO_8</span>';
-    rowClass = 'row-do8';
-  } else if (tab === 'do7') {
-    levelBadgesHtml = '<span class="badge-level badge-do7">🟡 DO_7</span>';
-    rowClass = 'row-do7';
+    if (cls.isDO9   && selectedModes.do)    levelBadgesHtml += '<span class="badge-level badge-do9">🔴 DO_9</span> ';
+    if (cls.isDO8   && selectedModes.do)    levelBadgesHtml += '<span class="badge-level badge-do8">🟠 DO_8</span> ';
+    if (cls.isDO7   && selectedModes.do)    levelBadgesHtml += '<span class="badge-level badge-do7">🟡 DO_7</span> ';
+    if      (cls.isDO9 && selectedModes.do) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do9';
+    else if (cls.isDO8 && selectedModes.do) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do8';
+    else if (cls.isDO7 && selectedModes.do) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do7';
+  } else if (tab === 'do') {
+    if      (cls.isDO9) { levelBadgesHtml = '<span class="badge-level badge-do9">🔴 DO_9</span>'; rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do9'; }
+    else if (cls.isDO8) { levelBadgesHtml = '<span class="badge-level badge-do8">🟠 DO_8</span>'; rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do8'; }
+    else if (cls.isDO7) { levelBadgesHtml = '<span class="badge-level badge-do7">🟡 DO_7</span>'; rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do7'; }
   }
 
   return `<tr class="${rowClass}">
@@ -283,20 +283,19 @@ function updateStats(rowsForTab, groups) {
   document.getElementById('stat-quahan').textContent      = quaHan;
   document.getElementById('stat-cod').textContent         = formatMoney(codTT500) + 'đ';
 
-  const doCodTotal = [...rowsForTab.do9, ...rowsForTab.do8, ...rowsForTab.do7]
-    .reduce((s, { row }) => s + (parseFloat(row['TIEN_COD']) || 0), 0);
+  // DO stats — giữ chi tiết do9/do8/do7 cho thống kê
+  const doCodTotal = rowsForTab.do.reduce((s, { row }) => s + (parseFloat(row['TIEN_COD']) || 0), 0);
   document.getElementById('stat-do9').textContent    = modeCounts.do9;
   document.getElementById('stat-do8').textContent    = modeCounts.do8;
   document.getElementById('stat-do7').textContent    = modeCounts.do7;
   document.getElementById('stat-cod-do').textContent = formatMoney(doCodTotal) + 'đ';
 
-  const hasAnyDO = (selectedModes.do9 && modeCounts.do9 > 0) ||
-                   (selectedModes.do8 && modeCounts.do8 > 0) ||
-                   (selectedModes.do7 && modeCounts.do7 > 0);
+  const hasAnyDO = selectedModes.do && (modeCounts.do9 > 0 || modeCounts.do8 > 0 || modeCounts.do7 > 0);
   document.getElementById('do-stats-row').style.display  = hasAnyDO ? 'grid' : 'none';
-  document.getElementById('stat-card-do9').style.display = selectedModes.do9 ? 'flex' : 'none';
-  document.getElementById('stat-card-do8').style.display = selectedModes.do8 ? 'flex' : 'none';
-  document.getElementById('stat-card-do7').style.display = selectedModes.do7 ? 'flex' : 'none';
+  document.getElementById('stat-card-do9').style.display = modeCounts.do9 > 0 ? 'flex' : 'none';
+  document.getElementById('stat-card-do8').style.display = modeCounts.do8 > 0 ? 'flex' : 'none';
+  document.getElementById('stat-card-do7').style.display = modeCounts.do7 > 0 ? 'flex' : 'none';
 
-  updateHeaderBadges(modeCounts.tt500, modeCounts.do9, modeCounts.do8, modeCounts.do7, groups.length, quaHan);
+  const doTotal = modeCounts.do9 + modeCounts.do8 + modeCounts.do7;
+  updateHeaderBadges(modeCounts.tt500, doTotal, quaHan);
 }

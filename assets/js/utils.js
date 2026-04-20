@@ -110,10 +110,8 @@ function showToast(msg, type = 'success') {
 /**
  * Cập nhật các badge số lượng ở header
  */
-function updateHeaderBadges(tt500, do9, do8, do7, buuta, quahan) {
+function updateHeaderBadges(tt500, doTotal, quahan) {
   document.getElementById('h-total-tt500').textContent  = tt500;
-  document.getElementById('h-total-do9').textContent    = do9;
-  document.getElementById('h-total-do8').textContent    = do8;
-  document.getElementById('h-total-do7').textContent    = do7;
+  document.getElementById('h-total-do').textContent     = doTotal;
   document.getElementById('h-total-quahan').textContent = quahan;
 }

@@ -1,13 +1,13 @@
 /**
  * mode.js — Chọn chế độ cảnh báo & phân loại hàng
- * Toggle mode cards, cập nhật badge, classify từng row Excel
+ * Toggle mode cards (tt500 / do), cập nhật badge, classify từng row Excel
  */
 
 // ================================================================
 // MODE CARD TOGGLE
 // ================================================================
 
-/** Toggle chọn/bỏ chọn một mode */
+/** Toggle chọn/bỏ chọn một mode ('tt500' hoặc 'do') */
 function toggleMode(mode) {
   selectedModes[mode] = !selectedModes[mode];
   const card  = document.getElementById('mode-card-' + mode);
@@ -23,7 +23,7 @@ function toggleMode(mode) {
 
 /** Chọn hoặc bỏ chọn tất cả mode */
 function selectAllModes(val) {
-  ['tt500', 'do9', 'do8', 'do7'].forEach(m => {
+  ['tt500', 'do'].forEach(m => {
     selectedModes[m] = val;
     const card  = document.getElementById('mode-card-' + m);
     const check = document.getElementById('mode-check-' + m);
@@ -39,10 +39,9 @@ function selectAllModes(val) {
 
 /** Cập nhật số lượng phiếu hiển thị trong từng mode card */
 function updateModeBadges() {
+  const doTotal = modeCounts.do9 + modeCounts.do8 + modeCounts.do7;
   document.getElementById('mode-badge-tt500').textContent = modeCounts.tt500 + ' phiếu';
-  document.getElementById('mode-badge-do9').textContent   = modeCounts.do9   + ' phiếu';
-  document.getElementById('mode-badge-do8').textContent   = modeCounts.do8   + ' phiếu';
-  document.getElementById('mode-badge-do7').textContent   = modeCounts.do7   + ' phiếu';
+  document.getElementById('mode-badge-do').textContent    = doTotal + ' phiếu';
 }
 
 // ================================================================

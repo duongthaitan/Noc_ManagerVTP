@@ -17,9 +17,9 @@ function buildMessage(groupName, rows) {
   const date  = now.toLocaleDateString('vi-VN');
 
   const tt500rows = rows.filter(r => classifyRow(r).isTT500 && selectedModes.tt500);
-  const do9rows   = rows.filter(r => classifyRow(r).isDO9   && selectedModes.do9);
-  const do8rows   = rows.filter(r => classifyRow(r).isDO8   && selectedModes.do8);
-  const do7rows   = rows.filter(r => classifyRow(r).isDO7   && selectedModes.do7);
+  const do9rows   = rows.filter(r => classifyRow(r).isDO9   && selectedModes.do);
+  const do8rows   = rows.filter(r => classifyRow(r).isDO8   && selectedModes.do);
+  const do7rows   = rows.filter(r => classifyRow(r).isDO7   && selectedModes.do);
 
   const hasDO    = do9rows.length > 0 || do8rows.length > 0 || do7rows.length > 0;
   const hasTT500 = tt500rows.length > 0;
@@ -77,30 +77,45 @@ function buildMessage(groupName, rows) {
   }
 
   // --- Template TT500 thuần ---
-  const noiTinhRows  = tt500rows.filter(r => (r['TINH_NHAN'] || '').trim().toUpperCase() === 'CTO');
-  const bienTinhRows = tt500rows.filter(r => (r['TINH_NHAN'] || '').trim().toUpperCase() !== 'CTO');
+  // Phân loại: TikTok/Shopee (mã VTPVN.../SHOPEEVTPVN...) hoặc Nội tỉnh (CTO) → nhóm đặc biệt
+  function isSpecial(r) {
+    const ma   = String(r['MA_PHIEUGUI'] || '').toUpperCase();
+    const tinh = String(r['TINH_NHAN']   || '').trim().toUpperCase();
+    return ma.startsWith('VTPVN') || ma.startsWith('SHOPEEVTPVN') || tinh === 'CTO';
+  }
+
+  const specialRows = tt500rows.filter(r =>  isSpecial(r));
+  const normalRows  = tt500rows.filter(r => !isSpecial(r));
 
   function rowLine(r) {
-    const ma     = r['MA_PHIEUGUI'] || '';
-    const cod    = parseFloat(r['TIEN_COD']) || 0;
-    const lp     = r['LAN_PHAT'];
-    const tqd    = parseFloat(r['TG_QUYDINH'])  || 0;
-    const ttt    = parseFloat(r['TG_TT_LUYKE'])  || 0;
-    const status = ttt > tqd ? 'QUÁ HẠN' : 'ĐÚNG HẠN';
-    const lpStr  = (lp === 0 || lp === '0' || lp === '') ? 'Chưa phát' : `Lần ${lp}`;
-    return `- ${ma} | COD: ${cod > 0 ? formatMoney(cod) + 'đ' : '0đ'} | ${lpStr} | ${status}`;
+    const ma  = r['MA_PHIEUGUI'] || '';
+    const cod = parseFloat(r['TIEN_COD'])    || 0;
+    const lp  = r['LAN_PHAT'];
+    const tqd = parseFloat(r['TG_QUYDINH']) || 0;
+    const ttt = parseFloat(r['TG_TT_LUYKE'])|| 0;
+    const chuaPhat = (lp === 0 || lp === '0' || lp === '');
+    const status   = ttt > tqd ? 'QUÁ HẠN' : 'ĐÚNG HẠN';
+
+    // Ghép các phần bằng " | ", bỏ phần rỗng ở giữa
+    const parts = [`- ${ma}`];
+    parts.push(cod > 0 ? `COD: ${formatMoney(cod)}đ` : '');
+    if (chuaPhat) parts.push('Chưa phát');
+    parts.push(status);
+    return parts.join(' | ');
   }
 
   let body = '';
-  if (bienTinhRows.length > 0)
-    body += `📦 DANH SÁCH PHIẾU TỒN (${bienTinhRows.length} phiếu):\n` + bienTinhRows.map(rowLine).join('\n');
-  if (noiTinhRows.length > 0) {
+  if (normalRows.length > 0) {
+    body += `ĐƠN THƯỜNG\n` + normalRows.map(rowLine).join('\n');
+  }
+  if (specialRows.length > 0) {
     if (body) body += '\n\n';
-    body += `⚡ NỘI TỈNH - CẦN TRẢ TRẠNG THÁI 500 SỚM (${noiTinhRows.length} phiếu):\n` + noiTinhRows.map(rowLine).join('\n');
-    body += `\n\n⚠️ Các phiếu nội tỉnh CTO cần được xử lý TRẢ SỚM để đảm bảo chỉ tiêu nội tỉnh.`;
+    body += `⚡ TIKTOK - SHOPEE - NỘI TỈNH - CẦN TRẢ TRẠNG THÁI 500 SỚM\n`;
+    body += specialRows.map(rowLine).join('\n');
+    body += `\n\n⚠️ Các phiếu tiktok shopee và nội tỉnh CTO cần được xử lý TRẢ TT500 SỚM để đảm bảo chỉ tiêu nội tỉnh.`;
   }
 
-  return `🚨 CẢNH BÁO TỒN PHÁT - TRẠNG THÁI 500\n\nXin chào anh/chị ${groupName},\n\nHiện tại anh/chị đang có ${rows.length} phiếu tồn phát chưa xử lý:\n\n${body}\n\n📌 Vui lòng xử lý sớm để tránh ảnh hưởng chỉ tiêu.\n⏰ Thời gian báo cáo: ${hhmm} ${date}\n\nTrân trọng.`;
+  return `🚨 CẢNH BÁO TỒN PHÁT - TRẠNG THÁI 500\n\nBưu tá ${groupName}\n\n📦Tổng BIL TT500: ${tt500rows.length} bưu phẩm chưa xử lý:\n\n${body}\n\n📌 Vui lòng xử lý sớm để tránh ảnh hưởng chỉ tiêu.\n⏰ Thời gian báo cáo: ${hhmm} ${date}\n\nTrân trọng.`;
 }
 
 // ================================================================
