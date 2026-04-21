@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sản Lượng Phát Ngày Hôm Qua - ViettelPost</title>
+<meta name="description" content="Báo cáo sản lượng phát thành công ngày hôm qua — ViettelPost">
+
+<!-- ===== FONTS & ICONS ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- ===== SHARED STYLESHEET ===== -->
+<link rel="stylesheet" href="assets/css/style.css">
+
+<!-- ===== SHEETJS + CHART.JS ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+/* ================================================================
+   PAGE-SPECIFIC STYLES — Sản Lượng Phát
+================================================================ */
+
+/* ── Nav breadcrumb ── */
+.page-nav {
+  background: white; border-bottom: 1px solid var(--border);
+  padding: 10px 20px; display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--gray-500);
+}
+.page-nav a { color: var(--vtp-red); font-weight: 600; text-decoration: none; }
+.page-nav a:hover { text-decoration: underline; }
+
+/* ── Toolbar ── */
+.toolbar {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 16px; margin-bottom: 10px; box-shadow: var(--shadow-xs);
+}
+.toolbar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.search-wrap { flex: 1; min-width: 200px; position: relative; }
+.search-wrap i {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--gray-400); font-size: 13px; pointer-events: none;
+}
+.search-input {
+  width: 100%; padding: 7px 10px 7px 34px;
+  border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+  font-family: inherit; font-size: 12.5px; color: var(--text);
+  background: var(--gray-50); transition: var(--transition);
+}
+.search-input:focus { outline: none; border-color: var(--vtp-red); box-shadow: 0 0 0 3px rgba(238,0,51,0.1); background: white; }
+.search-input::placeholder { color: var(--gray-400); }
+.row-count-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; background: var(--vtp-red-light); color: var(--vtp-red-dark);
+  border-radius: 999px; font-size: 11.5px; font-weight: 800;
+  border: 1px solid rgba(238,0,51,0.2); white-space: nowrap;
+}
+.toolbar-spacer { flex: 1; }
+.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Table ── */
+.excel-table-wrap {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow); background: white;
+}
+.excel-scroll-wrap { overflow-x: auto; overflow-y: auto; max-height: 80vh; }
+.excel-table { width: 100%; border-collapse: collapse; font-size: 11.5px; min-width: 1200px; }
+
+/* ── Header 2 tầng ── */
+.excel-table thead tr th {
+  background: #1e3a5f; color: white; font-weight: 700; font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: 0.3px;
+  padding: 5px 6px; border: 1px solid #2d527a;
+  white-space: nowrap; position: sticky; top: 0; z-index: 11; user-select: none;
+  text-align: center;
+}
+.excel-table thead tr:first-child th { top: 0; z-index: 12; }
+.excel-table thead tr:nth-child(2) th {
+  top: 26px; z-index: 11; background: #264b6f; font-size: 10px; padding: 4px 5px;
+}
+.excel-table thead th.col-tuyen { text-align: left; min-width: 220px; }
+.excel-table thead th.sortable { cursor: pointer; }
+.excel-table thead th.sortable:hover { background: #345f8a; }
+.sort-icon { margin-left: 3px; font-size: 9px; opacity: 0.6; }
+.excel-table thead th.sort-asc .sort-icon,
+.excel-table thead th.sort-desc .sort-icon { opacity: 1; color: #93C5FD; }
+
+/* Body */
+.excel-table tbody tr:nth-child(even) td { background: #f5f7fa; }
+.excel-table tbody tr:nth-child(odd)  td { background: #ffffff; }
+.excel-table tbody tr:hover td { background: #EFF6FF !important; transition: background 0.12s; }
+.excel-table tbody td {
+  padding: 3px 6px; border: 1px solid #d0d0d0;
+  vertical-align: middle; color: var(--text); text-align: center;
+  font-size: 11.5px; line-height: 1.3;
+}
+.excel-table tbody td.col-stt { color: var(--gray-400); font-weight: 700; font-size: 10.5px; width: 34px; }
+.excel-table tbody td.col-tuyen { text-align: left; font-weight: 600; color: #1e3a5f; font-size: 11px; }
+.excel-table tbody td.col-percent { font-weight: 800; }
+
+/* Color coding tỷ lệ PTC */
+.pct-high   { color: #059669 !important; background: #ECFDF5 !important; }
+.pct-medium { color: #D97706 !important; background: #FFFBEB !important; }
+.pct-low    { color: #DC2626 !important; background: #FEF2F2 !important; }
+.pct-zero   { color: var(--gray-300) !important; }
+
+/* Tăng/Giảm */
+.delta-up   { color: #059669; font-weight: 800; }
+.delta-down { color: #DC2626; font-weight: 800; }
+.delta-zero { color: var(--gray-300); }
+
+/* ── Summary ── */
+.summary-bar {
+  background: var(--gray-100); border-top: 2px solid var(--border);
+  padding: 6px 12px; display: flex; align-items: center; gap: 16px;
+  flex-wrap: wrap; font-size: 11.5px; font-weight: 700; color: var(--gray-700);
+}
+.summary-item { display: flex; align-items: center; gap: 5px; }
+.summary-item .val { color: var(--vtp-red); font-size: 13px; font-weight: 900; }
+.summary-item .val.blue { color: var(--zalo); }
+.summary-item .val.green { color: #059669; }
+
+/* ── Empty ── */
+.excel-empty { text-align: center; padding: 50px 20px; color: var(--gray-400); }
+.excel-empty .big-icon { font-size: 48px; margin-bottom: 12px; display: block; opacity: 0.5; }
+.excel-empty .empty-title { font-size: 15px; font-weight: 800; color: var(--gray-500); margin-bottom: 4px; }
+.excel-empty .empty-sub { font-size: 12.5px; color: var(--gray-400); }
+
+/* ── Stat Cards ── */
+.stat-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px; margin-bottom: 12px;
+}
+.stat-card-mini {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  box-shadow: var(--shadow-xs); transition: var(--transition);
+}
+.stat-card-mini:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.stat-card-mini .stat-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.stat-card-mini .stat-icon.red    { background: #FEE2E2; color: #DC2626; }
+.stat-card-mini .stat-icon.orange { background: #FEF3C7; color: #D97706; }
+.stat-card-mini .stat-icon.blue   { background: #DBEAFE; color: #2563EB; }
+.stat-card-mini .stat-icon.green  { background: #D1FAE5; color: #059669; }
+.stat-info { flex: 1; }
+.stat-info .stat-label { font-size: 10.5px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.3px; }
+.stat-info .stat-value { font-size: 18px; font-weight: 900; color: var(--text); margin-top: 1px; }
+.stat-info .stat-value .unit { font-size: 11px; font-weight: 600; color: var(--gray-400); margin-left: 2px; }
+
+/* ── Chart Modal ── */
+.chart-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+.chart-overlay.open { opacity: 1; pointer-events: all; }
+.chart-modal {
+  background: white; border-radius: 18px;
+  width: 100%; max-width: 960px; max-height: 92vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 28px 60px rgba(0,0,0,0.22);
+  transform: scale(0.92) translateY(16px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.chart-overlay.open .chart-modal { transform: scale(1) translateY(0); }
+.chart-modal-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; background: linear-gradient(135deg, #ECFDF5, white); border-radius: 18px 18px 0 0;
+}
+.chart-modal-title { font-size: 15px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.chart-close-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--gray-100); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--gray-500); transition: var(--transition);
+}
+.chart-close-btn:hover { background: var(--vtp-red-bg); color: var(--vtp-red); }
+.chart-tabs {
+  display: flex; gap: 6px; padding: 12px 20px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; background: var(--gray-50);
+}
+.chart-tab {
+  padding: 6px 16px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  border: 2px solid var(--gray-200); background: white; color: var(--gray-500);
+  transition: var(--transition); font-family: inherit;
+  display: flex; align-items: center; gap: 5px;
+}
+.chart-tab:hover { border-color: #059669; color: #059669; }
+.chart-tab.active { background: #059669; color: white; border-color: #059669; }
+.chart-body { padding: 20px; overflow-y: auto; flex: 1; display: flex; align-items: center; justify-content: center; }
+.chart-body canvas { max-height: 520px; width: 100% !important; }
+
+/* ── Print ── */
+@media print {
+  .site-header, .page-nav, .section-card, .toolbar, .stat-row,
+  .summary-bar, .btn, #toast-container, .no-print, .chart-overlay { display: none !important; }
+  body { background: white !important; }
+  .container { padding: 0 !important; max-width: 100% !important; }
+  .excel-table-wrap { box-shadow: none !important; border: none !important; }
+  .excel-scroll-wrap { max-height: none !important; overflow: visible !important; }
+  .excel-table { font-size: 10px !important; }
+  .excel-table thead tr th { background: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .excel-table tbody tr:nth-child(even) td { background: #f5f7fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="vtp-logo-box">
+        <i class="fa-solid fa-truck-fast logo-icon"></i>
+        <div class="logo-text">VIETTEL<span>POST</span></div>
+      </div>
+      <div class="header-title-group">
+        <div class="header-title">📦 SẢN LƯỢNG PHÁT NGÀY HÔM QUA</div>
+        <div class="header-subtitle">Tổng hợp khẩu phát — Sản lượng phát thành công theo tuyến bưu tá</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="hbadge danger">
+        <i class="fa-solid fa-users"></i>
+        <span>Bưu tá có phát:</span>
+        <span class="num" id="h-total-bt">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-box-open"></i>
+        <span>Tổng SL PTC ngày:</span>
+        <span class="num" id="h-total-sl">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-percent"></i>
+        <span>TB PTC ngày:</span>
+        <span class="num" id="h-avg-pct">0%</span>
+      </div>
+    </div>
+  </div>
+  <div class="header-accent-bar"></div>
+</header>
+
+<!-- ===== BREADCRUMB ===== -->
+<div class="page-nav no-print">
+  <a href="index.html"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chủ</a>
+  <i class="fa-solid fa-chevron-right" style="font-size:10px;opacity:.5;"></i>
+  <span>Sản Lượng Phát Ngày Hôm Qua</span>
+</div>
+
+<div class="container">
+
+  <!-- ===== UPLOAD ===== -->
+  <div class="section-card">
+    <div class="section-header no-click">
+      <span class="section-title"><i class="fa-solid fa-file-excel"></i> UPLOAD FILE BÁO CÁO SẢN LƯỢNG PHÁT</span>
+    </div>
+    <div class="section-body">
+      <div id="upload-zone" class="upload-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <div class="upload-icon-wrap"><i class="fa-solid fa-file-excel" style="color:var(--vtp-red);font-size:30px;"></i></div>
+        <div class="upload-text-main">Kéo thả file Excel báo cáo Sản Lượng Phát vào đây</div>
+        <div class="upload-text-sub">hoặc nhấn để chọn file từ máy tính</div>
+        <button class="btn btn-red" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+          <i class="fa-solid fa-file-arrow-up"></i> Chọn file .xlsx
+        </button>
+        <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFileChange(event)">
+      </div>
+      <div id="spinner-wrap" class="spinner-wrap">
+        <div class="spinner-ring"></div>
+        <span class="spinner-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Đang xử lý file...</span>
+      </div>
+      <div id="upload-reset" class="upload-reset">
+        <button class="btn btn-ghost btn-sm" onclick="resetUpload()"><i class="fa-solid fa-rotate-left"></i> Tải file khác</button>
+        <span class="file-chip" id="file-name-display"><i class="fa-solid fa-circle-check"></i></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESULTS ===== -->
+  <div id="section-results" style="display:none;">
+
+    <!-- Stat Cards -->
+    <div class="stat-row">
+      <div class="stat-card-mini">
+        <div class="stat-icon green"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Bưu tá có phát</div>
+          <div class="stat-value" id="st-bt-count">0 <span class="unit">/ 0 tổng</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon blue"><i class="fa-solid fa-box-open"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tổng SL PTC ngày</div>
+          <div class="stat-value" id="st-sl-ngay">0 <span class="unit">đơn</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon orange"><i class="fa-solid fa-percent"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">TL PTC Trung bình</div>
+          <div class="stat-value" id="st-pct-avg">0<span class="unit">%</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon red"><i class="fa-solid fa-clipboard-list"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tổng PCP ngày</div>
+          <div class="stat-value" id="st-pcp-ngay">0 <span class="unit">đơn</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar no-print">
+      <div class="toolbar-row">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="search-input" class="search-input" placeholder="🔍 Tìm kiếm tuyến bưu tá..." oninput="onFilterChange()">
+        </div>
+        <div class="row-count-badge"><i class="fa-solid fa-list-ol"></i> Hiển thị <span id="display-count">0</span> bưu tá</div>
+        <div class="toolbar-spacer"></div>
+        <div class="toolbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openChartModal()" style="border-color:#059669;color:#059669;">
+            <i class="fa-solid fa-chart-bar"></i> Biểu đồ
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> In</button>
+          <button class="btn btn-red btn-sm" onclick="exportExcel()" id="btn-export">
+            <i class="fa-solid fa-file-arrow-down"></i> Xuất Excel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print-only header -->
+    <div class="print-only" style="margin-bottom:10px;">
+      <h2 style="font-size:16px;font-weight:900;color:#1e3a5f;">BÁO CÁO SẢN LƯỢNG PHÁT — VIETTELPOST</h2>
+    </div>
+
+    <!-- Table -->
+    <div class="excel-table-wrap">
+      <div class="excel-scroll-wrap">
+        <table class="excel-table" id="excel-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="width:34px;">STT</th>
+              <th rowspan="2" class="col-tuyen sortable" onclick="onSortClick('tuyen',this)">
+                Tuyến <i class="fa-solid fa-sort sort-icon"></i>
+              </th>
+              <th colspan="3" style="background:#2a5a3a;border-color:#3d7a52;">Phân công phát</th>
+              <th colspan="3" style="background:#1e5a8a;border-color:#2a7ab5;">Sản lượng PTC (đơn)</th>
+              <th colspan="3" style="background:#8b1a1a;border-color:#b02020;">Tỷ lệ PTC (%)</th>
+              <th colspan="2" style="background:#4a3a6a;border-color:#6a5090;">Cùng kỳ LK N-1</th>
+              <th colspan="2" style="background:#3a5a6a;border-color:#507a90;">Tăng / Giảm</th>
+            </tr>
+            <tr>
+              <th class="sortable" onclick="onSortClick('pcp_ngay',this)">Ngày <i class="fa-solid fa-sort sort-icon"></i></th>
+              <th>Ngày mới</th>
+              <th>Lũy kế</th>
+              <th class="sortable" onclick="onSortClick('sl_ngay',this)" style="background:#a02020;">
+                Ngày <i class="fa-solid fa-sort-down sort-icon" style="opacity:1;color:#93C5FD;"></i>
+              </th>
+              <th>Ngày mới</th>
+              <th>Lũy kế</th>
+              <th class="sortable" onclick="onSortClick('pct_ngay',this)">Ngày <i class="fa-solid fa-sort sort-icon"></i></th>
+              <th>Ngày mới</th>
+              <th>Lũy kế</th>
+              <th>PCP</th>
+              <th>TL PTC</th>
+              <th>PCP</th>
+              <th class="sortable" onclick="onSortClick('delta_pct',this)">TL PTC <i class="fa-solid fa-sort sort-icon"></i></th>
+            </tr>
+          </thead>
+          <tbody id="excel-tbody"></tbody>
+        </table>
+      </div>
+      <div class="summary-bar">
+        <div class="summary-item"><i class="fa-solid fa-users" style="color:var(--vtp-red);"></i> <span>Bưu tá:</span> <span class="val" id="sum-bt">0</span></div>
+        <div class="summary-item"><i class="fa-solid fa-box-open" style="color:#2563EB;"></i> <span>SL PTC ngày:</span> <span class="val blue" id="sum-sl">0</span></div>
+        <div class="summary-item"><i class="fa-solid fa-percent" style="color:#059669;"></i> <span>TB PTC:</span> <span class="val green" id="sum-pct">0%</span></div>
+        <div style="flex:1;"></div>
+        <div class="summary-item" style="font-size:11px;color:var(--gray-400);font-weight:500;">
+          <i class="fa-solid fa-circle-info"></i> Đã loại bưu tá có SL PTC Ngày = 0
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== CHART MODAL ===== -->
+<div class="chart-overlay" id="chart-overlay" onclick="if(event.target===this)closeChartModal()">
+  <div class="chart-modal">
+    <div class="chart-modal-header">
+      <div class="chart-modal-title">
+        <i class="fa-solid fa-chart-bar" style="color:#059669;"></i>
+        BIỂU ĐỒ SẢN LƯỢNG PHÁT
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="downloadChart()" style="border-color:#059669;color:#059669;font-size:12px;padding:5px 12px;">
+          <i class="fa-solid fa-download"></i> Tải ảnh
+        </button>
+        <button class="chart-close-btn" onclick="closeChartModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="chart-tabs">
+      <button class="chart-tab active" data-chart="bar-sl" onclick="switchChart('bar-sl',this)">
+        <i class="fa-solid fa-chart-bar"></i> SL PTC Ngày
+      </button>
+      <button class="chart-tab" data-chart="bar-pct" onclick="switchChart('bar-pct',this)">
+        <i class="fa-solid fa-chart-column"></i> TL PTC Ngày (%)
+      </button>
+      <button class="chart-tab" data-chart="combo" onclick="switchChart('combo',this)">
+        <i class="fa-solid fa-chart-line"></i> PCP vs PTC
+      </button>
+    </div>
+    <div class="chart-body"><canvas id="chart-canvas"></canvas></div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast-container"></div>
+
+<script>
+/* ================================================================
+   STATE
+================================================================ */
+let allDataRows = [], filteredRows = [], displayRows = [];
+let totalBuutaGoc = 0;
+
+// Column indices (cố định theo file VTP — 17 cột)
+const COL = {
+  STT: 0, CHI_NHANH: 1, BUU_CUC: 2, TUYEN: 3,
+  PCP_NGAY: 4, PCP_NGAYMOI: 5, PCP_LUYKE: 6,
+  SL_NGAY: 7, SL_NGAYMOI: 8, SL_LUYKE: 9,
+  PCT_NGAY: 10, PCT_NGAYMOI: 11, PCT_LUYKE: 12,
+  CK_PCP: 13, CK_PTC: 14,
+  DELTA_PCP: 15, DELTA_PCT: 16,
+};
+
+let currentSort = { col: 'sl_ngay', dir: 'desc' };
+
+/* ================================================================
+   HELPERS
+================================================================ */
+function padZ(n) { return String(n).padStart(2, '0'); }
+function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function fmtPct(v) { const n = num(v); return n === 0 ? '0' : n.toFixed(3).replace(/\.?0+$/, ''); }
+function fmtNum(v) { const n = num(v); return n === 0 ? '' : String(n); }
+function escHtml(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Color code: PTC cao = xanh (tốt), thấp = đỏ (xấu) — ngược với tỉ lệ hoàn
+function pctClass(v) {
+  const n = num(v);
+  if (n === 0) return 'pct-zero';
+  if (n >= 85) return 'pct-high';
+  if (n >= 70) return 'pct-medium';
+  return 'pct-low';
+}
+
+function deltaHtml(v) {
+  const n = num(v);
+  if (n === 0) return '<span class="delta-zero">0</span>';
+  if (n > 0) return '<span class="delta-up">+' + fmtPct(n) + '</span>';
+  return '<span class="delta-down">' + fmtPct(n) + '</span>';
+}
+
+/* ================================================================
+   TOAST
+================================================================ */
+function showToast(msg, type) {
+  type = type || 'success';
+  var c = document.getElementById('toast-container');
+  var el = document.createElement('div');
+  var icons = { success:'fa-circle-check', error:'fa-circle-xmark', warning:'fa-triangle-exclamation', info:'fa-circle-info' };
+  el.className = 'toast-item toast-' + type;
+  el.innerHTML = '<i class="fa-solid ' + (icons[type]||icons.info) + ' toast-icon"></i><span>' + msg + '</span>';
+  c.appendChild(el);
+  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('show'); }); });
+  setTimeout(function() { el.classList.remove('show'); setTimeout(function() { el.remove(); }, 400); }, 3500);
+}
+
+/* ================================================================
+   UPLOAD
+================================================================ */
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+function handleDragLeave() { document.getElementById('upload-zone').classList.remove('dragover'); }
+function handleDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('dragover'); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }
+function handleFileChange(e) { if(e.target.files[0]) processFile(e.target.files[0]); }
+
+function processFile(file) {
+  if (!file.name.match(/\.xlsx?$/i)) { showToast('⚠️ Vui lòng chọn file .xlsx', 'error'); return; }
+  document.getElementById('upload-zone').style.display = 'none';
+  document.getElementById('spinner-wrap').style.display = 'flex';
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    setTimeout(function() {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, { type: 'array', cellDates: false });
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        var raw = XLSX.utils.sheet_to_json(ws, { range: 0, defval: '', header: 1 });
+
+        var dataRows = raw.slice(2).filter(function(r) { return r.length >= 10 && r[COL.TUYEN]; });
+        totalBuutaGoc = dataRows.length;
+        allDataRows = dataRows;
+
+        // Lọc: SL PTC Ngày > 0
+        filteredRows = dataRows.filter(function(r) { return num(r[COL.SL_NGAY]) > 0; });
+
+        // Sort giảm dần theo SL PTC Ngày
+        currentSort = { col: 'sl_ngay', dir: 'desc' };
+        applySort();
+
+        document.getElementById('spinner-wrap').style.display = 'none';
+        document.getElementById('upload-reset').style.display = 'flex';
+        document.getElementById('file-name-display').innerHTML =
+          '<i class="fa-solid fa-circle-check"></i> ' + escHtml(file.name) + ' (' + totalBuutaGoc + ' bưu tá gốc)';
+        document.getElementById('section-results').style.display = 'block';
+
+        setTimeout(function() {
+          document.getElementById('section-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
+
+        var removed = totalBuutaGoc - filteredRows.length;
+        showToast('✅ Đọc thành công! ' + filteredRows.length + ' bưu tá có phát (đã loại ' + removed + ' bưu tá SL=0).', 'success');
+
+      } catch(err) {
+        document.getElementById('spinner-wrap').style.display = 'none';
+        document.getElementById('upload-zone').style.display = 'block';
+        showToast('❌ Lỗi: ' + err.message, 'error');
+      }
+    }, 300);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function resetUpload() {
+  document.getElementById('upload-zone').style.display = 'block';
+  document.getElementById('upload-reset').style.display = 'none';
+  document.getElementById('spinner-wrap').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  document.getElementById('section-results').style.display = 'none';
+  allDataRows = []; filteredRows = []; displayRows = []; totalBuutaGoc = 0;
+  updateHeaderBadges();
+}
+
+/* ================================================================
+   FILTER & SORT
+================================================================ */
+function onFilterChange() {
+  var search = document.getElementById('search-input').value.toLowerCase().trim();
+  displayRows = search
+    ? filteredRows.filter(function(r) { return String(r[COL.TUYEN] || '').toLowerCase().indexOf(search) >= 0; })
+    : filteredRows.slice();
+  renderTable();
+  updateStats();
+}
+
+function applySort() {
+  var col = currentSort.col, dir = currentSort.dir;
+  var map = { tuyen: COL.TUYEN, pcp_ngay: COL.PCP_NGAY, sl_ngay: COL.SL_NGAY, pct_ngay: COL.PCT_NGAY, delta_pct: COL.DELTA_PCT };
+  var idx = map[col] != null ? map[col] : COL.SL_NGAY;
+
+  filteredRows.sort(function(a, b) {
+    if (col === 'tuyen') {
+      var va = String(a[idx] || '').trim(), vb = String(b[idx] || '').trim();
+      var cmp = va.localeCompare(vb, 'vi');
+      return dir === 'asc' ? cmp : -cmp;
+    }
+    return dir === 'asc' ? num(a[idx]) - num(b[idx]) : num(b[idx]) - num(a[idx]);
+  });
+  onFilterChange();
+}
+
+function onSortClick(col, th) {
+  if (currentSort.col === col) {
+    currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.col = col;
+    currentSort.dir = col === 'tuyen' ? 'asc' : 'desc';
+  }
+  document.querySelectorAll('.excel-table thead th.sortable').forEach(function(el) {
+    el.classList.remove('sort-asc','sort-desc');
+    var ic = el.querySelector('.sort-icon');
+    if (ic) ic.className = 'fa-solid fa-sort sort-icon';
+    el.style.background = '';
+  });
+  th.classList.add(currentSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  var thIcon = th.querySelector('.sort-icon');
+  if (thIcon) thIcon.className = 'fa-solid fa-sort-' + (currentSort.dir === 'asc' ? 'up' : 'down') + ' sort-icon';
+  applySort();
+}
+
+/* ================================================================
+   RENDER TABLE
+================================================================ */
+function renderTable() {
+  var tbody = document.getElementById('excel-tbody');
+  var rows = displayRows;
+  document.getElementById('display-count').textContent = rows.length;
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="15"><div class="excel-empty"><span class="big-icon"><i class="fa-solid fa-magnifying-glass"></i></span><div class="empty-title">Không tìm thấy dữ liệu</div><div class="empty-sub">Thử thay đổi từ khoá tìm kiếm.</div></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(function(r, i) {
+    var tuyen = escHtml(String(r[COL.TUYEN] || '').trim());
+    var pctNgay = num(r[COL.PCT_NGAY]);
+    return '<tr class="fade-in-up" style="animation-delay:' + Math.min(i*0.015,0.3) + 's">' +
+      '<td class="col-stt">' + (i+1) + '</td>' +
+      '<td class="col-tuyen">' + (tuyen || '—') + '</td>' +
+      '<td>' + fmtNum(r[COL.PCP_NGAY]) + '</td>' +
+      '<td>' + fmtNum(r[COL.PCP_NGAYMOI]) + '</td>' +
+      '<td>' + fmtNum(r[COL.PCP_LUYKE]) + '</td>' +
+      '<td style="font-weight:700;">' + fmtNum(r[COL.SL_NGAY]) + '</td>' +
+      '<td>' + fmtNum(r[COL.SL_NGAYMOI]) + '</td>' +
+      '<td>' + fmtNum(r[COL.SL_LUYKE]) + '</td>' +
+      '<td class="col-percent ' + pctClass(pctNgay) + '">' + fmtPct(pctNgay) + '%</td>' +
+      '<td class="col-percent">' + fmtPct(r[COL.PCT_NGAYMOI]) + '%</td>' +
+      '<td class="col-percent">' + fmtPct(r[COL.PCT_LUYKE]) + '%</td>' +
+      '<td>' + fmtNum(r[COL.CK_PCP]) + '</td>' +
+      '<td>' + fmtPct(r[COL.CK_PTC]) + (num(r[COL.CK_PTC]) ? '%' : '') + '</td>' +
+      '<td>' + deltaHtml(r[COL.DELTA_PCP]) + '</td>' +
+      '<td>' + deltaHtml(r[COL.DELTA_PCT]) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+/* ================================================================
+   STATS
+================================================================ */
+function updateStats() {
+  var rows = displayRows, count = rows.length;
+  var totalSl = 0, totalPcp = 0, sumPct = 0;
+  rows.forEach(function(r) {
+    totalSl  += num(r[COL.SL_NGAY]);
+    totalPcp += num(r[COL.PCP_NGAY]);
+    sumPct   += num(r[COL.PCT_NGAY]);
+  });
+  var avgPct = count > 0 ? sumPct / count : 0;
+
+  document.getElementById('st-bt-count').innerHTML = count + ' <span class="unit">/ ' + totalBuutaGoc + ' tổng</span>';
+  document.getElementById('st-sl-ngay').innerHTML = totalSl + ' <span class="unit">đơn</span>';
+  document.getElementById('st-pct-avg').innerHTML = avgPct.toFixed(1) + '<span class="unit">%</span>';
+  document.getElementById('st-pcp-ngay').innerHTML = totalPcp + ' <span class="unit">đơn</span>';
+
+  document.getElementById('sum-bt').textContent = count;
+  document.getElementById('sum-sl').textContent = totalSl;
+  document.getElementById('sum-pct').textContent = avgPct.toFixed(1) + '%';
+
+  updateHeaderBadges(count, avgPct, totalSl);
+}
+
+function updateHeaderBadges(bt, avgPct, totalSl) {
+  document.getElementById('h-total-bt').textContent = bt || 0;
+  document.getElementById('h-avg-pct').textContent = avgPct ? avgPct.toFixed(1) + '%' : '0%';
+  document.getElementById('h-total-sl').textContent = totalSl || 0;
+}
+
+/* ================================================================
+   EXPORT EXCEL
+================================================================ */
+function exportExcel() {
+  if (displayRows.length === 0) { showToast('⚠️ Không có dữ liệu!', 'warning'); return; }
+  var btn = document.getElementById('btn-export');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xuất...';
+
+  setTimeout(function() {
+    try {
+      var exp = displayRows.map(function(r, i) {
+        return {
+          'STT': i + 1,
+          'Tuyến': String(r[COL.TUYEN] || '').trim(),
+          'PCP Ngày': num(r[COL.PCP_NGAY]) || '',
+          'PCP Ngày mới': num(r[COL.PCP_NGAYMOI]) || '',
+          'PCP Lũy kế': num(r[COL.PCP_LUYKE]) || '',
+          'SL PTC Ngày': num(r[COL.SL_NGAY]) || '',
+          'SL PTC Ngày mới': num(r[COL.SL_NGAYMOI]) || '',
+          'SL PTC Lũy kế': num(r[COL.SL_LUYKE]) || '',
+          'TL PTC Ngày (%)': num(r[COL.PCT_NGAY]),
+          'TL PTC Ngày mới (%)': num(r[COL.PCT_NGAYMOI]),
+          'TL PTC Lũy kế (%)': num(r[COL.PCT_LUYKE]),
+          'CK PCP': num(r[COL.CK_PCP]) || '',
+          'CK TL PTC': num(r[COL.CK_PTC]) || '',
+          'Tăng/Giảm PCP': num(r[COL.DELTA_PCP]),
+          'Tăng/Giảm TL PTC': num(r[COL.DELTA_PCT]),
+        };
+      });
+      var wb = XLSX.utils.book_new();
+      var ws = XLSX.utils.json_to_sheet(exp);
+      ws['!cols'] = [
+        {wch:5},{wch:38},{wch:9},{wch:11},{wch:10},{wch:11},{wch:13},{wch:12},
+        {wch:13},{wch:15},{wch:14},{wch:9},{wch:11},{wch:12},{wch:14}
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'SAN_LUONG_PHAT');
+      var now = new Date();
+      var ds = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
+      XLSX.writeFile(wb, 'BaoCao_SanLuongPhat_' + ds + '.xlsx');
+      showToast('✅ Đã xuất ' + exp.length + ' dòng!', 'success');
+    } catch(err) { showToast('❌ Lỗi: ' + err.message, 'error'); }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> Xuất Excel';
+  }, 150);
+}
+
+/* ================================================================
+   CHART MODAL
+================================================================ */
+var chartInstance = null;
+
+function openChartModal() {
+  if (displayRows.length === 0) { showToast('⚠️ Chưa có dữ liệu!', 'warning'); return; }
+  document.getElementById('chart-overlay').classList.add('open');
+  document.querySelectorAll('.chart-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelector('.chart-tab[data-chart="bar-sl"]').classList.add('active');
+  setTimeout(function() { renderChart('bar-sl'); }, 150);
+}
+
+function closeChartModal() {
+  document.getElementById('chart-overlay').classList.remove('open');
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+}
+
+function downloadChart() {
+  var canvas = document.getElementById('chart-canvas');
+  if (!canvas || !chartInstance) { showToast('⚠️ Chưa có biểu đồ!', 'warning'); return; }
+  var tabMap = { 'bar-sl': 'SL_PTC_Ngay', 'bar-pct': 'TyLe_PTC_Ngay', 'combo': 'PCP_vs_PTC' };
+  var activeTab = document.querySelector('.chart-tab.active');
+  var chartLabel = tabMap[activeTab ? activeTab.dataset.chart : ''] || 'BieuDo';
+  var now = new Date();
+  var ds = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
+  var fileName = 'BieuDo_SanLuongPhat_' + chartLabel + '_' + ds + '.png';
+
+  canvas.toBlob(function(blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 100);
+    showToast('✅ Đã tải ảnh: ' + fileName, 'success');
+  }, 'image/png');
+}
+
+function switchChart(type, btn) {
+  document.querySelectorAll('.chart-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  renderChart(type);
+}
+
+function shortenName(name) {
+  var s = String(name || '').trim();
+  var dash = s.indexOf(' - ');
+  return dash > 0 ? s.substring(0, dash).trim() : s;
+}
+
+function renderChart(type) {
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  var canvas = document.getElementById('chart-canvas');
+  var ctx = canvas.getContext('2d');
+  var rows = displayRows;
+  var labels = rows.map(function(r) { return shortenName(r[COL.TUYEN]); });
+  var ff = "'Be Vietnam Pro', sans-serif";
+
+  if (type === 'bar-sl') {
+    // Cột ngang — SL PTC Ngày
+    var values = rows.map(function(r) { return num(r[COL.SL_NGAY]); });
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'SL PTC Ngày (đơn)',
+          data: values,
+          backgroundColor: '#3B82F6',
+          borderRadius: 4, barPercentage: 0.7,
+        }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { titleFont: { family: ff, size: 12 }, bodyFont: { family: ff, size: 13, weight: 'bold' } }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Số đơn PTC', font: { family: ff, size: 12, weight: 'bold' } },
+               ticks: { font: { family: ff, size: 11 } }, grid: { color: '#f0f0f0' } },
+          y: { ticks: { font: { family: ff, size: 10.5 }, autoSkip: false }, grid: { display: false } }
+        },
+        layout: { padding: { right: 20 } }
+      }
+    });
+
+  } else if (type === 'bar-pct') {
+    // Cột ngang — TL PTC Ngày (%)
+    var pctValues = rows.map(function(r) { return num(r[COL.PCT_NGAY]); });
+    var colors = pctValues.map(function(v) { return v >= 85 ? '#059669' : v >= 70 ? '#D97706' : '#DC2626'; });
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Tỷ lệ PTC Ngày (%)', data: pctValues,
+          backgroundColor: colors, borderRadius: 4, barPercentage: 0.7,
+        }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: function(ctx) { return ctx.parsed.x.toFixed(3) + '%'; } },
+                     titleFont: { family: ff, size: 12 }, bodyFont: { family: ff, size: 13, weight: 'bold' } }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Tỷ lệ PTC (%)', font: { family: ff, size: 12, weight: 'bold' } },
+               ticks: { font: { family: ff, size: 11 }, callback: function(v) { return v + '%'; } },
+               grid: { color: '#f0f0f0' } },
+          y: { ticks: { font: { family: ff, size: 10.5 }, autoSkip: false }, grid: { display: false } }
+        },
+        layout: { padding: { right: 20 } }
+      }
+    });
+
+  } else if (type === 'combo') {
+    // Combo — Bar PCP Ngày + Bar SL PTC Ngày
+    var pcpV = rows.map(function(r) { return num(r[COL.PCP_NGAY]); });
+    var slV = rows.map(function(r) { return num(r[COL.SL_NGAY]); });
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Phân công phát (Ngày)', data: pcpV, backgroundColor: '#3B82F6',
+            borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.7 },
+          { label: 'SL PTC (Ngày)', data: slV, backgroundColor: '#059669',
+            borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.7 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: ff, size: 12, weight: 'bold' }, usePointStyle: true, pointStyle: 'rectRounded' } },
+          tooltip: { titleFont: { family: ff, size: 12 }, bodyFont: { family: ff, size: 13 } }
+        },
+        scales: {
+          x: { ticks: { font: { family: ff, size: 9.5 }, maxRotation: 45, minRotation: 30, autoSkip: false }, grid: { display: false } },
+          y: { title: { display: true, text: 'Số đơn', font: { family: ff, size: 12, weight: 'bold' } },
+               ticks: { font: { family: ff, size: 11 } }, grid: { color: '#f0f0f0' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  canvas.style.height = (type === 'combo') ? '480px' : Math.max(350, rows.length * 28) + 'px';
+}
+</script>
+</body>
+</html>

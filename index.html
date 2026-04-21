@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Báo Cáo — ViettelPost HBCTVT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* ================================================================
+   SIDEBAR TOGGLE
+================================================================ */
+/* Toggle button luôn hiển thị, nổi ở cạnh sidebar */
+.sidebar-toggle {
+  position: fixed; top: 50%; left: var(--sidebar-w);
+  transform: translate(-50%, -50%);
+  z-index: 200;
+  width: 22px; height: 48px;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: left .35s cubic-bezier(.4,0,.2,1), background .2s;
+  box-shadow: 3px 0 10px rgba(0,0,0,.08);
+  color: var(--gray-400);
+  font-size: 10px;
+}
+.sidebar-toggle:hover { background: var(--red-lt); color: var(--red); }
+.sidebar-toggle .toggle-icon { transition: transform .3s ease; }
+
+/* Sidebar collapsed state */
+body.sidebar-collapsed {
+  --sidebar-w: 0px;
+}
+body.sidebar-collapsed .sidebar {
+  transform: translateX(-100%);
+  box-shadow: none;
+}
+body.sidebar-collapsed .sidebar-toggle {
+  left: 0;
+  border-left: 1.5px solid var(--border);
+  border-radius: 0 8px 8px 0;
+  background: white;
+}
+body.sidebar-collapsed .sidebar-toggle .toggle-icon {
+  transform: rotate(180deg);
+}
+body.sidebar-collapsed .main { margin-left: 0; }
+
+/* Smooth transition for main */
+.sidebar, .main, .sidebar-toggle {
+  transition-property: transform, margin-left, left, box-shadow;
+  transition-duration: .35s;
+  transition-timing-function: cubic-bezier(.4,0,.2,1);
+}
+
+/* ================================================================
+   TOKENS
+================================================================ */
+:root {
+  --red:        #EE0033;
+  --red-dk:     #C8002A;
+  --red-xdk:    #9A0020;
+  --red-lt:     #FFF0F3;
+  --red-mid:    rgba(238,0,51,.12);
+  --green:      #22C55E;
+  --green-lt:   #DCFCE7;
+  --green-dk:   #16A34A;
+  --amber:      #D97706;
+  --blue:       #2563EB;
+  --blue-lt:    #EFF6FF;
+  --zalo:       #0068FF;
+  --gray-50:    #F9FAFB;
+  --gray-100:   #F3F4F6;
+  --gray-200:   #E5E7EB;
+  --gray-300:   #D1D5DB;
+  --gray-400:   #9CA3AF;
+  --gray-500:   #6B7280;
+  --gray-700:   #374151;
+  --text:       #1F2937;
+  --border:     #E5E7EB;
+  --bg:         #F1F3F8;
+  --sidebar-w:  300px;
+  --radius:     14px;
+  --radius-sm:  8px;
+  --shadow:     0 4px 16px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.04);
+  --shadow-md:  0 8px 24px rgba(0,0,0,.1);
+  --shadow-red: 0 8px 24px rgba(238,0,51,.3);
+  --ease:       cubic-bezier(.4,0,.2,1);
+  --spring:     cubic-bezier(.34,1.56,.64,1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ================================================================
+   SCROLLBAR
+================================================================ */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+/* ================================================================
+   SIDEBAR
+================================================================ */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: white;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 100;
+  overflow: hidden;
+}
+
+/* Brand */
+.sb-brand {
+  background: linear-gradient(135deg, var(--red-xdk) 0%, var(--red-dk) 40%, var(--red) 100%);
+  padding: 20px 18px 18px;
+  flex-shrink: 0;
+}
+.sb-brand-top {
+  display: flex; align-items: center; gap: 11px; margin-bottom: 14px;
+}
+.sb-logo-box {
+  width: 42px; height: 42px; border-radius: 11px;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(0,0,0,.2);
+}
+.sb-logo-box i { font-size: 18px; color: var(--red); }
+.sb-brand-text {}
+.sb-brand-name { font-size: 16px; font-weight: 900; color: white; letter-spacing: -.3px; }
+.sb-brand-sub  { font-size: 10.5px; font-weight: 600; color: rgba(255,255,255,.72); margin-top: 1px; }
+
+/* Clock */
+.sb-clock {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sb-clock-time {
+  font-size: 22px; font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px; color: white; line-height: 1;
+}
+.sb-clock-time .sep { animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.sb-clock-right { text-align: right; }
+.sb-clock-date { font-size: 10.5px; font-weight: 600; color: rgba(255,255,255,.8); }
+.sb-clock-unit { font-size: 9.5px; color: rgba(255,255,255,.6); margin-top: 1px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* Nav */
+.sb-nav { flex: 1; overflow-y: auto; padding: 12px 10px; }
+.sb-label {
+  font-size: 9.5px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--gray-400);
+  padding: 0 8px; margin: 16px 0 6px;
+}
+.sb-label:first-child { margin-top: 4px; }
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all .2s var(--ease);
+  text-decoration: none;
+  position: relative;
+  margin-bottom: 2px;
+  border: 1.5px solid transparent;
+  user-select: none;
+}
+.sb-item:hover { background: var(--gray-50); color: var(--text); border-color: var(--border); }
+.sb-item.active {
+  background: var(--red-lt);
+  color: var(--red);
+  border-color: rgba(238,0,51,.2);
+  font-weight: 700;
+}
+.sb-item.active .sb-icon { background: var(--red); color: white; }
+.sb-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+  background: var(--gray-100);
+  color: var(--gray-500);
+  transition: all .2s var(--ease);
+}
+.sb-item:hover .sb-icon { background: var(--red-lt); color: var(--red); }
+.sb-item-text { flex: 1; line-height: 1.2; }
+.sb-item-sub { font-size: 10px; color: var(--gray-400); font-weight: 500; margin-top: 1px; display: block; }
+.sb-item.active .sb-item-sub { color: rgba(238,0,51,.65); }
+.sb-badge {
+  font-size: 9px; font-weight: 800;
+  padding: 2px 7px; border-radius: 99px;
+  background: var(--red); color: white;
+}
+.sb-badge.new { background: var(--green); }
+.sb-badge.soon { background: var(--gray-300); color: var(--gray-600); }
+
+/* Sidebar footer */
+.sb-footer {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sb-footer-inner {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--gray-400);
+}
+.sb-online-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px rgba(34,197,94,.7);
+  animation: pulse-g 2s infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse-g {
+  0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
+  50%      { box-shadow: 0 0 0 4px transparent; }
+}
+.sb-footer-v {
+  margin-left: auto; font-size: 9.5px; font-weight: 800;
+  padding: 2px 8px; border-radius: 99px;
+  background: var(--red-lt); color: var(--red);
+  border: 1px solid rgba(238,0,51,.2);
+}
+
+/* ================================================================
+   MAIN PANEL
+================================================================ */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Topbar */
+.topbar {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.topbar-breadcrumb {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: var(--gray-400);
+}
+.topbar-breadcrumb .home-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--red-lt); color: var(--red);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; cursor: pointer; transition: all .2s;
+  flex-shrink: 0;
+}
+.topbar-breadcrumb .home-icon:hover { background: var(--red); color: white; }
+.topbar-breadcrumb i.sep { font-size: 9px; opacity: .45; }
+.topbar-current { font-size: 13px; font-weight: 700; color: var(--text); }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 99px;
+  background: #DCFCE7; border: 1px solid rgba(34,197,94,.3);
+  font-size: 11px; font-weight: 700; color: var(--green-dk);
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse-g 2s infinite; }
+
+/* Loading bar */
+.loading-bar {
+  height: 3px; background: var(--red);
+  position: absolute; top: 0; left: 0;
+  width: 0%; transition: width .3s var(--ease);
+  border-radius: 0 99px 99px 0;
+}
+
+/* Content iframe */
+.content-frame {
+  flex: 1;
+  border: none;
+  width: 100%;
+  min-height: 0;
+  background: var(--bg);
+}
+
+/* Home content (shown when no iframe page active) */
+.home-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* ================================================================
+   HOME PAGE COMPONENTS
+================================================================ */
+.home-hero {
+  background: linear-gradient(135deg, var(--red-xdk) 0%, var(--red-dk) 40%, var(--red) 100%);
+  border-radius: var(--radius);
+  padding: 32px 36px;
+  color: white;
+  position: relative; overflow: hidden;
+  box-shadow: var(--shadow-red);
+  margin-bottom: 20px;
+}
+.home-hero::before {
+  content: '';
+  position: absolute; top: -50px; right: -50px;
+  width: 220px; height: 220px; border-radius: 50%;
+  background: rgba(255,255,255,.07);
+}
+.home-hero-body { position: relative; z-index: 1; display: flex; align-items: center; gap: 28px; }
+.home-hero-left { flex: 1; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.6px;
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3);
+  padding: 4px 12px; border-radius: 99px; margin-bottom: 12px;
+}
+.hero-h1 { font-size: 26px; font-weight: 900; line-height: 1.2; margin-bottom: 10px; }
+.hero-desc { font-size: 12.5px; opacity: .82; line-height: 1.65; margin-bottom: 18px; max-width: 380px; }
+.btn-hero {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 20px; border-radius: 99px;
+  background: white; color: var(--red);
+  font-size: 12.5px; font-weight: 800;
+  border: none; cursor: pointer; text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  transition: all .2s var(--ease);
+}
+.btn-hero:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,0,0,.22); }
+.hero-kpis { display: flex; gap: 10px; flex-shrink: 0; }
+.hero-kpi {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px; text-align: center; min-width: 90px;
+}
+.hero-kpi-val { font-size: 26px; font-weight: 900; color: white; line-height: 1; }
+.hero-kpi-lab { font-size: 9px; font-weight: 700; opacity: .75; text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; }
+
+/* KPI Strip */
+.kpi-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.kpi-card {
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  cursor: pointer; transition: all .22s var(--spring);
+  position: relative; overflow: hidden;
+}
+.kpi-card::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: var(--kc-color, var(--red));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .25s var(--ease);
+}
+.kpi-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.kpi-card:hover::after { transform: scaleX(1); }
+.kpi-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.kpi-val { font-size: 17px; font-weight: 900; color: var(--text); }
+.kpi-lab { font-size: 10px; color: var(--gray-500); font-weight: 600; margin-top: 2px; }
+
+/* Section header */
+.sec-hd {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.sec-hd-title {
+  font-size: 12.5px; font-weight: 800; color: var(--red);
+  text-transform: uppercase; letter-spacing: .5px;
+  display: flex; align-items: center; gap: 7px;
+}
+.sec-hd-line { flex: 1; height: 1px; background: var(--border); }
+
+/* Tool cards */
+.tools-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 14px; margin-bottom: 20px;
+}
+.tc {
+  background: white; border: 1.5px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  text-decoration: none; color: inherit;
+  display: flex; flex-direction: column;
+  transition: all .22s var(--spring);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  cursor: pointer;
+}
+.tc:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--red); }
+.tc-accent { height: 4px; flex-shrink: 0; }
+.tc-body { padding: 18px 16px 14px; flex: 1; display: flex; flex-direction: column; }
+.tc-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 12px;
+  transition: all .22s var(--spring);
+}
+.tc:hover .tc-icon { transform: scale(1.1) rotate(-5deg); }
+.tc-name { font-size: 14px; font-weight: 800; margin-bottom: 6px; line-height: 1.25; }
+.tc-desc { font-size: 12px; color: var(--gray-500); line-height: 1.6; flex: 1; margin-bottom: 14px; }
+.tc-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; }
+.tc-tag {
+  padding: 2px 8px; border-radius: 99px; font-size: 9.5px; font-weight: 700;
+  background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--border);
+}
+.tc:hover .tc-tag { background: var(--red-lt); color: var(--red-xdk); border-color: rgba(238,0,51,.2); }
+.tc-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 12px; border-top: 1px solid var(--border);
+}
+.tc-cta { font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 5px; }
+.tc-cta i { transition: transform .25s var(--spring); font-size: 10px; }
+.tc:hover .tc-cta i { transform: translateX(5px); }
+.tc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,.7); animation: pulse-g 2.5s infinite; }
+
+.t-red .tc-accent  { background: linear-gradient(90deg, #EE0033, #FF6680); }
+.t-red .tc-icon    { background: var(--red-lt); color: var(--red); }
+.t-red .tc-cta     { color: var(--red); }
+.t-amber .tc-accent { background: linear-gradient(90deg, #D97706, #F59E0B); }
+.t-amber .tc-icon   { background: #FFFBEB; color: var(--amber); }
+.t-amber .tc-cta    { color: var(--amber); }
+.t-blue .tc-accent  { background: linear-gradient(90deg, #1D4ED8, #3B82F6); }
+.t-blue .tc-icon    { background: #EFF6FF; color: var(--blue); }
+.t-blue .tc-cta     { color: var(--blue); }
+.t-green .tc-accent { background: linear-gradient(90deg, #16A34A, #22C55E); }
+.t-green .tc-icon   { background: var(--green-lt); color: var(--green-dk); }
+.t-green .tc-cta    { color: var(--green-dk); }
+
+/* Bottom grid */
+.bottom-grid {
+  display: grid; grid-template-columns: 1fr 280px;
+  gap: 14px;
+}
+.panel {
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px 11px;
+  border-bottom: 1px solid var(--border);
+  background: var(--gray-50);
+}
+.panel-title {
+  font-size: 12px; font-weight: 800; color: var(--red);
+  text-transform: uppercase; letter-spacing: .4px;
+  display: flex; align-items: center; gap: 7px;
+}
+.panel-badge {
+  font-size: 9.5px; font-weight: 800; padding: 2px 8px;
+  border-radius: 99px; background: var(--red-lt);
+  color: var(--red); border: 1px solid rgba(238,0,51,.2);
+}
+.panel-badge.ok { background: var(--green-lt); color: var(--green-dk); border-color: rgba(34,197,94,.25); }
+.act-item {
+  display: flex; gap: 10px; padding: 10px 16px;
+  border-bottom: 1px solid var(--gray-100); transition: background .15s;
+}
+.act-item:last-child { border-bottom: none; }
+.act-item:hover { background: var(--gray-50); }
+.act-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.act-title { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.35; }
+.act-meta  { font-size: 10.5px; color: var(--gray-500); margin-top: 2px; }
+.act-tag   { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 99px; margin-top: 4px; }
+.st-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; border-bottom: 1px solid var(--gray-100); transition: background .15s;
+}
+.st-row:last-child { border-bottom: none; }
+.st-row:hover { background: var(--gray-50); }
+.st-ico { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+.st-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.st-hint { font-size: 10px; color: var(--gray-500); }
+.st-badge { font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 99px; white-space: nowrap; margin-left: auto; }
+.sb-ok  { background: var(--green-lt); color: var(--green-dk); border: 1px solid rgba(34,197,94,.25); }
+.sb-off { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--border); }
+
+/* Footer bar */
+.footer-bar {
+  background: white; border-top: 2px solid var(--red);
+  padding: 10px 24px;
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0; font-size: 11px; color: var(--gray-400);
+}
+.footer-bar strong { color: var(--red); font-weight: 900; }
+.footer-bar .ver {
+  margin-left: auto; font-size: 9.5px; font-weight: 800;
+  padding: 2px 9px; border-radius: 99px;
+  background: var(--red-lt); color: var(--red); border: 1px solid rgba(238,0,51,.2);
+}
+.footer-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--gray-300); }
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.fu1 { animation: fadeUp .35s ease both .04s; }
+.fu2 { animation: fadeUp .35s ease both .10s; }
+.fu3 { animation: fadeUp .35s ease both .16s; }
+.fu4 { animation: fadeUp .35s ease both .22s; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  :root { --sidebar-w: 240px; }
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .tools-grid { grid-template-columns: 1fr; }
+  .bottom-grid { grid-template-columns: 1fr; }
+  .hero-kpis { display: none; }
+}
+@media (max-width: 640px) {
+  :root { --sidebar-w: 0px; }
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar">
+
+<!-- Nút toggle thu/mở sidebar — nổi ở cạnh phải -->
+<div class="sidebar-toggle" onclick="toggleSidebar()" title="Thu/Mở thanh công cụ">
+  <i class="fa-solid fa-chevron-left toggle-icon"></i>
+</div>
+
+  <!-- Brand + Clock -->
+  <div class="sb-brand">
+    <div class="sb-brand-top">
+      <div class="sb-logo-box"><i class="fa-solid fa-truck-fast"></i></div>
+      <div class="sb-brand-text">
+        <div class="sb-brand-name">ViettelPost</div>
+        <div class="sb-brand-sub">HBCTVT · Ops Center</div>
+      </div>
+    </div>
+    <div class="sb-clock">
+      <div class="sb-clock-time" id="clock">--<span class="sep">:</span>--<span class="sep">:</span>--</div>
+      <div class="sb-clock-right">
+        <div class="sb-clock-date" id="clock-date">--/--/----</div>
+        <div class="sb-clock-unit" id="clock-day">Đang tải...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="sb-nav">
+    <div class="sb-label">Tổng Quan</div>
+    <div class="sb-item active" id="nav-home" onclick="showHome()">
+      <div class="sb-icon"><i class="fa-solid fa-house-chimney"></i></div>
+      <div class="sb-item-text">
+        Dashboard
+        <span class="sb-item-sub">Trang chủ tổng quan</span>
+      </div>
+    </div>
+
+    <div class="sb-label">Công Cụ Báo Cáo</div>
+    <div class="sb-item" id="nav-ton" onclick="loadPage('quan_ly_phieu_ton_phat.html','nav-ton','Phiếu Tồn Phát')">
+      <div class="sb-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+      <div class="sb-item-text">
+        Phiếu Tồn Phát
+        <span class="sb-item-sub">TT500 · DO_7/8/9 · Zalo</span>
+      </div>
+      <span class="sb-badge">Hot</span>
+    </div>
+    <div class="sb-item" id="nav-thu" onclick="loadPage('quan_ly_thu_sai_gio.html','nav-thu','Thu Sai Giờ')">
+      <div class="sb-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+      <div class="sb-item-text">
+        Thu Sai Giờ
+        <span class="sb-item-sub">Lọc đơn · Xuất Excel</span>
+      </div>
+    </div>
+    <div class="sb-item" id="nav-hoan" onclick="loadPage('ti_le_hoan_ngay_hom_qua.html','nav-hoan','Tỉ Lệ Hoàn')">
+      <div class="sb-icon"><i class="fa-solid fa-arrow-rotate-left"></i></div>
+      <div class="sb-item-text">
+        Tỉ Lệ Hoàn
+        <span class="sb-item-sub">Biểu đồ · PNG export</span>
+      </div>
+    </div>
+    <div class="sb-item" id="nav-sl" onclick="loadPage('quan_ly_san_luong_phat_ngay_hom_qua.html','nav-sl','Sản Lượng Phát')">
+      <div class="sb-icon"><i class="fa-solid fa-box-open"></i></div>
+      <div class="sb-item-text">
+        Sản Lượng Phát
+        <span class="sb-item-sub">Chart.js · Export Excel</span>
+      </div>
+    </div>
+
+    <div class="sb-label">Hệ Thống</div>
+    <div class="sb-item" style="opacity:.45;pointer-events:none;">
+      <div class="sb-icon"><i class="fa-solid fa-gear"></i></div>
+      <div class="sb-item-text">Cài Đặt</div>
+      <span class="sb-badge soon">Soon</span>
+    </div>
+  </nav>
+
+  <!-- Footer -->
+  <div class="sb-footer">
+    <div class="sb-footer-inner">
+      <div class="sb-online-dot"></div>
+      <span>HBCTVT · Online</span>
+      <span class="sb-footer-v">v2.0</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-breadcrumb">
+      <!-- Hamburger toggle -->
+      <div class="home-icon" onclick="toggleSidebar()" id="topbar-menu-btn" title="Thu/Mở thanh công cụ" style="background:var(--gray-100);color:var(--gray-500);">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+      <div class="home-icon" onclick="showHome()" title="Về trang chủ">
+        <i class="fa-solid fa-house"></i>
+      </div>
+      <i class="fa-solid fa-chevron-right sep"></i>
+      <span class="topbar-current" id="topbar-current">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <span class="status-pill">
+        <span class="status-dot"></span>Hệ thống hoạt động
+      </span>
+    </div>
+  </header>
+
+  <!-- HOME VIEW -->
+  <div class="home-view" id="home-view">
+
+    <!-- Hero -->
+    <div class="home-hero fu1">
+      <div class="home-hero-body">
+        <div class="home-hero-left">
+          <div class="hero-eyebrow">
+            <i class="fa-solid fa-satellite-dish" style="font-size:9px;"></i>
+            Trung tâm vận hành HBCTVT
+          </div>
+          <h1 class="hero-h1">Quản Lý &amp;<br>Báo Cáo Vận Hành</h1>
+          <p class="hero-desc">Nền tảng báo cáo nội bộ — tự động hoá xử lý Excel, trực quan hoá dữ liệu và gửi cảnh báo Zalo cho Bưu cục HBCTVT.</p>
+          <button class="btn-hero" onclick="loadPage('quan_ly_phieu_ton_phat.html','nav-ton','Phiếu Tồn Phát')">
+            <i class="fa-solid fa-rocket"></i> Bắt đầu ngay
+          </button>
+        </div>
+        <div class="hero-kpis">
+          <div class="hero-kpi">
+            <div class="hero-kpi-val">4</div>
+            <div class="hero-kpi-lab">Công cụ</div>
+          </div>
+          <div class="hero-kpi">
+            <div class="hero-kpi-val" id="kpi-date">--/--</div>
+            <div class="hero-kpi-lab">Hôm nay</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Strip -->
+    <div class="kpi-strip">
+      <div class="kpi-card fu1" style="--kc-color:#EE0033;" onclick="loadPage('quan_ly_phieu_ton_phat.html','nav-ton','Phiếu Tồn Phát')">
+        <div class="kpi-icon" style="background:#FFF0F3;color:#EE0033;"><i class="fa-solid fa-clipboard-list"></i></div>
+        <div><div class="kpi-val">TT500</div><div class="kpi-lab">Cảnh báo tồn kho</div></div>
+      </div>
+      <div class="kpi-card fu2" style="--kc-color:#2563EB;" onclick="loadPage('quan_ly_thu_sai_gio.html','nav-thu','Thu Sai Giờ')">
+        <div class="kpi-icon" style="background:#EFF6FF;color:#2563EB;"><i class="fa-solid fa-file-excel"></i></div>
+        <div><div class="kpi-val">Excel</div><div class="kpi-lab">Đọc file tự động</div></div>
+      </div>
+      <div class="kpi-card fu3" style="--kc-color:#0068FF;">
+        <div class="kpi-icon" style="background:#EFF6FF;color:#0068FF;"><i class="fa-brands fa-rocketchat"></i></div>
+        <div><div class="kpi-val">Zalo</div><div class="kpi-lab">Gửi tin tự động</div></div>
+      </div>
+      <div class="kpi-card fu4" style="--kc-color:#16A34A;" onclick="loadPage('ti_le_hoan_ngay_hom_qua.html','nav-hoan','Tỉ Lệ Hoàn')">
+        <div class="kpi-icon" style="background:#DCFCE7;color:#16A34A;"><i class="fa-solid fa-chart-line"></i></div>
+        <div><div class="kpi-val">Chart.js</div><div class="kpi-lab">Biểu đồ trực quan</div></div>
+      </div>
+    </div>
+
+    <!-- Tool Cards -->
+    <div class="sec-hd">
+      <div class="sec-hd-title"><i class="fa-solid fa-toolbox"></i> Công Cụ Báo Cáo</div>
+      <div class="sec-hd-line"></div>
+      <span style="font-size:11px;color:var(--gray-400);font-weight:600;white-space:nowrap;">Nhấn để mở ngay</span>
+    </div>
+    <div class="tools-grid">
+      <div class="tc t-red" onclick="loadPage('quan_ly_phieu_ton_phat.html','nav-ton','Phiếu Tồn Phát')">
+        <div class="tc-accent"></div>
+        <div class="tc-body">
+          <div class="tc-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+          <div class="tc-name">Quản Lý Phiếu Tồn Phát</div>
+          <div class="tc-desc">Xử lý tồn kho theo tuyến bưu tá — phân nhóm TT500, DO_7/8/9. Tạo cảnh báo Zalo tự động.</div>
+          <div class="tc-tags"><span class="tc-tag">📊 Excel</span><span class="tc-tag">💬 Zalo</span><span class="tc-tag">⚠️ DO Alert</span></div>
+          <div class="tc-foot"><span class="tc-cta">Mở công cụ <i class="fa-solid fa-arrow-right"></i></span><span class="tc-dot"></span></div>
+        </div>
+      </div>
+      <div class="tc t-amber" onclick="loadPage('quan_ly_thu_sai_gio.html','nav-thu','Thu Sai Giờ')">
+        <div class="tc-accent"></div>
+        <div class="tc-body">
+          <div class="tc-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <div class="tc-name">Quản Lý Thu Sai Giờ</div>
+          <div class="tc-desc">Tự động lọc đơn "Không đúng giờ" — trích xuất 6 cột quan trọng, hiển thị bảng và xuất Excel báo cáo.</div>
+          <div class="tc-tags"><span class="tc-tag">🕐 Sai giờ</span><span class="tc-tag">📋 Lọc</span><span class="tc-tag">📥 Excel</span></div>
+          <div class="tc-foot"><span class="tc-cta">Mở công cụ <i class="fa-solid fa-arrow-right"></i></span><span class="tc-dot"></span></div>
+        </div>
+      </div>
+      <div class="tc t-blue" onclick="loadPage('ti_le_hoan_ngay_hom_qua.html','nav-hoan','Tỉ Lệ Hoàn')">
+        <div class="tc-accent"></div>
+        <div class="tc-body">
+          <div class="tc-icon"><i class="fa-solid fa-arrow-rotate-left"></i></div>
+          <div class="tc-name">Tỉ Lệ Hoàn Ngày Hôm Qua</div>
+          <div class="tc-desc">Phân tích tỉ lệ hoàn đơn theo tuyến bưu tá — tự lọc, sắp xếp. 3 dạng biểu đồ + xuất PNG.</div>
+          <div class="tc-tags"><span class="tc-tag">📈 Biểu đồ</span><span class="tc-tag">🔍 Lọc</span><span class="tc-tag">🖼️ PNG</span></div>
+          <div class="tc-foot"><span class="tc-cta">Mở công cụ <i class="fa-solid fa-arrow-right"></i></span><span class="tc-dot"></span></div>
+        </div>
+      </div>
+      <div class="tc t-green" onclick="loadPage('quan_ly_san_luong_phat_ngay_hom_qua.html','nav-sl','Sản Lượng Phát')">
+        <div class="tc-accent"></div>
+        <div class="tc-body">
+          <div class="tc-icon"><i class="fa-solid fa-box-open"></i></div>
+          <div class="tc-name">Sản Lượng Phát Ngày Hôm Qua</div>
+          <div class="tc-desc">Báo cáo sản lượng phát thành công theo bưu tá — Chart.js + xuất Excel đầy đủ.</div>
+          <div class="tc-tags"><span class="tc-tag">📦 SL Phát</span><span class="tc-tag">📊 Chart</span><span class="tc-tag">⬇️ Excel</span></div>
+          <div class="tc-foot"><span class="tc-cta">Mở công cụ <i class="fa-solid fa-arrow-right"></i></span><span class="tc-dot"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom -->
+    <div class="bottom-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i> Nhật Ký Cập Nhật</div>
+          <span class="panel-badge">Mới nhất</span>
+        </div>
+        <div>
+          <div class="act-item"><div class="act-dot" style="background:var(--green);margin-top:6px;"></div><div><div class="act-title">Giao diện đồng bộ light theme đỏ-trắng</div><div class="act-meta">Sidebar cố định + iframe content panel</div><span class="act-tag" style="background:var(--green-lt);color:var(--green-dk);border:1px solid rgba(34,197,94,.2);">✓ Hoàn thành</span></div></div>
+          <div class="act-item"><div class="act-dot" style="background:var(--green);margin-top:6px;"></div><div><div class="act-title">Module Sản Lượng Phát hoàn thiện</div><div class="act-meta">Chart.js, lọc bưu tá, xuất Excel</div><span class="act-tag" style="background:var(--green-lt);color:var(--green-dk);border:1px solid rgba(34,197,94,.2);">✓ Hoàn thành</span></div></div>
+          <div class="act-item"><div class="act-dot" style="background:var(--green);margin-top:6px;"></div><div><div class="act-title">DO_7, DO_8, DO_9 tích hợp cảnh báo</div><div class="act-meta">Tab, badge màu, Zalo template</div><span class="act-tag" style="background:var(--green-lt);color:var(--green-dk);border:1px solid rgba(34,197,94,.2);">✓ Hoàn thành</span></div></div>
+          <div class="act-item"><div class="act-dot" style="background:var(--amber);margin-top:6px;"></div><div><div class="act-title">Kiểm Kê Tồn Tuyến tự động hoá</div><div class="act-meta">Scan, hoàn thành tuyến, F5 reload</div><span class="act-tag" style="background:#FFFBEB;color:var(--amber);border:1px solid rgba(217,119,6,.2);">⚡ Nâng cấp</span></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><i class="fa-solid fa-server"></i> Trạng Thái</div>
+          <span class="panel-badge ok">● Online</span>
+        </div>
+        <div>
+          <div class="st-row"><div class="st-ico" style="background:#FFF0F3;color:#EE0033;"><i class="fa-solid fa-clipboard-list"></i></div><div><div class="st-name">Phiếu Tồn Phát</div><div class="st-hint">TT500 · DO · Zalo</div></div><span class="st-badge sb-ok">● Hoạt động</span></div>
+          <div class="st-row"><div class="st-ico" style="background:#FFFBEB;color:#D97706;"><i class="fa-solid fa-clock-rotate-left"></i></div><div><div class="st-name">Thu Sai Giờ</div><div class="st-hint">Lọc · Excel</div></div><span class="st-badge sb-ok">● Hoạt động</span></div>
+          <div class="st-row"><div class="st-ico" style="background:#EFF6FF;color:#2563EB;"><i class="fa-solid fa-arrow-rotate-left"></i></div><div><div class="st-name">Tỉ Lệ Hoàn</div><div class="st-hint">Chart · PNG</div></div><span class="st-badge sb-ok">● Hoạt động</span></div>
+          <div class="st-row"><div class="st-ico" style="background:#DCFCE7;color:#16A34A;"><i class="fa-solid fa-box-open"></i></div><div><div class="st-name">Sản Lượng</div><div class="st-hint">Chart · Excel</div></div><span class="st-badge sb-ok">● Hoạt động</span></div>
+          <div class="st-row"><div class="st-ico" style="background:var(--gray-100);color:var(--gray-400);"><i class="fa-solid fa-gear"></i></div><div><div class="st-name">Cài Đặt</div><div class="st-hint">Đang phát triển</div></div><span class="st-badge sb-off">Sắp ra mắt</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#home-view -->
+
+  <!-- IFRAME CONTENT (ẩn khi ở home) -->
+  <iframe class="content-frame" id="content-frame" style="display:none;" src="about:blank"></iframe>
+
+  <!-- Footer -->
+  <div class="footer-bar">
+    <strong>VIETTELPOST</strong>
+    <div class="footer-dot"></div>
+    <span>Dashboard Báo Cáo Nội Bộ · HBCTVT</span>
+    <span class="ver">v2.0</span>
+  </div>
+
+</div><!-- /.main -->
+
+<script>
+/* ─── Sidebar Toggle ─── */
+function toggleSidebar() {
+  document.body.classList.toggle('sidebar-collapsed');
+}
+
+/* ─── Clock ─── */
+(function tick() {
+  var now = new Date();
+  var pad = n => String(n).padStart(2,'0');
+  var h = pad(now.getHours()), m = pad(now.getMinutes()), s = pad(now.getSeconds());
+  var dd = pad(now.getDate()), mo = pad(now.getMonth()+1), yy = now.getFullYear();
+  var days = ['Chủ Nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+  document.getElementById('clock').innerHTML =
+    h+'<span class="sep">:</span>'+m+'<span class="sep">:</span>'+s;
+  document.getElementById('clock-date').textContent = dd+'/'+mo+'/'+yy;
+  document.getElementById('clock-day').textContent  = days[now.getDay()];
+  var kd = document.getElementById('kpi-date');
+  if (kd) kd.textContent = dd+'/'+mo;
+  setTimeout(tick, 1000);
+})();
+
+/* ─── Navigation ─── */
+var currentNav = 'nav-home';
+
+function setActive(id) {
+  document.getElementById(currentNav).classList.remove('active');
+  document.getElementById(id).classList.add('active');
+  currentNav = id;
+}
+
+function showHome() {
+  setActive('nav-home');
+  document.getElementById('home-view').style.display   = 'block';
+  document.getElementById('content-frame').style.display = 'none';
+  document.getElementById('content-frame').src = 'about:blank';
+  document.getElementById('topbar-current').textContent = 'Dashboard';
+}
+
+function loadPage(url, navId, title) {
+  setActive(navId);
+  document.getElementById('home-view').style.display   = 'none';
+  var frame = document.getElementById('content-frame');
+  frame.style.display = 'block';
+  frame.src = url;
+  document.getElementById('topbar-current').textContent = title;
+}
+</script>
+</body>
+</html>

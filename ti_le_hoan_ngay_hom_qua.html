@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tỉ Lệ Hoàn Ngày Hôm Qua - ViettelPost</title>
+<meta name="description" content="Báo cáo tỉ lệ hoàn đơn ngày hôm qua — ViettelPost">
+
+<!-- ===== FONTS & ICONS ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- ===== SHARED STYLESHEET ===== -->
+<link rel="stylesheet" href="assets/css/style.css">
+
+<!-- ===== SHEETJS ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- ===== CHART.JS ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+/* ================================================================
+   PAGE-SPECIFIC STYLES — Tỉ Lệ Hoàn
+================================================================ */
+
+/* ── Nav breadcrumb ── */
+.page-nav {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--gray-500);
+}
+.page-nav a { color: var(--vtp-red); font-weight: 600; text-decoration: none; }
+.page-nav a:hover { text-decoration: underline; }
+
+/* ── Toolbar ── */
+.toolbar {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-xs);
+}
+.toolbar-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.search-wrap {
+  flex: 1; min-width: 200px; position: relative;
+}
+.search-wrap i {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--gray-400); font-size: 13px; pointer-events: none;
+}
+.search-input {
+  width: 100%; padding: 7px 10px 7px 34px;
+  border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+  font-family: inherit; font-size: 12.5px; color: var(--text);
+  background: var(--gray-50); transition: var(--transition);
+}
+.search-input:focus { outline: none; border-color: var(--vtp-red); box-shadow: 0 0 0 3px rgba(238,0,51,0.1); background: white; }
+.search-input::placeholder { color: var(--gray-400); }
+.toolbar-label {
+  font-size: 12px; font-weight: 700; color: var(--gray-500); white-space: nowrap;
+}
+.row-count-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; background: var(--vtp-red-light); color: var(--vtp-red-dark);
+  border-radius: 999px; font-size: 11.5px; font-weight: 800;
+  border: 1px solid rgba(238,0,51,0.2); white-space: nowrap;
+}
+.toolbar-spacer { flex: 1; }
+.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Table ── */
+.excel-table-wrap {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow); background: white;
+}
+.excel-scroll-wrap {
+  overflow-x: auto; overflow-y: auto; max-height: 80vh;
+}
+.excel-table {
+  width: 100%; border-collapse: collapse; font-size: 11.5px; min-width: 1100px;
+}
+
+/* ── Header 2 tầng ── */
+.excel-table thead tr th {
+  background: #1e3a5f; color: white; font-weight: 700; font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: 0.3px;
+  padding: 5px 6px; border: 1px solid #2d527a;
+  white-space: nowrap; position: sticky; top: 0; z-index: 11; user-select: none;
+  text-align: center;
+}
+.excel-table thead tr:first-child th { top: 0; z-index: 12; }
+.excel-table thead tr:nth-child(2) th {
+  top: 26px; z-index: 11;
+  background: #264b6f; font-size: 10px; padding: 4px 5px;
+}
+.excel-table thead th.col-tuyen { text-align: left; min-width: 220px; }
+
+/* Sortable */
+.excel-table thead th.sortable { cursor: pointer; }
+.excel-table thead th.sortable:hover { background: #345f8a; }
+.sort-icon { margin-left: 3px; font-size: 9px; opacity: 0.6; }
+.excel-table thead th.sort-asc .sort-icon,
+.excel-table thead th.sort-desc .sort-icon { opacity: 1; color: #93C5FD; }
+
+/* Body */
+.excel-table tbody tr:nth-child(even) td { background: #f5f7fa; }
+.excel-table tbody tr:nth-child(odd)  td { background: #ffffff; }
+.excel-table tbody tr:hover td { background: #EFF6FF !important; transition: background 0.12s; }
+.excel-table tbody td {
+  padding: 3px 6px; border: 1px solid #d0d0d0;
+  vertical-align: middle; color: var(--text); text-align: center;
+  font-size: 11.5px; line-height: 1.3;
+}
+.excel-table tbody td.col-stt { color: var(--gray-400); font-weight: 700; font-size: 10.5px; width: 34px; }
+.excel-table tbody td.col-tuyen { text-align: left; font-weight: 600; color: #1e3a5f; font-size: 11px; }
+.excel-table tbody td.col-percent { font-weight: 800; }
+
+/* Color coding tỉ lệ hoàn */
+.pct-high   { color: #DC2626 !important; background: #FEF2F2 !important; }
+.pct-medium { color: #D97706 !important; background: #FFFBEB !important; }
+.pct-low    { color: #059669 !important; }
+.pct-zero   { color: var(--gray-300) !important; }
+
+/* Tăng/Giảm badges */
+.delta-up   { color: #DC2626; font-weight: 800; }
+.delta-down { color: #059669; font-weight: 800; }
+.delta-zero { color: var(--gray-300); }
+
+/* ── Summary ── */
+.summary-bar {
+  background: var(--gray-100); border-top: 2px solid var(--border);
+  padding: 6px 12px; display: flex; align-items: center; gap: 16px;
+  flex-wrap: wrap; font-size: 11.5px; font-weight: 700; color: var(--gray-700);
+}
+.summary-item { display: flex; align-items: center; gap: 5px; }
+.summary-item .val { color: var(--vtp-red); font-size: 13px; font-weight: 900; }
+.summary-item .val.blue { color: var(--zalo); }
+.summary-item .val.green { color: #059669; }
+
+/* ── Empty ── */
+.excel-empty { text-align: center; padding: 50px 20px; color: var(--gray-400); }
+.excel-empty .big-icon { font-size: 48px; margin-bottom: 12px; display: block; opacity: 0.5; }
+.excel-empty .empty-title { font-size: 15px; font-weight: 800; color: var(--gray-500); margin-bottom: 4px; }
+.excel-empty .empty-sub { font-size: 12.5px; color: var(--gray-400); }
+
+/* ── Stat Cards ── */
+.stat-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px; margin-bottom: 12px;
+}
+.stat-card-mini {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  box-shadow: var(--shadow-xs); transition: var(--transition);
+}
+.stat-card-mini:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.stat-card-mini .stat-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.stat-card-mini .stat-icon.red    { background: #FEE2E2; color: #DC2626; }
+.stat-card-mini .stat-icon.orange { background: #FEF3C7; color: #D97706; }
+.stat-card-mini .stat-icon.blue   { background: #DBEAFE; color: #2563EB; }
+.stat-card-mini .stat-icon.green  { background: #D1FAE5; color: #059669; }
+.stat-info { flex: 1; }
+.stat-info .stat-label { font-size: 10.5px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.3px; }
+.stat-info .stat-value { font-size: 18px; font-weight: 900; color: var(--text); margin-top: 1px; }
+.stat-info .stat-value .unit { font-size: 11px; font-weight: 600; color: var(--gray-400); margin-left: 2px; }
+
+/* ── Print ── */
+@media print {
+  .site-header, .page-nav, .section-card, .toolbar, .stat-row,
+  .summary-bar, .btn, #toast-container, .no-print { display: none !important; }
+  body { background: white !important; }
+  .container { padding: 0 !important; max-width: 100% !important; }
+  .excel-table-wrap { box-shadow: none !important; border: none !important; }
+  .excel-scroll-wrap { max-height: none !important; overflow: visible !important; }
+  .excel-table { font-size: 10px !important; }
+  .excel-table thead tr th { background: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .excel-table tbody tr:nth-child(even) td { background: #f5f7fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }
+
+/* ── Chart Modal ── */
+.chart-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.chart-overlay.open { opacity: 1; pointer-events: all; }
+.chart-modal {
+  background: white; border-radius: 18px;
+  width: 100%; max-width: 960px; max-height: 92vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 28px 60px rgba(0,0,0,0.22);
+  transform: scale(0.92) translateY(16px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.chart-overlay.open .chart-modal { transform: scale(1) translateY(0); }
+.chart-modal-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; background: linear-gradient(135deg, #EFF6FF, white);
+  border-radius: 18px 18px 0 0;
+}
+.chart-modal-title {
+  font-size: 15px; font-weight: 800; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.chart-close-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--gray-100); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--gray-500); transition: var(--transition);
+}
+.chart-close-btn:hover { background: var(--vtp-red-bg); color: var(--vtp-red); }
+.chart-tabs {
+  display: flex; gap: 6px; padding: 12px 20px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; background: var(--gray-50);
+}
+.chart-tab {
+  padding: 6px 16px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  border: 2px solid var(--gray-200); background: white; color: var(--gray-500);
+  transition: var(--transition); font-family: inherit;
+  display: flex; align-items: center; gap: 5px;
+}
+.chart-tab:hover { border-color: #2563EB; color: #2563EB; }
+.chart-tab.active { background: #2563EB; color: white; border-color: #2563EB; }
+.chart-body {
+  padding: 20px; overflow-y: auto; flex: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.chart-body canvas { max-height: 520px; width: 100% !important; }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="vtp-logo-box">
+        <i class="fa-solid fa-truck-fast logo-icon"></i>
+        <div class="logo-text">VIETTEL<span>POST</span></div>
+      </div>
+      <div class="header-title-group">
+        <div class="header-title">📊 TỈ LỆ HOÀN ĐƠN NGÀY HÔM QUA</div>
+        <div class="header-subtitle">Tổng hợp khẩu phát — Tỷ lệ hoàn theo tuyến bưu tá</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="hbadge danger">
+        <i class="fa-solid fa-arrow-rotate-left"></i>
+        <span>Bưu tá có hoàn:</span>
+        <span class="num" id="h-total-bt">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-percent"></i>
+        <span>TB Hoàn ngày:</span>
+        <span class="num" id="h-avg-pct">0%</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-box-open"></i>
+        <span>Tổng hoàn ngày:</span>
+        <span class="num" id="h-total-hoan">0</span>
+      </div>
+    </div>
+  </div>
+  <div class="header-accent-bar"></div>
+</header>
+
+<!-- ===== BREADCRUMB ===== -->
+<div class="page-nav no-print">
+  <a href="index.html"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chủ</a>
+  <i class="fa-solid fa-chevron-right" style="font-size:10px;opacity:.5;"></i>
+  <span>Tỉ Lệ Hoàn Ngày Hôm Qua</span>
+</div>
+
+<div class="container">
+
+  <!-- ===== UPLOAD ===== -->
+  <div class="section-card">
+    <div class="section-header no-click">
+      <span class="section-title">
+        <i class="fa-solid fa-file-excel"></i>
+        UPLOAD FILE BÁO CÁO TỈ LỆ HOÀN
+      </span>
+    </div>
+    <div class="section-body">
+      <div id="upload-zone" class="upload-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)"
+           ondrop="handleDrop(event)">
+        <div class="upload-icon-wrap"><i class="fa-solid fa-file-excel" style="color:var(--vtp-red);font-size:30px;"></i></div>
+        <div class="upload-text-main">Kéo thả file Excel báo cáo Tỉ Lệ Hoàn vào đây</div>
+        <div class="upload-text-sub">hoặc nhấn để chọn file từ máy tính</div>
+        <button class="btn btn-red" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+          <i class="fa-solid fa-file-arrow-up"></i> Chọn file .xlsx
+        </button>
+        <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFileChange(event)">
+      </div>
+      <div id="spinner-wrap" class="spinner-wrap">
+        <div class="spinner-ring"></div>
+        <span class="spinner-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Đang xử lý file...</span>
+      </div>
+      <div id="upload-reset" class="upload-reset">
+        <button class="btn btn-ghost btn-sm" onclick="resetUpload()">
+          <i class="fa-solid fa-rotate-left"></i> Tải file khác
+        </button>
+        <span class="file-chip" id="file-name-display">
+          <i class="fa-solid fa-circle-check"></i>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESULTS ===== -->
+  <div id="section-results" style="display:none;">
+
+    <!-- Stat Cards -->
+    <div class="stat-row" id="stat-row">
+      <div class="stat-card-mini">
+        <div class="stat-icon red"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Bưu tá có hoàn</div>
+          <div class="stat-value" id="st-bt-count">0 <span class="unit">/ 0 tổng</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon orange"><i class="fa-solid fa-arrow-rotate-left"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tổng SL hoàn ngày</div>
+          <div class="stat-value" id="st-sl-ngay">0 <span class="unit">đơn</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon blue"><i class="fa-solid fa-percent"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tỉ lệ hoàn TB ngày</div>
+          <div class="stat-value" id="st-pct-avg">0<span class="unit">%</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon green"><i class="fa-solid fa-box"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tổng PCP ngày</div>
+          <div class="stat-value" id="st-pcp-ngay">0 <span class="unit">đơn</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar no-print">
+      <div class="toolbar-row">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="search-input" class="search-input"
+                 placeholder="🔍 Tìm kiếm tuyến bưu tá..."
+                 oninput="onFilterChange()">
+        </div>
+        <div class="row-count-badge">
+          <i class="fa-solid fa-list-ol"></i>
+          Hiển thị <span id="display-count">0</span> bưu tá
+        </div>
+        <div class="toolbar-spacer"></div>
+        <div class="toolbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openChartModal()" id="btn-chart" style="border-color:#2563EB;color:#2563EB;">
+            <i class="fa-solid fa-chart-bar"></i> Biểu đồ
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> In
+          </button>
+          <button class="btn btn-red btn-sm" onclick="exportExcel()" id="btn-export">
+            <i class="fa-solid fa-file-arrow-down"></i> Xuất Excel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print-only header -->
+    <div class="print-only" style="margin-bottom:10px;">
+      <h2 style="font-size:16px;font-weight:900;color:#1e3a5f;">BÁO CÁO TỈ LỆ HOÀN ĐƠN — VIETTELPOST</h2>
+      <p style="font-size:11px;color:#555;" id="print-info"></p>
+    </div>
+
+    <!-- Table -->
+    <div class="excel-table-wrap">
+      <div class="excel-scroll-wrap" id="table-scroll-wrap">
+        <table class="excel-table" id="excel-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="width:34px;">STT</th>
+              <th rowspan="2" class="col-tuyen sortable" data-sort="tuyen" onclick="onSortClick('tuyen',this)">
+                Tuyến <i class="fa-solid fa-sort sort-icon"></i>
+              </th>
+              <th colspan="2" style="background:#2a5a3a;border-color:#3d7a52;">Phân công phát</th>
+              <th colspan="2" style="background:#7c3a1e;border-color:#a05030;">Sản lượng Hoàn (đơn)</th>
+              <th colspan="2" style="background:#8b1a1a;border-color:#b02020;">Tỷ lệ Hoàn (%)</th>
+              <th colspan="2" style="background:#4a3a6a;border-color:#6a5090;">Cùng kỳ LK tháng N-1</th>
+              <th colspan="2" style="background:#3a5a6a;border-color:#507a90;">Tăng / Giảm</th>
+            </tr>
+            <tr>
+              <th class="sortable" data-sort="pcp_ngay" onclick="onSortClick('pcp_ngay',this)">Ngày <i class="fa-solid fa-sort sort-icon"></i></th>
+              <th>Lũy kế</th>
+              <th class="sortable" data-sort="sl_ngay" onclick="onSortClick('sl_ngay',this)">Ngày <i class="fa-solid fa-sort sort-icon"></i></th>
+              <th>Lũy kế</th>
+              <th class="sortable" data-sort="pct_ngay" onclick="onSortClick('pct_ngay',this)" style="background:#a02020;">
+                Ngày <i class="fa-solid fa-sort-down sort-icon" style="opacity:1;color:#93C5FD;"></i>
+              </th>
+              <th>Lũy kế</th>
+              <th>PCP</th>
+              <th>TL Hoàn</th>
+              <th>PCP</th>
+              <th class="sortable" data-sort="delta_pct" onclick="onSortClick('delta_pct',this)">TL Hoàn <i class="fa-solid fa-sort sort-icon"></i></th>
+            </tr>
+          </thead>
+          <tbody id="excel-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary-bar" id="summary-bar">
+        <div class="summary-item">
+          <i class="fa-solid fa-users" style="color:var(--vtp-red);"></i>
+          <span>Bưu tá có hoàn:</span>
+          <span class="val" id="sum-bt">0</span>
+        </div>
+        <div class="summary-item">
+          <i class="fa-solid fa-arrow-rotate-left" style="color:#D97706;"></i>
+          <span>Tổng hoàn ngày:</span>
+          <span class="val" id="sum-sl">0</span>
+        </div>
+        <div class="summary-item">
+          <i class="fa-solid fa-percent" style="color:var(--zalo);"></i>
+          <span>TB Hoàn:</span>
+          <span class="val blue" id="sum-pct">0%</span>
+        </div>
+        <div style="flex:1;"></div>
+        <div class="summary-item" style="font-size:11px;color:var(--gray-400);font-weight:500;">
+          <i class="fa-solid fa-circle-info"></i>
+          Đã loại bưu tá có TL Hoàn Ngày = 0
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== CHART MODAL ===== -->
+<div class="chart-overlay" id="chart-overlay" onclick="if(event.target===this)closeChartModal()">
+  <div class="chart-modal">
+    <div class="chart-modal-header">
+      <div class="chart-modal-title">
+        <i class="fa-solid fa-chart-bar" style="color:#2563EB;"></i>
+        BIỂU ĐỒ TỈ LỆ HOÀN
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="downloadChart()" style="border-color:#2563EB;color:#2563EB;font-size:12px;padding:5px 12px;">
+          <i class="fa-solid fa-download"></i> Tải ảnh
+        </button>
+        <button class="chart-close-btn" onclick="closeChartModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+    <div class="chart-tabs" id="chart-tabs">
+      <button class="chart-tab active" data-chart="bar-pct" onclick="switchChart('bar-pct',this)">
+        <i class="fa-solid fa-chart-bar"></i> TL Hoàn Ngày (%)
+      </button>
+      <button class="chart-tab" data-chart="bar-vol" onclick="switchChart('bar-vol',this)">
+        <i class="fa-solid fa-chart-column"></i> PCP vs SL Hoàn
+      </button>
+      <button class="chart-tab" data-chart="combo" onclick="switchChart('combo',this)">
+        <i class="fa-solid fa-chart-line"></i> Ngày vs Lũy kế
+      </button>
+    </div>
+    <div class="chart-body">
+      <canvas id="chart-canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast-container"></div>
+
+<script>
+/* ================================================================
+   STATE
+================================================================ */
+let allDataRows   = [];   // dữ liệu gốc (đã parse, bỏ 2 header rows)
+let filteredRows  = [];   // sau khi lọc TL Hoàn > 0 + search
+let displayRows   = [];   // cuối cùng hiển thị
+let totalBuutaGoc = 0;    // số bưu tá gốc trước khi lọc
+
+// Column indices (cố định theo file VTP)
+const COL = {
+  STT:       0,
+  CHI_NHANH: 1,
+  BUU_CUC:   2,
+  TUYEN:     3,
+  PCP_NGAY:  4,
+  PCP_LUYKE: 5,
+  SL_NGAY:   6,
+  SL_LUYKE:  7,
+  PCT_NGAY:  8,
+  PCT_LUYKE: 9,
+  CK_PCP:    10,
+  CK_HOAN:   11,
+  DELTA_PCP: 12,
+  DELTA_PCT: 13,
+};
+
+let currentSort = { col: 'pct_ngay', dir: 'desc' }; // default sort
+
+/* ================================================================
+   HELPERS
+================================================================ */
+function padZ(n) { return String(n).padStart(2, '0'); }
+function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function fmtPct(v) { const n = num(v); return n === 0 ? '0' : n.toFixed(3).replace(/\.?0+$/, ''); }
+function fmtNum(v) { const n = num(v); return n === 0 ? '' : String(n); }
+
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function pctClass(v) {
+  const n = num(v);
+  if (n === 0) return 'pct-zero';
+  if (n >= 10) return 'pct-high';
+  if (n >= 5) return 'pct-medium';
+  return 'pct-low';
+}
+
+function deltaHtml(v) {
+  const n = num(v);
+  if (n === 0) return '<span class="delta-zero">0</span>';
+  if (n > 0) return `<span class="delta-up">+${fmtPct(n)}</span>`;
+  return `<span class="delta-down">${fmtPct(n)}</span>`;
+}
+
+/* ================================================================
+   TOAST
+================================================================ */
+let _tid = 0;
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  const icons = { success:'fa-circle-check', error:'fa-circle-xmark', warning:'fa-triangle-exclamation', info:'fa-circle-info' };
+  el.className = `toast-item toast-${type}`;
+  el.innerHTML = `<i class="fa-solid ${icons[type]||icons.info} toast-icon"></i><span>${msg}</span>`;
+  c.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 3500);
+}
+
+/* ================================================================
+   UPLOAD
+================================================================ */
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+function handleDragLeave() { document.getElementById('upload-zone').classList.remove('dragover'); }
+function handleDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('dragover'); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }
+function handleFileChange(e) { if(e.target.files[0]) processFile(e.target.files[0]); }
+
+function processFile(file) {
+  if (!file.name.match(/\.xlsx?$/i)) {
+    showToast('⚠️ Vui lòng chọn file .xlsx', 'error'); return;
+  }
+  document.getElementById('upload-zone').style.display  = 'none';
+  document.getElementById('spinner-wrap').style.display = 'flex';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    setTimeout(() => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb   = XLSX.read(data, { type: 'array', cellDates: false });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+
+        // Đọc dưới dạng mảng (header:1 = array mode)
+        const raw = XLSX.utils.sheet_to_json(ws, { range: 0, defval: '', header: 1 });
+
+        // Skip 2 header rows → dữ liệu từ row index 2 trở đi
+        const dataRows = raw.slice(2).filter(r => r.length >= 10 && r[COL.TUYEN]);
+
+        totalBuutaGoc = dataRows.length;
+        allDataRows = dataRows;
+
+        // Lọc: chỉ giữ bưu tá có Tỷ lệ Hoàn(%) Ngày > 0
+        filteredRows = dataRows.filter(r => num(r[COL.PCT_NGAY]) > 0);
+
+        // Sắp xếp: giảm dần theo Tỷ lệ Hoàn Ngày (Largest to Smallest)
+        currentSort = { col: 'pct_ngay', dir: 'desc' };
+        applySort();
+
+        document.getElementById('spinner-wrap').style.display = 'none';
+        document.getElementById('upload-reset').style.display = 'flex';
+        document.getElementById('file-name-display').innerHTML =
+          `<i class="fa-solid fa-circle-check"></i> ${escHtml(file.name)} (${totalBuutaGoc} bưu tá gốc)`;
+
+        document.getElementById('section-results').style.display = 'block';
+
+        // Scroll đến kết quả
+        setTimeout(() => {
+          document.getElementById('section-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
+
+        const removed = totalBuutaGoc - filteredRows.length;
+        showToast(`✅ Đọc thành công! ${filteredRows.length} bưu tá có hoàn (đã loại ${removed} bưu tá TL=0).`, 'success');
+
+      } catch(err) {
+        document.getElementById('spinner-wrap').style.display = 'none';
+        document.getElementById('upload-zone').style.display  = 'block';
+        showToast('❌ Lỗi: ' + err.message, 'error');
+        console.error(err);
+      }
+    }, 300);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function resetUpload() {
+  document.getElementById('upload-zone').style.display     = 'block';
+  document.getElementById('upload-reset').style.display    = 'none';
+  document.getElementById('spinner-wrap').style.display    = 'none';
+  document.getElementById('file-input').value              = '';
+  document.getElementById('section-results').style.display = 'none';
+  allDataRows = []; filteredRows = []; displayRows = []; totalBuutaGoc = 0;
+  updateHeaderBadges();
+}
+
+/* ================================================================
+   FILTER & SORT
+================================================================ */
+function onFilterChange() {
+  const search = document.getElementById('search-input').value.toLowerCase().trim();
+
+  if (search) {
+    displayRows = filteredRows.filter(r =>
+      String(r[COL.TUYEN] || '').toLowerCase().includes(search)
+    );
+  } else {
+    displayRows = [...filteredRows];
+  }
+
+  renderTable();
+  updateStats();
+}
+
+function applySort() {
+  const { col, dir } = currentSort;
+  const colIdx = {
+    'tuyen':     COL.TUYEN,
+    'pcp_ngay':  COL.PCP_NGAY,
+    'sl_ngay':   COL.SL_NGAY,
+    'pct_ngay':  COL.PCT_NGAY,
+    'delta_pct': COL.DELTA_PCT,
+  }[col] ?? COL.PCT_NGAY;
+
+  filteredRows.sort((a, b) => {
+    let va, vb;
+    if (col === 'tuyen') {
+      va = String(a[colIdx] || '').trim();
+      vb = String(b[colIdx] || '').trim();
+      const cmp = va.localeCompare(vb, 'vi');
+      return dir === 'asc' ? cmp : -cmp;
+    }
+    va = num(a[colIdx]);
+    vb = num(b[colIdx]);
+    return dir === 'asc' ? va - vb : vb - va;
+  });
+
+  onFilterChange();
+}
+
+function onSortClick(col, th) {
+  if (currentSort.col === col) {
+    currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.col = col;
+    currentSort.dir = col === 'tuyen' ? 'asc' : 'desc';
+  }
+
+  // Update icons
+  document.querySelectorAll('.excel-table thead th.sortable').forEach(el => {
+    el.classList.remove('sort-asc','sort-desc');
+    const ic = el.querySelector('.sort-icon');
+    if (ic) ic.className = 'fa-solid fa-sort sort-icon';
+    el.style.background = '';
+  });
+  th.classList.add(currentSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  const thIcon = th.querySelector('.sort-icon');
+  if (thIcon) thIcon.className = `fa-solid fa-sort-${currentSort.dir === 'asc' ? 'up' : 'down'} sort-icon`;
+
+  applySort();
+}
+
+/* ================================================================
+   RENDER TABLE
+================================================================ */
+function renderTable() {
+  const tbody = document.getElementById('excel-tbody');
+  const rows = displayRows;
+
+  document.getElementById('display-count').textContent = rows.length;
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12">
+      <div class="excel-empty">
+        <span class="big-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <div class="empty-title">Không tìm thấy dữ liệu</div>
+        <div class="empty-sub">Thử thay đổi từ khoá tìm kiếm.</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const stt       = i + 1;
+    const tuyen     = escHtml(String(r[COL.TUYEN] || '').trim());
+    const pcpNgay   = fmtNum(r[COL.PCP_NGAY]);
+    const pcpLuyke  = fmtNum(r[COL.PCP_LUYKE]);
+    const slNgay    = fmtNum(r[COL.SL_NGAY]);
+    const slLuyke   = fmtNum(r[COL.SL_LUYKE]);
+    const pctNgay   = num(r[COL.PCT_NGAY]);
+    const pctLuyke  = num(r[COL.PCT_LUYKE]);
+    const ckPcp     = fmtNum(r[COL.CK_PCP]);
+    const ckHoan    = fmtPct(r[COL.CK_HOAN]);
+    const deltaPcp  = r[COL.DELTA_PCP];
+    const deltaPct  = r[COL.DELTA_PCT];
+
+    return `<tr class="fade-in-up" style="animation-delay:${Math.min(i*0.015,0.3)}s">
+      <td class="col-stt">${stt}</td>
+      <td class="col-tuyen">${tuyen || '—'}</td>
+      <td>${pcpNgay}</td>
+      <td>${pcpLuyke}</td>
+      <td style="font-weight:700;">${slNgay}</td>
+      <td>${slLuyke}</td>
+      <td class="col-percent ${pctClass(pctNgay)}">${fmtPct(pctNgay)}%</td>
+      <td class="col-percent">${fmtPct(pctLuyke)}%</td>
+      <td>${ckPcp}</td>
+      <td>${ckHoan}${ckHoan ? '%' : ''}</td>
+      <td>${deltaHtml(deltaPcp)}</td>
+      <td>${deltaHtml(deltaPct)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ================================================================
+   STATS
+================================================================ */
+function updateStats() {
+  const rows = displayRows;
+  const count = rows.length;
+
+  // Totals
+  let totalSlNgay = 0, totalPcpNgay = 0, sumPctNgay = 0;
+  rows.forEach(r => {
+    totalSlNgay  += num(r[COL.SL_NGAY]);
+    totalPcpNgay += num(r[COL.PCP_NGAY]);
+    sumPctNgay   += num(r[COL.PCT_NGAY]);
+  });
+  const avgPct = count > 0 ? (sumPctNgay / count) : 0;
+
+  // Stat cards
+  document.getElementById('st-bt-count').innerHTML = `${count} <span class="unit">/ ${totalBuutaGoc} tổng</span>`;
+  document.getElementById('st-sl-ngay').innerHTML  = `${totalSlNgay} <span class="unit">đơn</span>`;
+  document.getElementById('st-pct-avg').innerHTML   = `${avgPct.toFixed(1)}<span class="unit">%</span>`;
+  document.getElementById('st-pcp-ngay').innerHTML  = `${totalPcpNgay} <span class="unit">đơn</span>`;
+
+  // Summary bar
+  document.getElementById('sum-bt').textContent  = count;
+  document.getElementById('sum-sl').textContent  = totalSlNgay;
+  document.getElementById('sum-pct').textContent = avgPct.toFixed(1) + '%';
+
+  // Header badges
+  updateHeaderBadges(count, avgPct, totalSlNgay);
+}
+
+function updateHeaderBadges(bt = 0, avgPct = 0, totalHoan = 0) {
+  document.getElementById('h-total-bt').textContent   = bt;
+  document.getElementById('h-avg-pct').textContent    = avgPct ? avgPct.toFixed(1) + '%' : '0%';
+  document.getElementById('h-total-hoan').textContent = totalHoan;
+}
+
+/* ================================================================
+   EXPORT EXCEL
+================================================================ */
+function exportExcel() {
+  if (displayRows.length === 0) { showToast('⚠️ Không có dữ liệu!', 'warning'); return; }
+
+  const btn = document.getElementById('btn-export');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xuất...';
+
+  setTimeout(() => {
+    try {
+      const exportData = displayRows.map((r, i) => ({
+        'STT': i + 1,
+        'Tuyến': String(r[COL.TUYEN] || '').trim(),
+        'PCP Ngày': num(r[COL.PCP_NGAY]) || '',
+        'PCP Lũy kế': num(r[COL.PCP_LUYKE]) || '',
+        'SL Hoàn Ngày': num(r[COL.SL_NGAY]) || '',
+        'SL Hoàn Lũy kế': num(r[COL.SL_LUYKE]) || '',
+        'TL Hoàn Ngày (%)': num(r[COL.PCT_NGAY]),
+        'TL Hoàn Lũy kế (%)': num(r[COL.PCT_LUYKE]),
+        'CK PCP': num(r[COL.CK_PCP]) || '',
+        'CK TL Hoàn': num(r[COL.CK_HOAN]) || '',
+        'Tăng/Giảm PCP': num(r[COL.DELTA_PCP]),
+        'Tăng/Giảm TL Hoàn': num(r[COL.DELTA_PCT]),
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      ws['!cols'] = [
+        { wch: 5 },  { wch: 38 }, { wch: 10 }, { wch: 10 },
+        { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 16 },
+        { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'TI_LE_HOAN');
+
+      const now = new Date();
+      const ds = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
+      XLSX.writeFile(wb, `BaoCao_TiLeHoan_${ds}.xlsx`);
+
+      showToast(`✅ Đã xuất ${exportData.length} dòng!`, 'success');
+    } catch(err) {
+      showToast('❌ Lỗi: ' + err.message, 'error');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> Xuất Excel';
+  }, 150);
+}
+
+/* ================================================================
+   CHART MODAL
+================================================================ */
+let chartInstance = null;
+
+function openChartModal() {
+  if (displayRows.length === 0) { showToast('⚠️ Chưa có dữ liệu!', 'warning'); return; }
+  document.getElementById('chart-overlay').classList.add('open');
+  // Reset to first tab
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.chart-tab[data-chart="bar-pct"]').classList.add('active');
+  setTimeout(() => renderChart('bar-pct'), 150);
+}
+
+function closeChartModal() {
+  document.getElementById('chart-overlay').classList.remove('open');
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+}
+
+function downloadChart() {
+  const canvas = document.getElementById('chart-canvas');
+  if (!canvas || !chartInstance) { showToast('⚠️ Chưa có biểu đồ!', 'warning'); return; }
+
+  const tabMap = {
+    'bar-pct': 'TyLeHoan_Ngay',
+    'bar-vol': 'PCP_vs_SLHoan',
+    'combo':   'Ngay_vs_LuyKe',
+  };
+  const activeTab = document.querySelector('.chart-tab.active');
+  const chartType = activeTab ? activeTab.dataset.chart : 'chart';
+  const chartLabel = tabMap[chartType] || 'BieuDo';
+
+  const now = new Date();
+  const ds = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
+  const fileName = 'BieuDo_TiLeHoan_' + chartLabel + '_' + ds + '.png';
+
+  canvas.toBlob(function(blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 100);
+    showToast('✅ Đã tải ảnh: ' + fileName, 'success');
+  }, 'image/png');
+}
+
+function switchChart(type, btn) {
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderChart(type);
+}
+
+function shortenName(name) {
+  // "Lê Thị Cẩm Tuyền - 830651 - 5429699" → "Lê Thị Cẩm Tuyền"
+  const s = String(name || '').trim();
+  const dash = s.indexOf(' - ');
+  return dash > 0 ? s.substring(0, dash).trim() : s;
+}
+
+function renderChart(type) {
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  const canvas = document.getElementById('chart-canvas');
+  const ctx = canvas.getContext('2d');
+  const rows = displayRows;
+  const labels = rows.map(r => shortenName(r[COL.TUYEN]));
+
+  const fontFamily = "'Be Vietnam Pro', sans-serif";
+
+  if (type === 'bar-pct') {
+    // ── Biểu đồ 1: Cột ngang — TL Hoàn Ngày (%) ──
+    const values = rows.map(r => num(r[COL.PCT_NGAY]));
+    const colors = values.map(v => v >= 10 ? '#DC2626' : v >= 5 ? '#D97706' : '#059669');
+
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Tỷ lệ Hoàn Ngày (%)',
+          data: values,
+          backgroundColor: colors,
+          borderColor: colors.map(c => c + 'CC'),
+          borderWidth: 1,
+          borderRadius: 4,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.parsed.x.toFixed(3)}%`
+            },
+            titleFont: { family: fontFamily, size: 12 },
+            bodyFont: { family: fontFamily, size: 13, weight: 'bold' },
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Tỷ lệ Hoàn (%)', font: { family: fontFamily, size: 12, weight: 'bold' } },
+            ticks: { font: { family: fontFamily, size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f0f0f0' },
+          },
+          y: {
+            ticks: { font: { family: fontFamily, size: 10.5 }, autoSkip: false },
+            grid: { display: false },
+          }
+        },
+        layout: { padding: { right: 20 } },
+      }
+    });
+
+  } else if (type === 'bar-vol') {
+    // ── Biểu đồ 2: Cột đôi — PCP Ngày vs SL Hoàn Ngày ──
+    const pcpValues = rows.map(r => num(r[COL.PCP_NGAY]));
+    const slValues  = rows.map(r => num(r[COL.SL_NGAY]));
+
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Phân công phát (Ngày)',
+            data: pcpValues,
+            backgroundColor: '#3B82F6',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Sản lượng Hoàn (Ngày)',
+            data: slValues,
+            backgroundColor: '#EF4444',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { font: { family: fontFamily, size: 12, weight: 'bold' }, usePointStyle: true, pointStyle: 'rectRounded' }
+          },
+          tooltip: {
+            titleFont: { family: fontFamily, size: 12 },
+            bodyFont: { family: fontFamily, size: 13 },
+          }
+        },
+        scales: {
+          x: {
+            ticks: { font: { family: fontFamily, size: 9.5 }, maxRotation: 45, minRotation: 30, autoSkip: false },
+            grid: { display: false },
+          },
+          y: {
+            title: { display: true, text: 'Số đơn', font: { family: fontFamily, size: 12, weight: 'bold' } },
+            ticks: { font: { family: fontFamily, size: 11 } },
+            grid: { color: '#f0f0f0' },
+            beginAtZero: true,
+          }
+        }
+      }
+    });
+
+  } else if (type === 'combo') {
+    // ── Biểu đồ 3: Combo — Bar TL Hoàn Ngày + Line TL Hoàn Lũy kế ──
+    const pctNgay  = rows.map(r => num(r[COL.PCT_NGAY]));
+    const pctLuyke = rows.map(r => num(r[COL.PCT_LUYKE]));
+
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'TL Hoàn Ngày (%)',
+            data: pctNgay,
+            backgroundColor: pctNgay.map(v => v >= 10 ? 'rgba(220,38,38,0.7)' : v >= 5 ? 'rgba(217,119,6,0.7)' : 'rgba(5,150,105,0.6)'),
+            borderRadius: 4,
+            barPercentage: 0.6,
+            yAxisID: 'y',
+            order: 2,
+          },
+          {
+            type: 'line',
+            label: 'TL Hoàn Lũy kế (%)',
+            data: pctLuyke,
+            borderColor: '#2563EB',
+            backgroundColor: 'rgba(37,99,235,0.1)',
+            borderWidth: 2.5,
+            pointBackgroundColor: '#2563EB',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3,
+            fill: true,
+            yAxisID: 'y',
+            order: 1,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { font: { family: fontFamily, size: 12, weight: 'bold' }, usePointStyle: true }
+          },
+          tooltip: {
+            callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}%` },
+            titleFont: { family: fontFamily, size: 12 },
+            bodyFont: { family: fontFamily, size: 13 },
+          }
+        },
+        scales: {
+          x: {
+            ticks: { font: { family: fontFamily, size: 9.5 }, maxRotation: 45, minRotation: 30, autoSkip: false },
+            grid: { display: false },
+          },
+          y: {
+            title: { display: true, text: 'Tỷ lệ (%)', font: { family: fontFamily, size: 12, weight: 'bold' } },
+            ticks: { font: { family: fontFamily, size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f0f0f0' },
+            beginAtZero: true,
+          }
+        }
+      }
+    });
+  }
+
+  // Resize canvas height based on data
+  if (type === 'bar-pct') {
+    canvas.style.height = Math.max(350, rows.length * 28) + 'px';
+  } else {
+    canvas.style.height = '480px';
+  }
+}
+</script>
+</body>
+</html>

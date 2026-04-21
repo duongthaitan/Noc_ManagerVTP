@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản Lý Thu Sai Giờ - ViettelPost</title>
+<meta name="description" content="Công cụ quản lý và báo cáo thu sai giờ — ViettelPost">
+
+<!-- ===== FONTS & ICONS ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- ===== SHARED STYLESHEET ===== -->
+<link rel="stylesheet" href="assets/css/style.css">
+
+<!-- ===== SHEETJS ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+/* ================================================================
+   PAGE-SPECIFIC STYLES — Quản Lý Thu Sai Giờ
+================================================================ */
+
+/* ── Nav breadcrumb ── */
+.page-nav {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--gray-500);
+}
+.page-nav a { color: var(--vtp-red); font-weight: 600; text-decoration: none; }
+.page-nav a:hover { text-decoration: underline; }
+
+/* ── Toolbar ── */
+.toolbar {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-xs);
+}
+.toolbar-row-1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.toolbar-row-2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.search-wrap {
+  flex: 1;
+  min-width: 220px;
+  position: relative;
+}
+.search-wrap i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+  font-size: 14px;
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  padding: 7px 10px 7px 34px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+  background: var(--gray-50);
+  transition: var(--transition);
+}
+.search-input:focus {
+  outline: none;
+  border-color: var(--vtp-red);
+  box-shadow: 0 0 0 3px rgba(238,0,51,0.1);
+  background: white;
+}
+.search-input::placeholder { color: var(--gray-400); }
+.toolbar-select {
+  padding: 7px 28px 7px 10px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--gray-50);
+  cursor: pointer;
+  transition: var(--transition);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236B7280' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  min-width: 130px;
+}
+.toolbar-select:focus {
+  outline: none;
+  border-color: var(--vtp-red);
+  box-shadow: 0 0 0 3px rgba(238,0,51,0.1);
+}
+.toolbar-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--gray-500);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.row-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  background: var(--vtp-red-light);
+  color: var(--vtp-red-dark);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  border: 1px solid rgba(238,0,51,0.2);
+  white-space: nowrap;
+}
+.toolbar-spacer { flex: 1; }
+.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Table Wrapper ── */
+.excel-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: white;
+  position: relative;
+}
+.excel-scroll-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 80vh;
+}
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 860px;
+}
+
+/* Header */
+.excel-table thead tr th {
+  background: #1e3a5f;
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 7px 10px;
+  border: 1px solid #2d527a;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  user-select: none;
+}
+.excel-table thead tr th.col-stt    { text-align: center; width: 40px; min-width: 40px; }
+.excel-table thead tr th.col-code   { text-align: left; min-width: 130px; }
+.excel-table thead tr th.col-date   { text-align: center; min-width: 140px; }
+.excel-table thead tr th.col-route  { text-align: left; min-width: 220px; }
+.excel-table thead tr th.col-eval   { text-align: center; min-width: 130px; }
+.excel-table thead tr th.col-name   { text-align: left; min-width: 130px; }
+
+/* Sortable header */
+.excel-table thead th.sortable { cursor: pointer; }
+.excel-table thead th.sortable:hover { background: #254e7e; }
+.sort-icon { margin-left: 5px; font-size: 10px; opacity: 0.6; transition: var(--transition); }
+.excel-table thead th.sort-asc  .sort-icon,
+.excel-table thead th.sort-desc .sort-icon { opacity: 1; color: #93C5FD; }
+
+/* Body rows */
+.excel-table tbody tr:nth-child(even) td { background: #f5f7fa; }
+.excel-table tbody tr:nth-child(odd)  td { background: #ffffff; }
+.excel-table tbody tr:hover td { background: #EFF6FF !important; transition: background 0.12s; }
+.excel-table tbody td {
+  padding: 4px 8px;
+  border: 1px solid #d0d0d0;
+  vertical-align: middle;
+  color: var(--text);
+  line-height: 1.35;
+}
+.excel-table tbody td.col-stt  { text-align: center; color: var(--gray-400); font-weight: 700; font-size: 11px; }
+.excel-table tbody td.col-code { font-family: 'Courier New', monospace; font-weight: 700; color: #1e3a5f; font-size: 11.5px; }
+.excel-table tbody td.col-date { text-align: center; font-size: 11.5px; color: var(--gray-700); }
+.excel-table tbody td.col-eval { text-align: center; }
+.excel-table tbody td.col-name { color: var(--gray-700); font-size: 11.5px; }
+
+/* Badge */
+.badge-sai-gio {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* ── Summary row (sticky bottom) ── */
+.summary-bar {
+  background: var(--gray-100);
+  border-top: 2px solid var(--border);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--gray-700);
+}
+.summary-item { display: flex; align-items: center; gap: 5px; }
+.summary-item .val { color: var(--vtp-red); font-size: 13px; font-weight: 900; }
+.summary-item .val.blue { color: var(--zalo); }
+
+/* ── Pagination ── */
+.pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pagination-info { font-size: 12.5px; color: var(--gray-500); font-weight: 500; }
+.pagination-btns { display: flex; align-items: center; gap: 4px; }
+.pg-btn {
+  min-width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--gray-200);
+  background: white;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--gray-700);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+}
+.pg-btn:hover:not(:disabled) { border-color: var(--vtp-red); color: var(--vtp-red); background: var(--vtp-red-light); }
+.pg-btn.active { background: var(--vtp-red); border-color: var(--vtp-red); color: white; }
+.pg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pg-dots { padding: 0 4px; color: var(--gray-400); font-weight: 700; }
+
+/* ── Empty state ── */
+.excel-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--gray-400);
+}
+.excel-empty .big-icon { font-size: 56px; margin-bottom: 14px; display: block; opacity: 0.5; }
+.excel-empty .empty-title { font-size: 16px; font-weight: 800; color: var(--gray-500); margin-bottom: 6px; }
+.excel-empty .empty-sub { font-size: 13px; color: var(--gray-400); }
+
+/* ── Print styles ── */
+@media print {
+  .site-header, .page-nav, .section-card, .toolbar,
+  .pagination-wrap, .summary-bar + div,
+  .btn, .stats-actions, #toast-container { display: none !important; }
+  body { background: white !important; }
+  .container { padding: 0 !important; max-width: 100% !important; }
+  .excel-table-wrap { box-shadow: none !important; border: none !important; }
+  .excel-scroll-wrap { max-height: none !important; overflow: visible !important; }
+  .excel-table { font-size: 11px !important; }
+  .excel-table thead tr th { background: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .excel-table tbody tr:nth-child(even) td { background: #f5f7fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-only { display: block !important; }
+  .no-print { display: none !important; }
+}
+.print-only { display: none; }
+
+/* ── Skeleton loader ── */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-row td {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%) !important;
+  background-size: 800px 100% !important;
+  animation: skeleton-shimmer 1.4s infinite !important;
+}
+.skeleton-row td > span {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: transparent;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="vtp-logo-box">
+        <i class="fa-solid fa-truck-fast logo-icon"></i>
+        <div class="logo-text">VIETTEL<span>POST</span></div>
+      </div>
+      <div class="header-title-group">
+        <div class="header-title">⏱️ QUẢN LÝ THU SAI GIỜ</div>
+        <div class="header-subtitle">Báo cáo & theo dõi bưu phẩm thu không đúng thời gian quy định</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="hbadge danger">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Tổng sai giờ:</span>
+        <span class="num" id="h-total-saigió">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-users"></i>
+        <span>Bưu tá:</span>
+        <span class="num" id="h-total-buuta">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-calendar-day"></i>
+        <span>Kỳ báo cáo:</span>
+        <span class="num" id="h-ky-baocao">—</span>
+      </div>
+    </div>
+  </div>
+  <div class="header-accent-bar"></div>
+</header>
+
+<!-- ===== BREADCRUMB ===== -->
+<div class="page-nav no-print">
+  <a href="index.html"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chủ</a>
+  <i class="fa-solid fa-chevron-right" style="font-size:10px;opacity:.5;"></i>
+  <span>Quản Lý Thu Sai Giờ</span>
+</div>
+
+<div class="container">
+
+  <!-- ===== SECTION A: UPLOAD ===== -->
+  <div class="section-card">
+    <div class="section-header no-click">
+      <span class="section-title">
+        <i class="fa-solid fa-file-excel"></i>
+        UPLOAD FILE EXCEL BÁO CÁO THU SAI GIỜ
+      </span>
+    </div>
+    <div class="section-body">
+      <div id="upload-zone" class="upload-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)"
+           ondrop="handleDrop(event)">
+        <div class="upload-icon-wrap"><i class="fa-solid fa-file-excel" style="color:var(--vtp-red);font-size:30px;"></i></div>
+        <div class="upload-text-main">Kéo thả file Excel báo cáo Thu Sai Giờ vào đây</div>
+        <div class="upload-text-sub">hoặc nhấn để chọn file từ máy tính</div>
+        <button class="btn btn-red" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+          <i class="fa-solid fa-file-arrow-up"></i> Chọn file .xlsx
+        </button>
+        <input type="file" id="file-input" accept=".xlsx" onchange="handleFileChange(event)">
+      </div>
+      <div id="spinner-wrap" class="spinner-wrap">
+        <div class="spinner-ring"></div>
+        <span class="spinner-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Đang xử lý file Excel...</span>
+      </div>
+      <div id="upload-reset" class="upload-reset">
+        <button class="btn btn-ghost btn-sm" onclick="resetUpload()">
+          <i class="fa-solid fa-rotate-left"></i> Tải file khác
+        </button>
+        <span class="file-chip" id="file-name-display">
+          <i class="fa-solid fa-circle-check"></i>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION B: MAP CỘT (ẩn khi chưa upload) ===== -->
+  <div id="section-col-map" class="section-card" style="display:none;">
+    <div class="section-header" onclick="toggleCollapse('section-col-map')">
+      <span class="section-title">
+        <i class="fa-solid fa-table-columns"></i>
+        KIỂM TRA / CHỈNH CỘT DỮ LIỆU
+      </span>
+      <div class="collapse-icon"><i class="fa-solid fa-chevron-down"></i></div>
+    </div>
+    <div class="collapsible-content">
+      <div class="section-body">
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;">
+          <i class="fa-solid fa-circle-info" style="color:var(--zalo);"></i>
+          Hệ thống sẽ tự nhận diện cột từ file Excel. Nếu tên cột không khớp, hãy chỉnh lại bên dưới.
+        </p>
+        <div class="col-map-grid" id="col-map-grid"
+             style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+          <!-- rendered by JS -->
+        </div>
+        <div style="margin-top:16px;">
+          <button class="btn btn-red" onclick="applyColMap(); addRipple(event)">
+            <i class="fa-solid fa-check"></i> Áp dụng &amp; xem kết quả
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION C: BẢNG KẾT QUẢ ===== -->
+  <div id="section-results" style="display:none;">
+
+    <!-- Toolbar -->
+    <div class="toolbar no-print">
+      <div class="toolbar-row-1">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="search-input" class="search-input"
+                 placeholder="🔍 Tìm kiếm mã vận đơn / tên KH / bưu tá..."
+                 oninput="onFilterChange()">
+        </div>
+      </div>
+      <div class="toolbar-row-2">
+        <span class="toolbar-label"><i class="fa-solid fa-person-biking" style="color:var(--vtp-red);"></i> Lọc bưu tá:</span>
+        <select id="filter-buuta" class="toolbar-select" onchange="onFilterChange()">
+          <option value="">Tất cả</option>
+        </select>
+        <span class="toolbar-label"><i class="fa-solid fa-arrow-up-wide-short" style="color:var(--zalo);"></i> Sắp xếp:</span>
+        <select id="sort-select" class="toolbar-select" onchange="onFilterChange()">
+          <option value="default">Mặc định</option>
+          <option value="buuta-az">A→Z theo bưu tá</option>
+          <option value="date-newest">Mới nhất trước</option>
+          <option value="date-oldest">Cũ nhất trước</option>
+        </select>
+        <div class="row-count-badge">
+          <i class="fa-solid fa-list-ol"></i>
+          Hiển thị <span id="display-count" style="margin:0 2px;">0</span> dòng
+        </div>
+        <div class="toolbar-spacer"></div>
+        <div class="toolbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="printTable()">
+            <i class="fa-solid fa-print"></i> In
+          </button>
+          <button class="btn btn-red btn-sm" onclick="exportExcel()" id="btn-export">
+            <i class="fa-solid fa-file-arrow-down"></i> Xuất Excel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print-only header -->
+    <div class="print-only" style="margin-bottom:12px;">
+      <h2 style="font-size:18px;font-weight:900;color:#1e3a5f;">BÁO CÁO THU SAI GIỜ — VIETTELPOST</h2>
+      <p style="font-size:12px;color:#555;">Ngày in: <span id="print-date"></span> | Tổng: <span id="print-total"></span> đơn sai giờ</p>
+    </div>
+
+    <!-- Table -->
+    <div class="excel-table-wrap">
+      <div class="excel-scroll-wrap" id="table-scroll-wrap">
+        <table class="excel-table" id="excel-table">
+          <thead>
+            <tr>
+              <th class="col-stt">STT</th>
+              <th class="col-code sortable" data-sort="code" onclick="onSortClick(this)">
+                <i class="fa-solid fa-barcode" style="margin-right:5px;opacity:.8;"></i>MÃ VẬN ĐƠN
+                <i class="fa-solid fa-sort sort-icon"></i>
+              </th>
+              <th class="col-date sortable" data-sort="date-create" onclick="onSortClick(this)">
+                <i class="fa-solid fa-calendar-plus" style="margin-right:5px;opacity:.8;"></i>NGÀY TẠO ĐƠN
+                <i class="fa-solid fa-sort sort-icon"></i>
+              </th>
+              <th class="col-date sortable" data-sort="date-pickup" onclick="onSortClick(this)">
+                <i class="fa-solid fa-calendar-check" style="margin-right:5px;opacity:.8;"></i>NGÀY THU ĐƠN
+                <i class="fa-solid fa-sort sort-icon"></i>
+              </th>
+              <th class="col-route sortable" data-sort="route" onclick="onSortClick(this)">
+                <i class="fa-solid fa-route" style="margin-right:5px;opacity:.8;"></i>TUYẾN BƯU TÁ
+                <i class="fa-solid fa-sort sort-icon"></i>
+              </th>
+              <th class="col-eval">
+                <i class="fa-solid fa-clock" style="margin-right:5px;opacity:.8;"></i>ĐÁNH GIÁ ĐÚNG GIỜ
+              </th>
+              <th class="col-name sortable" data-sort="name" onclick="onSortClick(this)">
+                <i class="fa-solid fa-user" style="margin-right:5px;opacity:.8;"></i>TÊN KH GỬI
+                <i class="fa-solid fa-sort sort-icon"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="excel-tbody">
+            <!-- rows rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Summary bar -->
+      <div class="summary-bar" id="summary-bar">
+        <div class="summary-item">
+          <i class="fa-solid fa-triangle-exclamation" style="color:var(--vtp-red);"></i>
+          <span>Tổng đơn sai giờ:</span>
+          <span class="val" id="sum-total">0</span>
+        </div>
+        <div class="summary-item">
+          <i class="fa-solid fa-users" style="color:var(--zalo);"></i>
+          <span>Số bưu tá:</span>
+          <span class="val blue" id="sum-buuta">0</span>
+        </div>
+        <div style="flex:1;"></div>
+        <div class="summary-item" style="font-size:11.5px;color:var(--gray-400);font-weight:500;">
+          <i class="fa-solid fa-circle-info"></i>
+          Chỉ tổng kết các dòng đang lọc
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div id="pagination-wrap" class="pagination-wrap no-print" style="display:none;">
+        <div class="pagination-info" id="pagination-info">Trang 1/1 — Dòng 1-0 của 0</div>
+        <div class="pagination-btns" id="pagination-btns"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .container -->
+
+<!-- ===== TOAST ===== -->
+<div id="toast-container"></div>
+
+<style>
+/* inline col-map field */
+.col-map-field {
+  display: flex; flex-direction: column; gap: 5px;
+}
+.col-map-field label {
+  font-size: 12px; font-weight: 700; color: var(--vtp-red); text-transform: uppercase; letter-spacing: 0.3px;
+}
+.col-map-field select {
+  padding: 7px 10px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-xs);
+  font-family: inherit; font-size: 13px; color: var(--text);
+  background: var(--gray-50);
+  cursor: pointer;
+}
+.col-map-field select:focus { outline: none; border-color: var(--vtp-red); }
+</style>
+
+<!-- ===== SCRIPTS ===== -->
+<script>
+/* ================================================================
+   STATE
+================================================================ */
+let allRawRows   = [];   // raw từ Excel (toàn bộ file gốc)
+let saiGioRows   = [];   // đã lọc chỉ giữ "Không đúng giờ"
+let filteredRows = [];   // sau khi search/sort/filter bưu tá
+let allHeaders   = [];   // tên cột thực trong file
+let currentPage  = 1;
+const PAGE_SIZE  = 50;
+let sortState    = { col: null, dir: 'asc' };
+
+// Column mapping (key → tên cột thực trong Excel)
+let colMap = {
+  code:        '',   // MÃ VẬN ĐƠN
+  dateCreate:  '',   // NGÀY TẠO ĐƠN
+  datePickup:  '',   // NGÀY THU ĐƠN
+  route:       '',   // TUYẾN BƯU TÁ
+  eval:        '',   // ĐÁNH GIÁ ĐÚNG GIỜ
+  custName:    '',   // TÊN KH GỬI
+};
+
+// Auto-detect hints (chứa từ khoá để match)
+// Ưu tiên tên cột chính xác từ file thực tế trước
+const COL_HINTS = {
+  code:       ['mã vận đơn','ma van don','ma_van_don','bill','mã bill','barcode','số hiệu','ma_vd','ma_phieu','MA_PHIEUGUI','bill_code'],
+  dateCreate: ['ngày tạo đơn','ngày tạo','ngay_tao_don','tao don','create','created','tạo lệnh','NGAY_TAO','ngay_tao'],
+  datePickup: ['ngày thu đơn','ngày thu','ngay_thu_don','thu don','pickup','collected','date thu','NGAY_THU','ngay_thu'],
+  route:      ['tuyến bưu tá','tuyen buu ta','tuyến','bưu tá','buuta','postman','tên bưu tá','tuyen','TUYEN_BUU_TA','BUU_TA_PHAT'],
+  eval:       ['đánh giá đúng giờ','danh gia dung gio','đánh giá','danh gia','đúng giờ','dung gio','on time','evaluation','DANH_GIA','EVAL'],
+  custName:   ['tên kh gửi','ten kh gui','tên kh','ten kh','khách hàng','sender','người gửi','nguoi gui','TEN_KH','TEN_KH_GUI','CUSTOMER'],
+};
+
+/* ================================================================
+   FORMAT HELPERS
+================================================================ */
+function padZ(n) { return String(n).padStart(2, '0'); }
+
+function formatDate(val) {
+  if (!val) return '';
+  if (typeof val === 'number') {
+    try {
+      const d = XLSX.SSF.parse_date_code(val);
+      if (!d) return String(val);
+      const dt = new Date(d.y, d.m - 1, d.d, d.H || 0, d.M || 0);
+      return padZ(dt.getDate()) + '/' + padZ(dt.getMonth() + 1) + '/' + dt.getFullYear()
+           + ' ' + padZ(dt.getHours()) + ':' + padZ(dt.getMinutes());
+    } catch(e) { return String(val); }
+  }
+  const str = String(val).trim();
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) return str;
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime()))
+      return padZ(d.getDate()) + '/' + padZ(d.getMonth() + 1) + '/' + d.getFullYear()
+           + ' ' + padZ(d.getHours()) + ':' + padZ(d.getMinutes());
+  } catch(e) {}
+  return str;
+}
+
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ================================================================
+   RIPPLE
+================================================================ */
+function addRipple(e) {
+  const btn = e.currentTarget;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const size = Math.max(btn.offsetWidth, btn.offsetHeight);
+  const rect = btn.getBoundingClientRect();
+  r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+}
+
+/* ================================================================
+   TOAST
+================================================================ */
+let _tid = 0;
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const id = ++_tid;
+  const el = document.createElement('div');
+  const icons = { success:'fa-circle-check', error:'fa-circle-xmark', warning:'fa-triangle-exclamation', info:'fa-circle-info' };
+  el.className = `toast-item toast-${type}`;
+  el.id = 'toast-' + id;
+  el.innerHTML = `<i class="fa-solid ${icons[type]||icons.info} toast-icon"></i><span>${msg}</span>`;
+  c.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 3500);
+}
+
+/* ================================================================
+   COLLAPSE
+================================================================ */
+function toggleCollapse(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+/* ================================================================
+   UPLOAD HANDLERS
+================================================================ */
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('dragover');
+}
+function handleDragLeave() {
+  document.getElementById('upload-zone').classList.remove('dragover');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileChange(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+    showToast('⚠️ Vui lòng chọn file .xlsx hoặc .xls', 'error'); return;
+  }
+  document.getElementById('upload-zone').style.display  = 'none';
+  document.getElementById('spinner-wrap').style.display = 'flex';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    setTimeout(() => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb   = XLSX.read(data, { type: 'array', cellDates: false });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+
+        // Thử cả range:0 và range:1, chọn cái nhận diện được nhiều cột hơn
+        const raw0 = XLSX.utils.sheet_to_json(ws, { range: 0, defval: '' });
+        const raw1 = XLSX.utils.sheet_to_json(ws, { range: 1, defval: '' });
+
+        function countKnownCols(headers) {
+          const allHints = Object.values(COL_HINTS).flat().map(h => h.toLowerCase());
+          return headers.filter(h => {
+            const lh = h.toLowerCase().trim();
+            return allHints.some(hint => lh.includes(hint) || hint.includes(lh));
+          }).length;
+        }
+
+        const headers0 = raw0.length > 0 ? Object.keys(raw0[0]) : [];
+        const headers1 = raw1.length > 0 ? Object.keys(raw1[0]) : [];
+        const score0 = countKnownCols(headers0);
+        const score1 = countKnownCols(headers1);
+
+        // Chọn range có nhiều cột nhận diện được hơn
+        let raw = (score0 >= score1 || raw1.length === 0) ? raw0 : raw1;
+
+        allRawRows = raw;
+        allHeaders = raw.length > 0 ? Object.keys(raw[0]) : [];
+
+        document.getElementById('spinner-wrap').style.display = 'none';
+        document.getElementById('upload-reset').style.display = 'flex';
+        const chip = document.getElementById('file-name-display');
+        chip.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${escHtml(file.name)} (${raw.length} dòng gốc)`;
+
+        // Detect columns
+        autoDetectColumns();
+        buildColMapUI();
+
+        document.getElementById('section-col-map').style.display = 'block';
+
+        // Áp dụng ngay (lọc "Không đúng giờ" tự động)
+        applyColMap(true);
+
+        // Tự thu gọn panel cấu hình cột + cuộn đến bảng kết quả
+        document.getElementById('section-col-map').classList.add('collapsed');
+        setTimeout(() => {
+          const el = document.getElementById('section-results');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
+
+        showToast(`✅ Đọc file thành công! ${raw.length} dòng gốc.`, 'success');
+
+      } catch(err) {
+        document.getElementById('spinner-wrap').style.display = 'none';
+        document.getElementById('upload-zone').style.display  = 'block';
+        showToast('❌ Lỗi đọc file: ' + err.message, 'error');
+      }
+    }, 350);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function resetUpload() {
+  document.getElementById('upload-zone').style.display         = 'block';
+  document.getElementById('upload-reset').style.display        = 'none';
+  document.getElementById('spinner-wrap').style.display        = 'none';
+  document.getElementById('file-input').value                  = '';
+  document.getElementById('file-name-display').innerHTML       = '';
+  document.getElementById('section-col-map').style.display     = 'none';
+  document.getElementById('section-results').style.display     = 'none';
+  allRawRows = []; saiGioRows = []; filteredRows = []; allHeaders = []; currentPage = 1;
+  updateHeaderBadges(0, 0);
+}
+
+/* ================================================================
+   COLUMN AUTO-DETECT & MAP UI
+================================================================ */
+function autoDetectColumns() {
+  const lowerHeaders = allHeaders.map(h => h.toLowerCase().trim());
+
+  for (const [key, hints] of Object.entries(COL_HINTS)) {
+    colMap[key] = '';
+    for (const hint of hints) {
+      const lh = hint.toLowerCase();
+      const idx = lowerHeaders.findIndex(h => h.includes(lh) || lh.includes(h));
+      if (idx >= 0) { colMap[key] = allHeaders[idx]; break; }
+    }
+  }
+}
+
+function buildColMapUI() {
+  const grid = document.getElementById('col-map-grid');
+  const fields = [
+    { key: 'code',       label: 'MÃ VẬN ĐƠN' },
+    { key: 'dateCreate', label: 'NGÀY TẠO ĐƠN' },
+    { key: 'datePickup', label: 'NGÀY THU ĐƠN' },
+    { key: 'route',      label: 'TUYẾN BƯU TÁ' },
+    { key: 'eval',       label: 'ĐÁNH GIÁ ĐÚNG GIỜ' },
+    { key: 'custName',   label: 'TÊN KH GỬI' },
+  ];
+  grid.innerHTML = fields.map(f => `
+    <div class="col-map-field">
+      <label>${f.label}</label>
+      <select id="cm-${f.key}" onchange="colMap['${f.key}']=this.value">
+        <option value="">(bỏ trống / không có)</option>
+        ${allHeaders.map(h => `<option value="${escHtml(h)}" ${colMap[f.key]===h?'selected':''}>${escHtml(h)}</option>`).join('')}
+      </select>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   APPLY COL MAP → RENDER
+================================================================ */
+function applyColMap(silent = false) {
+  // Đọc lại từ select nếu UI đã render
+  ['code','dateCreate','datePickup','route','eval','custName'].forEach(k => {
+    const el = document.getElementById('cm-' + k);
+    if (el) colMap[k] = el.value;
+  });
+
+  // ===== LỌC TỪ FILE GỐC: chỉ giữ dòng "Không đúng giờ" =====
+  if (colMap.eval) {
+    saiGioRows = allRawRows.filter(r => {
+      const val = String(r[colMap.eval] || '').trim().toLowerCase();
+      return val.includes('không đúng giờ') || val.includes('khong dung gio') || val === 'không đúng giờ';
+    });
+  } else {
+    // Nếu không detect được cột đánh giá → dùng toàn bộ
+    saiGioRows = [...allRawRows];
+  }
+
+  if (!silent) {
+    showToast(`✅ Đã lọc ${saiGioRows.length}/${allRawRows.length} đơn sai giờ!`, 'success');
+  } else if (saiGioRows.length > 0) {
+    showToast(`🔍 Lọc được ${saiGioRows.length} đơn "Không đúng giờ" từ ${allRawRows.length} dòng gốc.`, 'info');
+  }
+
+  buildFilters();
+  filterAndRender();
+
+  document.getElementById('section-results').style.display = 'block';
+}
+
+/* ================================================================
+   BUILD FILTER DROPDOWNS
+================================================================ */
+function buildFilters() {
+  const sel = document.getElementById('filter-buuta');
+  const current = sel.value;
+
+  // Unique bưu tá (từ dữ liệu đã lọc sai giờ)
+  const buutaSet = new Set();
+  saiGioRows.forEach(r => {
+    const v = String(r[colMap.route] || '').trim();
+    if (v) buutaSet.add(v);
+  });
+  const sorted = [...buutaSet].sort((a, b) => a.localeCompare(b, 'vi'));
+
+  sel.innerHTML = '<option value="">Tất cả</option>' +
+    sorted.map(v => `<option value="${escHtml(v)}" ${v===current?'selected':''}>${escHtml(v)}</option>`).join('');
+}
+
+/* ================================================================
+   FILTER & SORT → filteredRows
+================================================================ */
+function getCell(row, key) { return String(row[colMap[key]] ?? '').trim(); }
+
+function onFilterChange() { currentPage = 1; filterAndRender(); }
+
+function filterAndRender() {
+  const search = document.getElementById('search-input').value.toLowerCase().trim();
+  const buuta  = document.getElementById('filter-buuta').value;
+  const sortVal = document.getElementById('sort-select').value;
+
+  let rows = [...saiGioRows];
+
+  // Filter bưu tá
+  if (buuta) rows = rows.filter(r => getCell(r, 'route') === buuta);
+
+  // Search
+  if (search) {
+    rows = rows.filter(r =>
+      getCell(r, 'code').toLowerCase().includes(search) ||
+      getCell(r, 'custName').toLowerCase().includes(search) ||
+      getCell(r, 'route').toLowerCase().includes(search)
+    );
+  }
+
+  // Sort
+  if (sortState.col && sortVal === 'default') {
+    rows = sortRows(rows, sortState.col, sortState.dir);
+  } else if (sortVal === 'buuta-az') {
+    rows.sort((a, b) => getCell(a,'route').localeCompare(getCell(b,'route'),'vi'));
+  } else if (sortVal === 'date-newest') {
+    rows.sort((a, b) => compareDateCells(b, a, 'datePickup'));
+  } else if (sortVal === 'date-oldest') {
+    rows.sort((a, b) => compareDateCells(a, b, 'datePickup'));
+  }
+
+  filteredRows = rows;
+  renderTable();
+  updateSummary();
+  updateHeaderBadges(filteredRows.length, countUnique(filteredRows, 'route'));
+}
+
+function compareDateCells(a, b, key) {
+  const va = a[colMap[key]]; const vb = b[colMap[key]];
+  const na = typeof va==='number' ? va : new Date(String(va||0)).getTime();
+  const nb = typeof vb==='number' ? vb : new Date(String(vb||0)).getTime();
+  return na - nb;
+}
+
+function sortRows(rows, col, dir) {
+  return [...rows].sort((a, b) => {
+    const va = getCell(a, col); const vb = getCell(b, col);
+    const cmp = va.localeCompare(vb, 'vi', { numeric: true });
+    return dir === 'asc' ? cmp : -cmp;
+  });
+}
+
+function countUnique(rows, key) {
+  const s = new Set(rows.map(r => getCell(r, key)).filter(Boolean));
+  return s.size;
+}
+
+/* ================================================================
+   SORT BY COLUMN HEADER CLICK
+================================================================ */
+function onSortClick(th) {
+  const col = th.dataset.sort;
+  if (sortState.col === col) {
+    sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortState.col = col;
+    sortState.dir = 'asc';
+  }
+  // Update sort icon classes
+  document.querySelectorAll('.excel-table thead th.sortable').forEach(el => {
+    el.classList.remove('sort-asc','sort-desc');
+    const icon = el.querySelector('.sort-icon');
+    if (icon) { icon.className = 'fa-solid fa-sort sort-icon'; }
+  });
+  th.classList.add(sortState.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  const thIcon = th.querySelector('.sort-icon');
+  if (thIcon) thIcon.className = `fa-solid fa-sort-${sortState.dir === 'asc' ? 'up' : 'down'} sort-icon`;
+
+  // Reset dropdown sort
+  document.getElementById('sort-select').value = 'default';
+
+  filteredRows = sortRows(filteredRows, col, sortState.dir);
+  currentPage = 1;
+  renderTable();
+}
+
+/* ================================================================
+   RENDER TABLE
+================================================================ */
+function renderTable() {
+  const tbody = document.getElementById('excel-tbody');
+  const total = filteredRows.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  document.getElementById('display-count').textContent = total;
+
+  // Print helpers
+  document.getElementById('print-date').textContent = new Date().toLocaleDateString('vi-VN');
+  document.getElementById('print-total').textContent = total;
+
+  if (total === 0) {
+    tbody.innerHTML = `<tr><td colspan="7">
+      <div class="excel-empty">
+        <span class="big-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <div class="empty-title">Không tìm thấy dữ liệu</div>
+        <div class="empty-sub">Thử thay đổi từ khoá tìm kiếm hoặc bộ lọc bưu tá.</div>
+      </div>
+    </td></tr>`;
+    document.getElementById('pagination-wrap').style.display = 'none';
+    return;
+  }
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end   = Math.min(start + PAGE_SIZE, total);
+  const pageRows = filteredRows.slice(start, end);
+
+  tbody.innerHTML = pageRows.map((r, i) => {
+    const stt = start + i + 1;
+    const code    = escHtml(getCell(r, 'code'));
+    const dcreate = escHtml(formatDate(r[colMap.dateCreate] ?? ''));
+    const dpickup = escHtml(formatDate(r[colMap.datePickup] ?? ''));
+    const route   = escHtml(getCell(r, 'route'));
+    const cust    = escHtml(getCell(r, 'custName'));
+    const evalVal = getCell(r, 'eval');
+
+    // Badge đánh giá — luôn hiển thị "Không đúng giờ" vì đây là báo cáo sai giờ
+    const evalBadge = `<span class="badge-sai-gio"><i class="fa-solid fa-xmark"></i> Không đúng giờ</span>`;
+
+    return `<tr class="fade-in-up" style="animation-delay:${Math.min(i*0.02,0.3)}s">
+      <td class="col-stt">${stt}</td>
+      <td class="col-code">${code || '<span style="color:var(--gray-300);">—</span>'}</td>
+      <td class="col-date">${dcreate || '—'}</td>
+      <td class="col-date">${dpickup || '—'}</td>
+      <td class="col-route">${route || '—'}</td>
+      <td class="col-eval">${evalBadge}</td>
+      <td class="col-name">${cust || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(total, totalPages, start, end);
+}
+
+/* ================================================================
+   PAGINATION
+================================================================ */
+function renderPagination(total, totalPages, start, end) {
+  const wrap = document.getElementById('pagination-wrap');
+  if (total <= PAGE_SIZE) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+
+  document.getElementById('pagination-info').textContent =
+    `Trang ${currentPage}/${totalPages} — Dòng ${start+1}-${end} của ${total}`;
+
+  const btns = document.getElementById('pagination-btns');
+  let html = '';
+
+  html += `<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>
+    <i class="fa-solid fa-chevron-left" style="font-size:11px;"></i>
+  </button>`;
+
+  const range = buildPageRange(currentPage, totalPages);
+  let lastWasDot = false;
+  range.forEach(p => {
+    if (p === '...') {
+      if (!lastWasDot) html += `<span class="pg-dots">…</span>`;
+      lastWasDot = true;
+    } else {
+      lastWasDot = false;
+      html += `<button class="pg-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+    }
+  });
+
+  html += `<button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>
+    <i class="fa-solid fa-chevron-right" style="font-size:11px;"></i>
+  </button>`;
+
+  btns.innerHTML = html;
+}
+
+function buildPageRange(cur, total) {
+  if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+  const pages = [];
+  pages.push(1);
+  if (cur > 3) pages.push('...');
+  for (let p = Math.max(2, cur-1); p <= Math.min(total-1, cur+1); p++) pages.push(p);
+  if (cur < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
+function goPage(p) {
+  const total = filteredRows.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (p < 1 || p > totalPages) return;
+  currentPage = p;
+  renderTable();
+  document.getElementById('table-scroll-wrap').scrollTop = 0;
+}
+
+/* ================================================================
+   SUMMARY BAR
+================================================================ */
+function updateSummary() {
+  const total = filteredRows.length;
+  const buutaCount = countUnique(filteredRows, 'route');
+  document.getElementById('sum-total').textContent = total;
+  document.getElementById('sum-buuta').textContent = buutaCount;
+}
+
+/* ================================================================
+   HEADER BADGES
+================================================================ */
+function updateHeaderBadges(total, buuta) {
+  document.getElementById('h-total-saigió').textContent = total;
+  document.getElementById('h-total-buuta').textContent  = buuta;
+
+  // Tính kỳ báo cáo từ ngày thu đầu/cuối
+  if (filteredRows.length > 0 && colMap.datePickup) {
+    const dates = filteredRows
+      .map(r => r[colMap.datePickup])
+      .filter(Boolean)
+      .map(v => typeof v==='number' ? v : 0)
+      .filter(v => v > 0)
+      .sort();
+    if (dates.length > 0) {
+      const minD = formatDate(dates[0]).slice(0,10);
+      const maxD = formatDate(dates[dates.length-1]).slice(0,10);
+      document.getElementById('h-ky-baocao').textContent =
+        minD === maxD ? minD : `${minD} → ${maxD}`;
+    } else {
+      document.getElementById('h-ky-baocao').textContent = '—';
+    }
+  } else {
+    document.getElementById('h-ky-baocao').textContent = '—';
+  }
+}
+
+/* ================================================================
+   EXPORT EXCEL
+================================================================ */
+function exportExcel() {
+  if (filteredRows.length === 0) { showToast('⚠️ Không có dữ liệu để xuất!', 'warning'); return; }
+
+  const btn = document.getElementById('btn-export');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xuất...';
+
+  setTimeout(() => {
+    try {
+      const exportData = filteredRows.map((r, i) => ({
+        'STT':                i + 1,
+        'MÃ VẬN ĐƠN':        getCell(r, 'code'),
+        'NGÀY TẠO ĐƠN':      formatDate(r[colMap.dateCreate] ?? ''),
+        'NGÀY THU ĐƠN':      formatDate(r[colMap.datePickup] ?? ''),
+        'TUYẾN BƯU TÁ':      getCell(r, 'route'),
+        'ĐÁNH GIÁ ĐÚNG GIỜ': 'Không đúng giờ',
+        'TÊN KH GỬI':        getCell(r, 'custName'),
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      ws['!cols'] = [
+        { wch: 6  },  // STT
+        { wch: 20 },  // MÃ VẬN ĐƠN
+        { wch: 22 },  // NGÀY TẠO ĐƠN
+        { wch: 22 },  // NGÀY THU ĐƠN
+        { wch: 38 },  // TUYẾN BƯU TÁ
+        { wch: 22 },  // ĐÁNH GIÁ ĐÚNG GIỜ
+        { wch: 24 },  // TÊN KH GỬI
+      ];
+
+      // Freeze header row
+      ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' };
+
+      XLSX.utils.book_append_sheet(wb, ws, 'SAI_GIO');
+
+      const now = new Date();
+      const dateSuffix = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
+      XLSX.writeFile(wb, `BaoCao_ThuSaiGio_${dateSuffix}.xlsx`);
+
+      showToast(`✅ Đã xuất ${exportData.length} dòng ra Excel!`, 'success');
+    } catch(err) {
+      showToast('❌ Lỗi xuất Excel: ' + err.message, 'error');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> Xuất Excel';
+  }, 150);
+}
+
+/* ================================================================
+   PRINT
+================================================================ */
+function printTable() {
+  window.print();
+}
+
+/* ================================================================
+   INIT
+================================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  // Ready
+});
+</script>
+
+</body>
+</html>
