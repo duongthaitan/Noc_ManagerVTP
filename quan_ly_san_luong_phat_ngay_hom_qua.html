@@ -988,63 +988,47 @@ function getPageLanUrl() {
   return loc.protocol + '//' + host + ':' + loc.port + loc.pathname;
 }
 
-function chartToSmallDataUrl() {
-  var canvas = document.getElementById('chart-canvas');
-  if (!canvas) return null;
-  var small = document.createElement('canvas');
-  var ratio = canvas.width / canvas.height;
-  small.width = 280;
-  small.height = Math.round(280 / ratio);
-  var ctx = small.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, small.width, small.height);
-  ctx.drawImage(canvas, 0, 0, small.width, small.height);
-  return small.toDataURL('image/jpeg', 0.25);
-}
-
 function showQrModal() {
   var canvas = document.getElementById('chart-canvas');
   if (!canvas || !chartInstance) { showToast('\u26a0\ufe0f Ch\u01b0a c\u00f3 bi\u1ec3u \u0111\u1ed3!', 'warning'); return; }
   var container = document.getElementById('qr-container');
-  container.innerHTML = '';
-
-  var smallDataUrl = chartToSmallDataUrl();
-  var isImageMode = false;
-
-  if (smallDataUrl && smallDataUrl.length <= 2800) {
-    qrUrl = smallDataUrl;
-    isImageMode = true;
-  } else {
-    qrUrl = getPageLanUrl();
-    isImageMode = false;
-  }
-
-  qrInstance = new QRCode(container, {
-    text: qrUrl, width: 220, height: 220,
-    colorDark: '#1e3a5f', colorLight: '#ffffff',
-    correctLevel: isImageMode ? QRCode.CorrectLevel.L : QRCode.CorrectLevel.M
-  });
-
   var infoEl = document.getElementById('qr-mode-info');
   var urlEl = document.getElementById('qr-url-display');
-  if (isImageMode) {
-    infoEl.innerHTML = '<i class="fa-solid fa-image" style="color:#059669;margin-right:4px;"></i>' +
-      '<span style="color:#059669;font-weight:800;">\u1ea2nh bi\u1ec3u \u0111\u1ed3 nh\u00fang trong QR!</span><br>' +
-      '<span style="font-weight:500;">Qu\u00e9t = m\u1edf \u1ea3nh tr\u1ef1c ti\u1ebfp tr\u00ean \u0111i\u1ec7n tho\u1ea1i</span>';
-    urlEl.textContent = 'data:image/jpeg (' + Math.round(smallDataUrl.length/1024) + 'KB)';
-  } else {
-    infoEl.innerHTML = '<i class="fa-solid fa-mobile-screen" style="color:#7C3AED;margin-right:4px;"></i>' +
-      'Qu\u00e9t QR \u0111\u1ec3 m\u1edf trang b\u00e1o c\u00e1o tr\u00ean \u0111i\u1ec7n tho\u1ea1i';
-    urlEl.textContent = qrUrl;
-    if (qrUrl.indexOf('127.0.0.1') >= 0 || qrUrl.indexOf('localhost') >= 0) {
-      urlEl.innerHTML += '<br><span style="color:#DC2626;font-weight:700;">\u26a0 \u0110ang d\u00f9ng localhost \u2014 h\u00e3y truy c\u1eadp b\u1eb1ng IP LAN \u0111\u1ec3 QR ho\u1ea1t \u0111\u1ed9ng</span>';
-    }
-  }
+  
+  container.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">\u0110ang t\u1ea1o link t\u1ea3i...</span></div>';
+  infoEl.innerHTML = '';
+  if (urlEl) urlEl.innerHTML = '';
 
   var shareBtn = document.getElementById('btn-share');
   if (navigator.share && navigator.canShare) { shareBtn.style.display = 'inline-flex'; }
   document.getElementById('qr-overlay').classList.add('open');
+
+  canvas.toBlob(function(blob) {
+    var fd = new FormData();
+    fd.append('file', blob, 'BieuDo.png');
+    fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      container.innerHTML = '';
+      if (res && res.status === 'success') {
+        var dlUrl = res.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/').replace('http://', 'https://');
+        qrInstance = new QRCode(container, { text: dlUrl, width: 220, height: 220, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+        infoEl.innerHTML = '<i class="fa-solid fa-cloud-arrow-down" style="color:#059669;margin-right:4px;"></i>' +
+          '<span style="color:#059669;font-weight:800;">Qu\u00e9t \u0111\u1ec3 t\u1ea3i \u1ea3nh x\u1ecbn!</span><br>' +
+          '<span style="font-weight:500;">(Link t\u1ef1 h\u1ee7y sau 60 ph\u00fat)</span>';
+        if (urlEl) urlEl.style.display = 'none';
+      } else { throw new Error('Upload err'); }
+    })
+    .catch(function() {
+      container.innerHTML = '';
+      qrInstance = new QRCode(container, { text: getPageLanUrl(), width: 220, height: 220, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+      infoEl.innerHTML = '<i class="fa-solid fa-mobile-screen" style="color:#7C3AED;margin-right:4px;"></i>' +
+          'Qu\u00e9t QR \u0111\u1ec3 m\u1edf trang web (Upload b\u1ecb l\u1ed7i)';
+      if (urlEl) { urlEl.textContent = getPageLanUrl(); urlEl.style.display = 'block'; }
+    });
+  }, 'image/png');
 }
+
 
 function closeQrModal() { document.getElementById('qr-overlay').classList.remove('open'); }
 
