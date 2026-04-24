@@ -463,7 +463,7 @@
 
 <!-- ===== QR MODAL ===== -->
 <div class="chart-overlay" id="qr-overlay" onclick="if(event.target===this)closeQrModal()" style="z-index:1100;">
-  <div class="chart-modal" style="max-width:420px;">
+  <div class="chart-modal" style="max-width:440px;">
     <div class="chart-modal-header" style="background:linear-gradient(135deg,#EDE9FE,white);">
       <div class="chart-modal-title">
         <i class="fa-solid fa-qrcode" style="color:#7C3AED;"></i>
@@ -473,14 +473,14 @@
     </div>
     <div style="padding:24px;text-align:center;">
       <div id="qr-container" style="display:inline-block;padding:16px;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:2px solid #E5E7EB;"></div>
-      <div style="margin-top:16px;font-size:12.5px;color:#6B7280;font-weight:600;line-height:1.6;">
-        <i class="fa-solid fa-mobile-screen" style="color:#7C3AED;margin-right:4px;"></i>
-        Quét QR bằng điện thoại để mở trang báo cáo trên thiết bị di động
-      </div>
-      <div style="margin-top:8px;font-size:11px;color:#9CA3AF;word-break:break-all;" id="qr-url-display"></div>
-      <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;">
+      <div id="qr-mode-info" style="margin-top:14px;font-size:12px;color:#6B7280;font-weight:600;line-height:1.6;"></div>
+      <div style="margin-top:6px;font-size:11px;color:#9CA3AF;word-break:break-all;" id="qr-url-display"></div>
+      <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-ghost btn-sm" onclick="downloadChart()" style="border-color:#059669;color:#059669;">
-          <i class="fa-solid fa-download"></i> Tải ảnh trực tiếp
+          <i class="fa-solid fa-download"></i> Tải ảnh PNG
+        </button>
+        <button class="btn btn-ghost btn-sm" id="btn-share" onclick="shareChartImage()" style="border-color:#3B82F6;color:#3B82F6;display:none;">
+          <i class="fa-solid fa-share-nodes"></i> Chia sẻ
         </button>
         <button class="btn btn-ghost btn-sm" onclick="copyQrUrl()" style="border-color:#7C3AED;color:#7C3AED;">
           <i class="fa-solid fa-copy"></i> Copy link
@@ -995,27 +995,75 @@ function renderChart(type) {
 }
 
 /* ================================================================
-   QR CODE
+   QR CODE — Encode chart image directly in QR
 ================================================================ */
 var qrInstance = null;
 var qrUrl = '';
+var detectedLanIp = '';
+
+// Detect LAN IP via WebRTC
+(function detectLanIp() {
+  try {
+    var rtc = new RTCPeerConnection({iceServers:[]});
+    rtc.createDataChannel('');
+    rtc.createOffer().then(function(offer) { rtc.setLocalDescription(offer); });
+    rtc.onicecandidate = function(e) {
+      if (e && e.candidate && e.candidate.candidate) {
+        var match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
+        if (match && match[1] && match[1] !== '0.0.0.0' && match[1].indexOf('127.') !== 0) {
+          detectedLanIp = match[1];
+          rtc.close();
+        }
+      }
+    };
+  } catch(e) {}
+})();
 
 function getPageLanUrl() {
-  // Build LAN-accessible URL
   var loc = window.location;
-  // Try to use the current hostname (works if accessed via LAN IP)
   var host = loc.hostname;
-  // If localhost, try to suggest LAN IP
-  if (host === 'localhost' || host === '127.0.0.1') {
-    host = loc.hostname; // fallback
+  if ((host === 'localhost' || host === '127.0.0.1') && detectedLanIp) {
+    host = detectedLanIp;
   }
   return loc.protocol + '//' + host + ':' + loc.port + loc.pathname;
 }
 
+function chartToSmallDataUrl() {
+  var canvas = document.getElementById('chart-canvas');
+  if (!canvas) return null;
+  // Create small canvas for QR-friendly size
+  var small = document.createElement('canvas');
+  var ratio = canvas.width / canvas.height;
+  small.width = 280;
+  small.height = Math.round(280 / ratio);
+  var ctx = small.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, small.width, small.height);
+  ctx.drawImage(canvas, 0, 0, small.width, small.height);
+  // Try JPEG at low quality for smaller size
+  return small.toDataURL('image/jpeg', 0.25);
+}
+
 function showQrModal() {
-  qrUrl = getPageLanUrl();
+  var canvas = document.getElementById('chart-canvas');
+  if (!canvas || !chartInstance) { showToast('\u26a0\ufe0f Ch\u01b0a c\u00f3 bi\u1ec3u \u0111\u1ed3!', 'warning'); return; }
+
   var container = document.getElementById('qr-container');
   container.innerHTML = '';
+
+  // Try to encode chart image directly in QR
+  var smallDataUrl = chartToSmallDataUrl();
+  var isImageMode = false;
+
+  if (smallDataUrl && smallDataUrl.length <= 2800) {
+    // Image fits in QR — phone scans = opens image directly!
+    qrUrl = smallDataUrl;
+    isImageMode = true;
+  } else {
+    // Image too large, fall back to page URL with LAN IP
+    qrUrl = getPageLanUrl();
+    isImageMode = false;
+  }
 
   qrInstance = new QRCode(container, {
     text: qrUrl,
@@ -1023,10 +1071,32 @@ function showQrModal() {
     height: 220,
     colorDark: '#1e3a5f',
     colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M
+    correctLevel: isImageMode ? QRCode.CorrectLevel.L : QRCode.CorrectLevel.M
   });
 
-  document.getElementById('qr-url-display').textContent = qrUrl;
+  var infoEl = document.getElementById('qr-mode-info');
+  var urlEl = document.getElementById('qr-url-display');
+
+  if (isImageMode) {
+    infoEl.innerHTML = '<i class="fa-solid fa-image" style="color:#059669;margin-right:4px;"></i>' +
+      '<span style="color:#059669;font-weight:800;">\u1ea2nh bi\u1ec3u \u0111\u1ed3 nh\u00fang trong QR!</span><br>' +
+      '<span style="font-weight:500;">Qu\u00e9t = m\u1edf \u1ea3nh tr\u1ef1c ti\u1ebfp tr\u00ean \u0111i\u1ec7n tho\u1ea1i</span>';
+    urlEl.textContent = 'data:image/jpeg (' + Math.round(smallDataUrl.length/1024) + 'KB)';
+  } else {
+    infoEl.innerHTML = '<i class="fa-solid fa-mobile-screen" style="color:#7C3AED;margin-right:4px;"></i>' +
+      'Qu\u00e9t QR \u0111\u1ec3 m\u1edf trang b\u00e1o c\u00e1o tr\u00ean \u0111i\u1ec7n tho\u1ea1i';
+    urlEl.textContent = qrUrl;
+    if (qrUrl.indexOf('127.0.0.1') >= 0 || qrUrl.indexOf('localhost') >= 0) {
+      urlEl.innerHTML += '<br><span style="color:#DC2626;font-weight:700;">\u26a0 \u0110ang d\u00f9ng localhost \u2014 h\u00e3y truy c\u1eadp b\u1eb1ng IP LAN \u0111\u1ec3 QR ho\u1ea1t \u0111\u1ed9ng</span>';
+    }
+  }
+
+  // Show Share button if available
+  var shareBtn = document.getElementById('btn-share');
+  if (navigator.share && navigator.canShare) {
+    shareBtn.style.display = 'inline-flex';
+  }
+
   document.getElementById('qr-overlay').classList.add('open');
 }
 
@@ -1034,19 +1104,36 @@ function closeQrModal() {
   document.getElementById('qr-overlay').classList.remove('open');
 }
 
+function shareChartImage() {
+  var canvas = document.getElementById('chart-canvas');
+  if (!canvas) return;
+  canvas.toBlob(function(blob) {
+    var file = new File([blob], 'bieu_do_san_luong_thu.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({
+        title: 'Bi\u1ec3u \u0111\u1ed3 S\u1ea3n L\u01b0\u1ee3ng Thu',
+        text: 'B\u00e1o c\u00e1o s\u1ea3n l\u01b0\u1ee3ng thu ViettelPost',
+        files: [file]
+      }).then(function() {
+        showToast('\u2705 \u0110\u00e3 chia s\u1ebb!', 'success');
+      }).catch(function() {});
+    } else {
+      showToast('\u26a0\ufe0f Tr\u00ecnh duy\u1ec7t kh\u00f4ng h\u1ed7 tr\u1ee3 Share API', 'warning');
+    }
+  }, 'image/png');
+}
+
 function copyQrUrl() {
-  if (!qrUrl) return;
-  navigator.clipboard.writeText(qrUrl).then(function() {
-    showToast('✅ Đã copy link: ' + qrUrl, 'success');
+  var url = getPageLanUrl();
+  navigator.clipboard.writeText(url).then(function() {
+    showToast('\u2705 \u0110\u00e3 copy: ' + url, 'success');
   }).catch(function() {
-    // Fallback
     var ta = document.createElement('textarea');
-    ta.value = qrUrl;
-    document.body.appendChild(ta);
-    ta.select();
+    ta.value = url;
+    document.body.appendChild(ta); ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    showToast('✅ Đã copy link!', 'success');
+    showToast('\u2705 \u0110\u00e3 copy link!', 'success');
   });
 }
 </script>
