@@ -1092,7 +1092,15 @@ function captureScreenshot() {
   if (btn) btn.disabled = true;
   setTimeout(function() {
     html2canvas(target, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', logging: false,
-      ignoreElements: function(el) { return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot'); }
+      ignoreElements: function(el) { return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot'); },
+      onclone: function(doc) {
+        var els = doc.querySelectorAll('.fade-in-up, .pulse-red');
+        for (var i = 0; i < els.length; i++) {
+          els[i].style.animation = 'none';
+          els[i].style.opacity = '1';
+          els[i].style.transform = 'none';
+        }
+      }
     }).then(function(canvas) {
       if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
       if (btn) btn.disabled = false;
