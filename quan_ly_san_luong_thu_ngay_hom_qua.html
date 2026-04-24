@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sản Lượng Thu Ngày Hôm Qua — ViettelPost HBCTVT</title>
+<meta name="description" content="Báo cáo sản lượng thu thành công ngày hôm qua — ViettelPost">
+
+<!-- ===== FONTS & ICONS ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- ===== SHARED STYLESHEET ===== -->
+<link rel="stylesheet" href="assets/css/style.css">
+
+<!-- ===== SHEETJS + CHART.JS ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+/* ================================================================
+   PAGE-SPECIFIC STYLES — Sản Lượng Thu
+================================================================ */
+
+/* ── Nav breadcrumb ── */
+.page-nav {
+  background: white; border-bottom: 1px solid var(--border);
+  padding: 10px 20px; display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--gray-500);
+}
+.page-nav a { color: var(--vtp-red); font-weight: 600; text-decoration: none; }
+.page-nav a:hover { text-decoration: underline; }
+
+/* ── Toolbar ── */
+.toolbar {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 16px; margin-bottom: 10px; box-shadow: var(--shadow-xs);
+}
+.toolbar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.search-wrap { flex: 1; min-width: 200px; position: relative; }
+.search-wrap i {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--gray-400); font-size: 13px; pointer-events: none;
+}
+.search-input {
+  width: 100%; padding: 7px 10px 7px 34px;
+  border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+  font-family: inherit; font-size: 12.5px; color: var(--text);
+  background: var(--gray-50); transition: var(--transition);
+}
+.search-input:focus { outline: none; border-color: var(--vtp-red); box-shadow: 0 0 0 3px rgba(238,0,51,0.1); background: white; }
+.search-input::placeholder { color: var(--gray-400); }
+.row-count-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; background: var(--vtp-red-light); color: var(--vtp-red-dark);
+  border-radius: 999px; font-size: 11.5px; font-weight: 800;
+  border: 1px solid rgba(238,0,51,0.2); white-space: nowrap;
+}
+.toolbar-spacer { flex: 1; }
+.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Table ── */
+.excel-table-wrap {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow); background: white;
+}
+.excel-scroll-wrap { overflow-x: auto; overflow-y: auto; max-height: 80vh; }
+.excel-table { width: 100%; border-collapse: collapse; font-size: 11.5px; min-width: 1100px; }
+
+/* ── Header 2 tầng ── */
+.excel-table thead tr th {
+  background: #1e3a5f; color: white; font-weight: 700; font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: 0.3px;
+  padding: 5px 6px; border: 1px solid #2d527a;
+  white-space: nowrap; position: sticky; top: 0; z-index: 11; user-select: none;
+  text-align: center;
+}
+.excel-table thead tr:first-child th { top: 0; z-index: 12; }
+.excel-table thead tr:nth-child(2) th {
+  top: 26px; z-index: 11; background: #264b6f; font-size: 10px; padding: 4px 5px;
+}
+.excel-table thead th.col-tuyen { text-align: left; min-width: 240px; }
+.excel-table thead th.sortable { cursor: pointer; }
+.excel-table thead th.sortable:hover { background: #345f8a; }
+.sort-icon { margin-left: 3px; font-size: 9px; opacity: 0.6; }
+.excel-table thead th.sort-asc .sort-icon,
+.excel-table thead th.sort-desc .sort-icon { opacity: 1; color: #93C5FD; }
+
+/* Body */
+.excel-table tbody tr:nth-child(even) td { background: #f5f7fa; }
+.excel-table tbody tr:nth-child(odd)  td { background: #ffffff; }
+.excel-table tbody tr:hover td { background: #EFF6FF !important; transition: background 0.12s; }
+.excel-table tbody td {
+  padding: 3px 6px; border: 1px solid #d0d0d0;
+  vertical-align: middle; color: var(--text); text-align: center;
+  font-size: 11.5px; line-height: 1.3;
+}
+.excel-table tbody td.col-stt { color: var(--gray-400); font-weight: 700; font-size: 10.5px; width: 34px; }
+.excel-table tbody td.col-tuyen { text-align: left; font-weight: 600; color: #1e3a5f; font-size: 11px; }
+.excel-table tbody td.col-percent { font-weight: 800; }
+
+/* Total row */
+.excel-table tbody tr.total-row td {
+  background: linear-gradient(135deg, #1e3a5f, #264b6f) !important;
+  color: white !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  border-color: #2d527a !important;
+}
+.excel-table tbody tr.total-row:hover td {
+  background: linear-gradient(135deg, #264b6f, #345f8a) !important;
+}
+
+/* Color coding tỷ lệ TTC — like output file */
+.pct-high   { color: #059669 !important; background: #ECFDF5 !important; }
+.pct-medium { color: #D97706 !important; background: #FFFBEB !important; }
+.pct-low    { color: #DC2626 !important; background: #FEF2F2 !important; }
+.pct-zero   { color: var(--gray-300) !important; }
+
+/* Tăng/Giảm */
+.delta-up   { color: #059669; font-weight: 800; }
+.delta-down { color: #DC2626; font-weight: 800; }
+.delta-zero { color: var(--gray-300); }
+
+/* ── Summary ── */
+.summary-bar {
+  background: var(--gray-100); border-top: 2px solid var(--border);
+  padding: 6px 12px; display: flex; align-items: center; gap: 16px;
+  flex-wrap: wrap; font-size: 11.5px; font-weight: 700; color: var(--gray-700);
+}
+.summary-item { display: flex; align-items: center; gap: 5px; }
+.summary-item .val { color: var(--vtp-red); font-size: 13px; font-weight: 900; }
+.summary-item .val.blue { color: var(--zalo); }
+.summary-item .val.green { color: #059669; }
+
+/* ── Empty ── */
+.excel-empty { text-align: center; padding: 50px 20px; color: var(--gray-400); }
+.excel-empty .big-icon { font-size: 48px; margin-bottom: 12px; display: block; opacity: 0.5; }
+.excel-empty .empty-title { font-size: 15px; font-weight: 800; color: var(--gray-500); margin-bottom: 4px; }
+.excel-empty .empty-sub { font-size: 12.5px; color: var(--gray-400); }
+
+/* ── Stat Cards ── */
+.stat-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px; margin-bottom: 12px;
+}
+.stat-card-mini {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  box-shadow: var(--shadow-xs); transition: var(--transition);
+}
+.stat-card-mini:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.stat-card-mini .stat-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.stat-card-mini .stat-icon.red    { background: #FEE2E2; color: #DC2626; }
+.stat-card-mini .stat-icon.orange { background: #FEF3C7; color: #D97706; }
+.stat-card-mini .stat-icon.blue   { background: #DBEAFE; color: #2563EB; }
+.stat-card-mini .stat-icon.green  { background: #D1FAE5; color: #059669; }
+.stat-card-mini .stat-icon.purple { background: #EDE9FE; color: #7C3AED; }
+.stat-info { flex: 1; }
+.stat-info .stat-label { font-size: 10.5px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.3px; }
+.stat-info .stat-value { font-size: 18px; font-weight: 900; color: var(--text); margin-top: 1px; }
+.stat-info .stat-value .unit { font-size: 11px; font-weight: 600; color: var(--gray-400); margin-left: 2px; }
+
+/* ── Chart Modal ── */
+.chart-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+.chart-overlay.open { opacity: 1; pointer-events: all; }
+.chart-modal {
+  background: white; border-radius: 18px;
+  width: 100%; max-width: 960px; max-height: 92vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 28px 60px rgba(0,0,0,0.22);
+  transform: scale(0.92) translateY(16px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.chart-overlay.open .chart-modal { transform: scale(1) translateY(0); }
+.chart-modal-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; background: linear-gradient(135deg, #ECFDF5, white); border-radius: 18px 18px 0 0;
+}
+.chart-modal-title { font-size: 15px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.chart-close-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--gray-100); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--gray-500); transition: var(--transition);
+}
+.chart-close-btn:hover { background: var(--vtp-red-bg); color: var(--vtp-red); }
+.chart-tabs {
+  display: flex; gap: 6px; padding: 12px 20px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; background: var(--gray-50);
+}
+.chart-tab {
+  padding: 6px 16px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  border: 2px solid var(--gray-200); background: white; color: var(--gray-500);
+  transition: var(--transition); font-family: inherit;
+  display: flex; align-items: center; gap: 5px;
+}
+.chart-tab:hover { border-color: #059669; color: #059669; }
+.chart-tab.active { background: #059669; color: white; border-color: #059669; }
+.chart-body { padding: 20px; overflow-y: auto; flex: 1; display: flex; align-items: center; justify-content: center; }
+.chart-body canvas { max-height: 520px; width: 100% !important; }
+
+/* ── Print ── */
+@media print {
+  .site-header, .page-nav, .section-card, .toolbar, .stat-row,
+  .summary-bar, .btn, #toast-container, .no-print, .chart-overlay { display: none !important; }
+  body { background: white !important; }
+  .container { padding: 0 !important; max-width: 100% !important; }
+  .excel-table-wrap { box-shadow: none !important; border: none !important; }
+  .excel-scroll-wrap { max-height: none !important; overflow: visible !important; }
+  .excel-table { font-size: 10px !important; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="vtp-logo-box">
+        <i class="fa-solid fa-truck-fast logo-icon"></i>
+        <div class="logo-text">VIETTEL<span>POST</span></div>
+      </div>
+      <div class="header-title-group">
+        <div class="header-title">📥 SẢN LƯỢNG THU NGÀY HÔM QUA</div>
+        <div class="header-subtitle">Tổng hợp khẩu nhận — Sản lượng thu thành công theo tuyến bưu tá</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="hbadge danger">
+        <i class="fa-solid fa-users"></i>
+        <span>Bưu tá có thu:</span>
+        <span class="num" id="h-total-bt">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <span>Tổng YC Thu ngày:</span>
+        <span class="num" id="h-total-yc">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-box-open"></i>
+        <span>Tổng SL TTC ngày:</span>
+        <span class="num" id="h-total-ttc">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-percent"></i>
+        <span>TB TTC ngày:</span>
+        <span class="num" id="h-avg-pct">0%</span>
+      </div>
+    </div>
+  </div>
+  <div class="header-accent-bar"></div>
+</header>
+
+<!-- ===== BREADCRUMB ===== -->
+<div class="page-nav no-print">
+  <a href="index.html"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chủ</a>
+  <i class="fa-solid fa-chevron-right" style="font-size:10px;opacity:.5;"></i>
+  <span>Sản Lượng Thu Ngày Hôm Qua</span>
+</div>
+
+<div class="container">
+
+  <!-- ===== UPLOAD ===== -->
+  <div class="section-card">
+    <div class="section-header no-click">
+      <span class="section-title"><i class="fa-solid fa-file-excel"></i> UPLOAD FILE BÁO CÁO SẢN LƯỢNG THU</span>
+    </div>
+    <div class="section-body">
+      <div id="upload-zone" class="upload-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <div class="upload-icon-wrap"><i class="fa-solid fa-file-excel" style="color:var(--vtp-red);font-size:30px;"></i></div>
+        <div class="upload-text-main">Kéo thả file Excel báo cáo Sản Lượng Thu vào đây</div>
+        <div class="upload-text-sub">hoặc nhấn để chọn file từ máy tính · Baocaotonghopchitietdon_thu.xlsx</div>
+        <button class="btn btn-red" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+          <i class="fa-solid fa-file-arrow-up"></i> Chọn file .xlsx
+        </button>
+        <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFileChange(event)">
+      </div>
+      <div id="spinner-wrap" class="spinner-wrap">
+        <div class="spinner-ring"></div>
+        <span class="spinner-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Đang xử lý file...</span>
+      </div>
+      <div id="upload-reset" class="upload-reset">
+        <button class="btn btn-ghost btn-sm" onclick="resetUpload()"><i class="fa-solid fa-rotate-left"></i> Tải file khác</button>
+        <span class="file-chip" id="file-name-display"><i class="fa-solid fa-circle-check"></i></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESULTS ===== -->
+  <div id="section-results" style="display:none;">
+
+    <!-- Stat Cards -->
+    <div class="stat-row">
+      <div class="stat-card-mini">
+        <div class="stat-icon green"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Bưu tá có thu</div>
+          <div class="stat-value" id="st-bt-count">0 <span class="unit">/ 0 tổng</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon blue"><i class="fa-solid fa-clipboard-list"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tổng YC Thu ngày</div>
+          <div class="stat-value" id="st-yc-ngay">0 <span class="unit">đơn</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon red"><i class="fa-solid fa-box-open"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tổng SL TTC ngày</div>
+          <div class="stat-value" id="st-ttc-ngay">0 <span class="unit">đơn</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon orange"><i class="fa-solid fa-percent"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">TL TTC Trung bình</div>
+          <div class="stat-value" id="st-pct-avg">0<span class="unit">%</span></div>
+        </div>
+      </div>
+      <div class="stat-card-mini">
+        <div class="stat-icon purple"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">TL TTC Lũy kế TB</div>
+          <div class="stat-value" id="st-pct-lk">0<span class="unit">%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar no-print">
+      <div class="toolbar-row">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="search-input" class="search-input" placeholder="🔍 Tìm kiếm tuyến bưu tá..." oninput="onFilterChange()">
+        </div>
+        <div class="row-count-badge"><i class="fa-solid fa-list-ol"></i> Hiển thị <span id="display-count">0</span> bưu tá</div>
+        <div class="toolbar-spacer"></div>
+        <div class="toolbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openChartModal()" style="border-color:#059669;color:#059669;">
+            <i class="fa-solid fa-chart-bar"></i> Biểu đồ
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> In</button>
+          <button class="btn btn-red btn-sm" onclick="exportExcel()" id="btn-export">
+            <i class="fa-solid fa-file-arrow-down"></i> Xuất Excel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print-only header -->
+    <div class="print-only" style="margin-bottom:10px;">
+      <h2 style="font-size:16px;font-weight:900;color:#1e3a5f;">BÁO CÁO SẢN LƯỢNG THU — VIETTELPOST</h2>
+    </div>
+
+    <!-- Table -->
+    <div class="excel-table-wrap">
+      <div class="excel-scroll-wrap">
+        <table class="excel-table" id="excel-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="width:34px;">STT</th>
+              <th rowspan="2" class="col-tuyen sortable" onclick="onSortClick('tuyen',this)">
+                Tuyến <i class="fa-solid fa-sort sort-icon"></i>
+              </th>
+              <th colspan="3" style="background:#2a5a3a;border-color:#3d7a52;">Yêu cầu thu</th>
+              <th colspan="3" style="background:#1e5a8a;border-color:#2a7ab5;">Sản lượng TTC</th>
+              <th colspan="3" style="background:#8b1a1a;border-color:#b02020;">Tỷ lệ TTC (%)</th>
+              <th colspan="2" style="background:#4a3a6a;border-color:#6a5090;">Cùng kỳ LK TTC</th>
+              <th colspan="2" style="background:#3a5a6a;border-color:#507a90;">Tăng / Giảm</th>
+            </tr>
+            <tr>
+              <th class="sortable" onclick="onSortClick('yc_ngay',this)">Ngày <i class="fa-solid fa-sort sort-icon"></i></th>
+              <th>Ngày mới</th>
+              <th>Lũy kế</th>
+              <th class="sortable" onclick="onSortClick('ttc_ngay',this)">
+                Ngày <i class="fa-solid fa-sort sort-icon"></i>
+              </th>
+              <th>Ngày mới</th>
+              <th>Lũy kế</th>
+              <th class="sortable" onclick="onSortClick('pct_ngay',this)" style="background:#a02020;">
+                Ngày <i class="fa-solid fa-sort-down sort-icon" style="opacity:1;color:#93C5FD;"></i>
+              </th>
+              <th>Ngày mới</th>
+              <th>Lũy kế</th>
+              <th>Sản lượng</th>
+              <th>Tỷ lệ (%)</th>
+              <th>Sản lượng</th>
+              <th class="sortable" onclick="onSortClick('delta_pct',this)">Tỷ lệ (%) <i class="fa-solid fa-sort sort-icon"></i></th>
+            </tr>
+          </thead>
+          <tbody id="excel-tbody"></tbody>
+        </table>
+      </div>
+      <div class="summary-bar">
+        <div class="summary-item"><i class="fa-solid fa-users" style="color:var(--vtp-red);"></i> <span>Bưu tá:</span> <span class="val" id="sum-bt">0</span></div>
+        <div class="summary-item"><i class="fa-solid fa-clipboard-list" style="color:#2563EB;"></i> <span>YC Thu ngày:</span> <span class="val blue" id="sum-yc">0</span></div>
+        <div class="summary-item"><i class="fa-solid fa-box-open" style="color:#059669;"></i> <span>SL TTC ngày:</span> <span class="val green" id="sum-ttc">0</span></div>
+        <div class="summary-item"><i class="fa-solid fa-percent" style="color:#059669;"></i> <span>TB TTC:</span> <span class="val green" id="sum-pct">0%</span></div>
+        <div style="flex:1;"></div>
+        <div class="summary-item" style="font-size:11px;color:var(--gray-400);font-weight:500;">
+          <i class="fa-solid fa-circle-info"></i> Đã loại tuyến có YC Thu Ngày = 0
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== CHART MODAL ===== -->
+<div class="chart-overlay" id="chart-overlay" onclick="if(event.target===this)closeChartModal()">
+  <div class="chart-modal">
+    <div class="chart-modal-header">
+      <div class="chart-modal-title">
+        <i class="fa-solid fa-chart-bar" style="color:#059669;"></i>
+        BIỂU ĐỒ SẢN LƯỢNG THU
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="downloadChart()" style="border-color:#059669;color:#059669;font-size:12px;padding:5px 12px;">
+          <i class="fa-solid fa-download"></i> Tải ảnh
+        </button>
+        <button class="chart-close-btn" onclick="closeChartModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="chart-tabs">
+      <button class="chart-tab active" data-chart="bar-ttc" onclick="switchChart('bar-ttc',this)">
+        <i class="fa-solid fa-chart-bar"></i> SL TTC Ngày
+      </button>
+      <button class="chart-tab" data-chart="bar-pct" onclick="switchChart('bar-pct',this)">
+        <i class="fa-solid fa-chart-column"></i> TL TTC Ngày (%)
+      </button>
+      <button class="chart-tab" data-chart="combo" onclick="switchChart('combo',this)">
+        <i class="fa-solid fa-chart-line"></i> YC vs TTC
+      </button>
+    </div>
+    <div class="chart-body"><canvas id="chart-canvas"></canvas></div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast-container"></div>
+
+<script>
+/* ================================================================
+   STATE
+================================================================ */
+var allDataRows = [], filteredRows = [], displayRows = [];
+var totalBuutaGoc = 0;
+
+// Column indices from source file (21 columns: A-U)
+var COL = {
+  STT: 0, CHI_NHANH: 1, BUU_CUC: 2, TUYEN: 3,
+  YC_NGAY: 4, YC_NGAYMOI: 5, YC_LUYKE: 6,
+  HUY_NGAY: 7, HUY_LUYKE: 8,
+  TL_HUY_NGAY: 9, TL_HUY_LUYKE: 10,
+  TTC_NGAY: 11, TTC_NGAYMOI: 12, TTC_LUYKE: 13,
+  PCT_NGAY: 14, PCT_NGAYMOI: 15, PCT_LUYKE: 16,
+  CK_SL: 17, CK_PCT: 18,
+  DELTA_SL: 19, DELTA_PCT: 20
+};
+
+var currentSort = { col: 'pct_ngay', dir: 'desc' };
+
+/* ================================================================
+   HELPERS
+================================================================ */
+function padZ(n) { return String(n).padStart(2, '0'); }
+function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function fmtPct(v) { var n = num(v); return n === 0 ? '0' : n.toFixed(3).replace(/\.?0+$/, ''); }
+function fmtNum(v) { var n = num(v); return n === 0 ? '' : String(n); }
+function escHtml(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Color code: TTC cao = xanh (tốt), thấp = đỏ (xấu)
+function pctClass(v) {
+  var n = num(v);
+  if (n === 0) return 'pct-zero';
+  if (n >= 85) return 'pct-high';
+  if (n >= 70) return 'pct-medium';
+  return 'pct-low';
+}
+
+function deltaHtml(v) {
+  var n = num(v);
+  if (n === 0) return '<span class="delta-zero">0</span>';
+  if (n > 0) return '<span class="delta-up">+' + fmtPct(n) + '</span>';
+  return '<span class="delta-down">' + fmtPct(n) + '</span>';
+}
+
+/* ================================================================
+   TOAST
+================================================================ */
+function showToast(msg, type) {
+  type = type || 'success';
+  var c = document.getElementById('toast-container');
+  var el = document.createElement('div');
+  var icons = { success:'fa-circle-check', error:'fa-circle-xmark', warning:'fa-triangle-exclamation', info:'fa-circle-info' };
+  el.className = 'toast-item toast-' + type;
+  el.innerHTML = '<i class="fa-solid ' + (icons[type]||icons.info) + ' toast-icon"></i><span>' + msg + '</span>';
+  c.appendChild(el);
+  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('show'); }); });
+  setTimeout(function() { el.classList.remove('show'); setTimeout(function() { el.remove(); }, 400); }, 3500);
+}
+
+/* ================================================================
+   UPLOAD
+================================================================ */
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+function handleDragLeave() { document.getElementById('upload-zone').classList.remove('dragover'); }
+function handleDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('dragover'); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }
+function handleFileChange(e) { if(e.target.files[0]) processFile(e.target.files[0]); }
+
+function processFile(file) {
+  if (!file.name.match(/\.xlsx?$/i)) { showToast('⚠️ Vui lòng chọn file .xlsx', 'error'); return; }
+  document.getElementById('upload-zone').style.display = 'none';
+  document.getElementById('spinner-wrap').style.display = 'flex';
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    setTimeout(function() {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, { type: 'array', cellDates: false });
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        var raw = XLSX.utils.sheet_to_json(ws, { range: 0, defval: '', header: 1 });
+
+        // Data rows start after 2-row header, filter valid rows
+        var dataRows = raw.slice(2).filter(function(r) {
+          return r.length >= 10 && r[COL.TUYEN] && String(r[COL.TUYEN]).trim() !== '';
+        });
+
+        // Remove "TỔNG" row if present
+        dataRows = dataRows.filter(function(r) {
+          var stt = String(r[COL.STT] || '').trim().toUpperCase();
+          return stt !== 'TỔNG';
+        });
+
+        totalBuutaGoc = dataRows.length;
+        allDataRows = dataRows;
+
+        // Filter: YC Thu Ngày > 0 (has activity) and skip "CHUA_XAC_DINH"
+        filteredRows = dataRows.filter(function(r) { 
+          var tuyen = String(r[COL.TUYEN] || '').trim().toUpperCase();
+          return num(r[COL.YC_NGAY]) > 0 && tuyen !== 'CHUA_XAC_DINH' && tuyen !== 'KHÔNG XÁC ĐỊNH'; 
+        });
+
+        // Sort: TỶ LỆ TTC Ngày descending
+        currentSort = { col: 'pct_ngay', dir: 'desc' };
+        applySort();
+
+        document.getElementById('spinner-wrap').style.display = 'none';
+        document.getElementById('upload-reset').style.display = 'flex';
+        document.getElementById('file-name-display').innerHTML =
+          '<i class="fa-solid fa-circle-check"></i> ' + escHtml(file.name) + ' (' + totalBuutaGoc + ' bưu tá gốc)';
+        document.getElementById('section-results').style.display = 'block';
+
+        setTimeout(function() {
+          document.getElementById('section-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
+
+        var removed = totalBuutaGoc - filteredRows.length;
+        showToast('✅ Đọc thành công! ' + filteredRows.length + ' bưu tá có thu (đã loại ' + removed + ' bưu tá YC=0).', 'success');
+
+      } catch(err) {
+        document.getElementById('spinner-wrap').style.display = 'none';
+        document.getElementById('upload-zone').style.display = 'block';
+        showToast('❌ Lỗi: ' + err.message, 'error');
+      }
+    }, 300);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function resetUpload() {
+  document.getElementById('upload-zone').style.display = 'block';
+  document.getElementById('upload-reset').style.display = 'none';
+  document.getElementById('spinner-wrap').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  document.getElementById('section-results').style.display = 'none';
+  allDataRows = []; filteredRows = []; displayRows = []; totalBuutaGoc = 0;
+  updateHeaderBadges();
+}
+
+/* ================================================================
+   FILTER & SORT
+================================================================ */
+function onFilterChange() {
+  var search = document.getElementById('search-input').value.toLowerCase().trim();
+  displayRows = search
+    ? filteredRows.filter(function(r) { return String(r[COL.TUYEN] || '').toLowerCase().indexOf(search) >= 0; })
+    : filteredRows.slice();
+  renderTable();
+  updateStats();
+}
+
+function applySort() {
+  var col = currentSort.col, dir = currentSort.dir;
+  var map = {
+    tuyen: COL.TUYEN, yc_ngay: COL.YC_NGAY, ttc_ngay: COL.TTC_NGAY,
+    pct_ngay: COL.PCT_NGAY, delta_pct: COL.DELTA_PCT
+  };
+  var idx = map[col] != null ? map[col] : COL.PCT_NGAY;
+
+  filteredRows.sort(function(a, b) {
+    if (col === 'tuyen') {
+      var va = String(a[idx] || '').trim(), vb = String(b[idx] || '').trim();
+      var cmp = va.localeCompare(vb, 'vi');
+      return dir === 'asc' ? cmp : -cmp;
+    }
+    return dir === 'asc' ? num(a[idx]) - num(b[idx]) : num(b[idx]) - num(a[idx]);
+  });
+  onFilterChange();
+}
+
+function onSortClick(col, th) {
+  if (currentSort.col === col) {
+    currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.col = col;
+    currentSort.dir = col === 'tuyen' ? 'asc' : 'desc';
+  }
+  document.querySelectorAll('.excel-table thead th.sortable').forEach(function(el) {
+    el.classList.remove('sort-asc','sort-desc');
+    var ic = el.querySelector('.sort-icon');
+    if (ic) ic.className = 'fa-solid fa-sort sort-icon';
+    el.style.background = '';
+  });
+  th.classList.add(currentSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  var thIcon = th.querySelector('.sort-icon');
+  if (thIcon) thIcon.className = 'fa-solid fa-sort-' + (currentSort.dir === 'asc' ? 'up' : 'down') + ' sort-icon';
+  applySort();
+}
+
+/* ================================================================
+   RENDER TABLE
+================================================================ */
+function renderTable() {
+  var tbody = document.getElementById('excel-tbody');
+  var rows = displayRows;
+  document.getElementById('display-count').textContent = rows.length;
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="16"><div class="excel-empty"><span class="big-icon"><i class="fa-solid fa-magnifying-glass"></i></span><div class="empty-title">Không tìm thấy dữ liệu</div><div class="empty-sub">Thử thay đổi từ khoá tìm kiếm.</div></div></td></tr>';
+    return;
+  }
+
+  // Calculate totals
+  var tYC = 0, tYCM = 0, tYCLK = 0, tTTC = 0, tTTCM = 0, tTTCLK = 0, tCKSL = 0;
+  rows.forEach(function(r) {
+    tYC += num(r[COL.YC_NGAY]); tYCM += num(r[COL.YC_NGAYMOI]); tYCLK += num(r[COL.YC_LUYKE]);
+    tTTC += num(r[COL.TTC_NGAY]); tTTCM += num(r[COL.TTC_NGAYMOI]); tTTCLK += num(r[COL.TTC_LUYKE]);
+    tCKSL += num(r[COL.CK_SL]);
+  });
+  var tPctN = tYC > 0 ? (tTTC / tYC * 100) : 0;
+  var tPctNM = tYCM > 0 ? (tTTCM / tYCM * 100) : 0;
+  var tPctLK = tYCLK > 0 ? (tTTCLK / tYCLK * 100) : 0;
+  // CK tỷ lệ: sum of CK_SL TTC / total doesn't aggregate easily, average it
+  var tCKPct = 0; var countCK = 0;
+  rows.forEach(function(r) { var v = num(r[COL.CK_PCT]); if (v > 0) { tCKPct += v; countCK++; } });
+  tCKPct = countCK > 0 ? tCKPct / countCK : 0;
+  var tDeltaSL = tTTCLK - tCKSL;
+  var tDeltaPct = tPctLK - tCKPct;
+
+  var html = rows.map(function(r, i) {
+    var tuyen = escHtml(String(r[COL.TUYEN] || '').trim());
+    var pctN = num(r[COL.PCT_NGAY]);
+    return '<tr class="fade-in-up" style="animation-delay:' + Math.min(i*0.015,0.3) + 's">' +
+      '<td class="col-stt">' + (i+1) + '</td>' +
+      '<td class="col-tuyen">' + (tuyen || '—') + '</td>' +
+      // Yêu cầu thu
+      '<td>' + fmtNum(r[COL.YC_NGAY]) + '</td>' +
+      '<td>' + fmtNum(r[COL.YC_NGAYMOI]) + '</td>' +
+      '<td>' + fmtNum(r[COL.YC_LUYKE]) + '</td>' +
+      // Sản lượng TTC
+      '<td style="font-weight:700;">' + fmtNum(r[COL.TTC_NGAY]) + '</td>' +
+      '<td>' + fmtNum(r[COL.TTC_NGAYMOI]) + '</td>' +
+      '<td>' + fmtNum(r[COL.TTC_LUYKE]) + '</td>' +
+      // Tỷ lệ TTC
+      '<td class="col-percent ' + pctClass(pctN) + '">' + fmtPct(pctN) + '%</td>' +
+      '<td class="col-percent">' + fmtPct(r[COL.PCT_NGAYMOI]) + '%</td>' +
+      '<td class="col-percent">' + fmtPct(r[COL.PCT_LUYKE]) + '%</td>' +
+      // Cùng kỳ
+      '<td>' + fmtNum(r[COL.CK_SL]) + '</td>' +
+      '<td>' + fmtPct(r[COL.CK_PCT]) + (num(r[COL.CK_PCT]) ? '%' : '') + '</td>' +
+      // Tăng/Giảm
+      '<td>' + deltaHtml(r[COL.DELTA_SL]) + '</td>' +
+      '<td>' + deltaHtml(r[COL.DELTA_PCT]) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  // Total row
+  html += '<tr class="total-row">' +
+    '<td></td><td style="text-align:left;font-weight:900;">TỔNG</td>' +
+    '<td>' + tYC + '</td><td>' + tYCM + '</td><td>' + tYCLK + '</td>' +
+    '<td>' + tTTC + '</td><td>' + tTTCM + '</td><td>' + tTTCLK + '</td>' +
+    '<td>' + fmtPct(tPctN) + '%</td><td>' + fmtPct(tPctNM) + '%</td><td>' + fmtPct(tPctLK) + '%</td>' +
+    '<td>' + (tCKSL || '') + '</td><td>' + (tCKPct ? fmtPct(tCKPct) + '%' : '') + '</td>' +
+    '<td>' + deltaHtml(tDeltaSL) + '</td><td>' + deltaHtml(tDeltaPct) + '</td>' +
+  '</tr>';
+
+  tbody.innerHTML = html;
+}
+
+/* ================================================================
+   STATS
+================================================================ */
+function updateStats() {
+  var rows = displayRows, count = rows.length;
+  var totalYC = 0, totalTTC = 0, sumPct = 0, sumPctLK = 0;
+  rows.forEach(function(r) {
+    totalYC  += num(r[COL.YC_NGAY]);
+    totalTTC += num(r[COL.TTC_NGAY]);
+    sumPct   += num(r[COL.PCT_NGAY]);
+    sumPctLK += num(r[COL.PCT_LUYKE]);
+  });
+  var avgPct = count > 0 ? sumPct / count : 0;
+  var avgPctLK = count > 0 ? sumPctLK / count : 0;
+
+  document.getElementById('st-bt-count').innerHTML = count + ' <span class="unit">/ ' + totalBuutaGoc + ' tổng</span>';
+  document.getElementById('st-yc-ngay').innerHTML = totalYC + ' <span class="unit">đơn</span>';
+  document.getElementById('st-ttc-ngay').innerHTML = totalTTC + ' <span class="unit">đơn</span>';
+  document.getElementById('st-pct-avg').innerHTML = avgPct.toFixed(1) + '<span class="unit">%</span>';
+  document.getElementById('st-pct-lk').innerHTML = avgPctLK.toFixed(1) + '<span class="unit">%</span>';
+
+  document.getElementById('sum-bt').textContent = count;
+  document.getElementById('sum-yc').textContent = totalYC;
+  document.getElementById('sum-ttc').textContent = totalTTC;
+  document.getElementById('sum-pct').textContent = avgPct.toFixed(1) + '%';
+
+  updateHeaderBadges(count, totalYC, totalTTC, avgPct);
+}
+
+function updateHeaderBadges(bt, yc, ttc, avgPct) {
+  document.getElementById('h-total-bt').textContent = bt || 0;
+  document.getElementById('h-total-yc').textContent = yc || 0;
+  document.getElementById('h-total-ttc').textContent = ttc || 0;
+  document.getElementById('h-avg-pct').textContent = avgPct ? avgPct.toFixed(1) + '%' : '0%';
+}
+
+/* ================================================================
+   EXPORT EXCEL — matching output format
+================================================================ */
+function exportExcel() {
+  if (displayRows.length === 0) { showToast('⚠️ Không có dữ liệu!', 'warning'); return; }
+  var btn = document.getElementById('btn-export');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xuất...';
+
+  setTimeout(function() {
+    try {
+      // Header rows matching output file format
+      var h1 = ['TUYẾN', 'YÊU CẦU THU', '', '', 'SẢN LƯỢNG TTC', '', '', 'TỶ LỆ TTC (%)', '', '', 'CÙNG KỲ LŨY KẾ TTC', '', 'TĂNG/GIẢM', ''];
+      var h2 = ['', 'NGÀY', 'NGÀY MỚI', 'LŨY KẾ', 'NGÀY', 'NGÀY MỚI', 'LŨY KẾ', 'NGÀY', 'NGÀY MỚI', 'LŨY KẾ', 'SẢN LƯỢNG', 'TỶ LỆ (%)', 'SẢN LƯỢNG', 'TỶ LỆ (%)'];
+
+      // Totals
+      var tYC = 0, tYCM = 0, tYCLK = 0, tTTC = 0, tTTCM = 0, tTTCLK = 0;
+      displayRows.forEach(function(r) {
+        tYC += num(r[COL.YC_NGAY]); tYCM += num(r[COL.YC_NGAYMOI]); tYCLK += num(r[COL.YC_LUYKE]);
+        tTTC += num(r[COL.TTC_NGAY]); tTTCM += num(r[COL.TTC_NGAYMOI]); tTTCLK += num(r[COL.TTC_LUYKE]);
+      });
+      var tPctN = tYC > 0 ? tTTC / tYC * 100 : 0;
+      var tPctNM = tYCM > 0 ? tTTCM / tYCM * 100 : 0;
+      var tPctLK = tYCLK > 0 ? tTTCLK / tYCLK * 100 : 0;
+
+      var wsData = [h1, h2];
+
+      // Total row first (like the output file)
+      wsData.push(['', tYC, tYCM, tYCLK, tTTC, tTTCM, tTTCLK, tPctN, tPctNM, tPctLK, '', '', '', '']);
+
+      // Data rows
+      displayRows.forEach(function(r) {
+        wsData.push([
+          String(r[COL.TUYEN] || '').trim(),
+          num(r[COL.YC_NGAY]) || '', num(r[COL.YC_NGAYMOI]) || '', num(r[COL.YC_LUYKE]) || '',
+          num(r[COL.TTC_NGAY]) || '', num(r[COL.TTC_NGAYMOI]) || '', num(r[COL.TTC_LUYKE]) || '',
+          num(r[COL.PCT_NGAY]), num(r[COL.PCT_NGAYMOI]), num(r[COL.PCT_LUYKE]),
+          num(r[COL.CK_SL]) || '', num(r[COL.CK_PCT]) || '',
+          num(r[COL.DELTA_SL]), num(r[COL.DELTA_PCT])
+        ]);
+      });
+
+      var wb = XLSX.utils.book_new();
+      var ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Merges for header
+      ws['!merges'] = [
+        { s:{r:0,c:1}, e:{r:0,c:3} },  // YÊU CẦU THU
+        { s:{r:0,c:4}, e:{r:0,c:6} },  // SẢN LƯỢNG TTC
+        { s:{r:0,c:7}, e:{r:0,c:9} },  // TỶ LỆ TTC
+        { s:{r:0,c:10}, e:{r:0,c:11} }, // CÙNG KỲ
+        { s:{r:0,c:12}, e:{r:0,c:13} }  // TĂNG/GIẢM
+      ];
+
+      ws['!cols'] = [
+        {wch:42},{wch:9},{wch:11},{wch:10},{wch:9},{wch:11},{wch:10},
+        {wch:10},{wch:12},{wch:10},{wch:12},{wch:11},{wch:12},{wch:11}
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'TL THU HÔM QUA');
+      var now = new Date();
+      var ds = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
+      XLSX.writeFile(wb, 'Ti_le_thu_hom_qua_' + ds + '.xlsx');
+      showToast('✅ Đã xuất ' + displayRows.length + ' dòng!', 'success');
+    } catch(err) { showToast('❌ Lỗi: ' + err.message, 'error'); }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> Xuất Excel';
+  }, 150);
+}
+
+/* ================================================================
+   CHART MODAL
+================================================================ */
+var chartInstance = null;
+
+function openChartModal() {
+  if (displayRows.length === 0) { showToast('⚠️ Chưa có dữ liệu!', 'warning'); return; }
+  document.getElementById('chart-overlay').classList.add('open');
+  document.querySelectorAll('.chart-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelector('.chart-tab[data-chart="bar-ttc"]').classList.add('active');
+  setTimeout(function() { renderChart('bar-ttc'); }, 150);
+}
+
+function closeChartModal() {
+  document.getElementById('chart-overlay').classList.remove('open');
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+}
+
+function downloadChart() {
+  var canvas = document.getElementById('chart-canvas');
+  if (!canvas || !chartInstance) { showToast('⚠️ Chưa có biểu đồ!', 'warning'); return; }
+  var tabMap = { 'bar-ttc': 'SL_TTC_Ngay', 'bar-pct': 'TyLe_TTC_Ngay', 'combo': 'YC_vs_TTC' };
+  var activeTab = document.querySelector('.chart-tab.active');
+  var chartLabel = tabMap[activeTab ? activeTab.dataset.chart : ''] || 'BieuDo';
+  var now = new Date();
+  var ds = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
+  var fileName = 'BieuDo_SanLuongThu_' + chartLabel + '_' + ds + '.png';
+
+  canvas.toBlob(function(blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 100);
+    showToast('✅ Đã tải ảnh: ' + fileName, 'success');
+  }, 'image/png');
+}
+
+function switchChart(type, btn) {
+  document.querySelectorAll('.chart-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  renderChart(type);
+}
+
+function shortenName(name) {
+  var s = String(name || '').trim();
+  var dash = s.indexOf(' - ');
+  return dash > 0 ? s.substring(0, dash).trim() : s;
+}
+
+function renderChart(type) {
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  var canvas = document.getElementById('chart-canvas');
+  var ctx = canvas.getContext('2d');
+  var rows = displayRows;
+  var labels = rows.map(function(r) { return shortenName(r[COL.TUYEN]); });
+  var ff = "'Be Vietnam Pro', sans-serif";
+
+  if (type === 'bar-ttc') {
+    var values = rows.map(function(r) { return num(r[COL.TTC_NGAY]); });
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'SL TTC Ngày (đơn)',
+          data: values,
+          backgroundColor: '#059669',
+          borderRadius: 4, barPercentage: 0.7,
+        }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { titleFont: { family: ff, size: 12 }, bodyFont: { family: ff, size: 13, weight: 'bold' } }
+        },
+        scales: {
+          x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, border: { dash: [4,4] }, ticks: { font: { family: ff } } },
+          y: { grid: { display: false }, ticks: { font: { family: ff, size: 11 } } }
+        }
+      }
+    });
+  } else if (type === 'bar-pct') {
+    var values = rows.map(function(r) { return num(r[COL.PCT_NGAY]); });
+    var bgColors = values.map(function(v) { return v >= 85 ? '#059669' : (v >= 70 ? '#D97706' : '#DC2626'); });
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'TL TTC Ngày (%)',
+          data: values,
+          backgroundColor: bgColors,
+          borderRadius: 4, barPercentage: 0.7,
+        }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { titleFont: { family: ff, size: 12 }, bodyFont: { family: ff, size: 13, weight: 'bold' },
+            callbacks: { label: function(c) { return c.parsed.x + '%'; } }
+          }
+        },
+        scales: {
+          x: { max: 100, beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, border: { dash: [4,4] }, ticks: { font: { family: ff }, callback: function(v){return v+'%'} } },
+          y: { grid: { display: false }, ticks: { font: { family: ff, size: 11 } } }
+        }
+      }
+    });
+  } else if (type === 'combo') {
+    var ycVals = rows.map(function(r) { return num(r[COL.YC_NGAY]); });
+    var ttcVals = rows.map(function(r) { return num(r[COL.TTC_NGAY]); });
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { type: 'line', label: 'YC Thu Ngày', data: ycVals, borderColor: '#DC2626', backgroundColor: '#DC2626', borderWidth: 2, pointRadius: 3, fill: false, tension: 0.3 },
+          { type: 'bar', label: 'SL TTC Ngày', data: ttcVals, backgroundColor: 'rgba(5,150,105,0.7)', borderRadius: 3, barPercentage: 0.6 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { font: { family: ff, size: 12, weight: 'bold' }, usePointStyle: true } },
+          tooltip: { titleFont: { family: ff, size: 12 }, bodyFont: { family: ff, size: 13, weight: 'bold' } }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, border: { dash: [4,4] }, ticks: { font: { family: ff } } },
+          x: { grid: { display: false }, ticks: { font: { family: ff, size: 11, weight: '600' }, maxRotation: 45, minRotation: 45 } }
+        }
+      }
+    });
+  }
+}
+</script>
+</body>
+</html>
