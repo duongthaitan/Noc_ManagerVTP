@@ -1022,6 +1022,11 @@ var detectedLanIp = '';
 function getPageLanUrl() {
   var loc = window.location;
   var host = loc.hostname;
+  // If running on GitHub Pages — use public URL directly (works from anywhere!)
+  if (host.indexOf('github.io') >= 0) {
+    return loc.href;
+  }
+  // Otherwise try to detect LAN IP
   if ((host === 'localhost' || host === '127.0.0.1') && detectedLanIp) {
     host = detectedLanIp;
   }
