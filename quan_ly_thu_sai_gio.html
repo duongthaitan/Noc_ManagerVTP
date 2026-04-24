@@ -1234,6 +1234,15 @@ function captureScreenshot() {
   if (scrollEl) { prevMaxH = scrollEl.style.maxHeight; scrollEl.style.maxHeight = 'none'; }
   var btn = document.getElementById('btn-screenshot');
   if (btn) btn.disabled = true;
+
+  var animEls = target.querySelectorAll('.fade-in-up, .pulse-red');
+  for (var i = 0; i < animEls.length; i++) {
+    animEls[i].classList.remove('fade-in-up', 'pulse-red');
+    animEls[i].style.animation = 'none';
+    animEls[i].style.opacity = '1';
+    animEls[i].style.transform = 'none';
+  }
+
   setTimeout(function() {
     html2canvas(target, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', logging: false,
       ignoreElements: function(el) { return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot'); },
