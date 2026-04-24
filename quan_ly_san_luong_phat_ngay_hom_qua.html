@@ -1092,26 +1092,38 @@ function captureScreenshot() {
   if (btn) btn.disabled = true;
   setTimeout(function() {
     html2canvas(target, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', logging: false,
-      ignoreElements: function(el) { return el.classList && el.classList.contains('no-print'); }
+      ignoreElements: function(el) { return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot'); }
     }).then(function(canvas) {
       if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
       if (btn) btn.disabled = false;
       screenshotDataUrl = canvas.toDataURL('image/png');
       document.getElementById('ss-preview').src = screenshotDataUrl;
-      var small = document.createElement('canvas');
-      var ratio = canvas.width / canvas.height;
-      small.width = 260; small.height = Math.round(260 / ratio);
-      var ctx = small.getContext('2d');
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, small.width, small.height);
-      ctx.drawImage(canvas, 0, 0, small.width, small.height);
-      var thumb = small.toDataURL('image/jpeg', 0.20);
+      
       var qrContainer = document.getElementById('ss-qr-container');
-      qrContainer.innerHTML = '';
+      qrContainer.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">Đang t\u1ea1o link t\u1ea3i...</span></div>';
       var infoEl = document.getElementById('ss-qr-info');
-      var qrData = thumb.length <= 2953 ? thumb : getPageLanUrl();
-      var isImg = thumb.length <= 2953;
-      new QRCode(qrContainer, { text: qrData, width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: isImg ? QRCode.CorrectLevel.L : QRCode.CorrectLevel.M });
-      infoEl.innerHTML = isImg ? '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-image"></i> Qu\u00e9t = xem thumbnail!</span>' : '<i class="fa-solid fa-mobile-screen" style="color:#7C3AED;"></i> Qu\u00e9t \u0111\u1ec3 m\u1edf trang web';
+      infoEl.innerHTML = '';
+      
+      canvas.toBlob(function(blob) {
+        var fd = new FormData();
+        fd.append('file', blob, 'BaoCao.png');
+        fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          qrContainer.innerHTML = '';
+          if (res && res.status === 'success') {
+            var dlUrl = res.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/').replace('http://', 'https://');
+            new QRCode(qrContainer, { text: dlUrl, width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+            infoEl.innerHTML = '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-cloud-arrow-down"></i> Qu\u00e9t \u0111\u1ec3 t\u1ea3i \u1ea3nh x\u1ecbn!</span><br><span style="color:#6B7280;">(Link t\u1ef1 h\u1ee7y sau 60 ph\u00fat)</span>';
+          } else { throw new Error('Upload err'); }
+        })
+        .catch(function() {
+          qrContainer.innerHTML = '';
+          new QRCode(qrContainer, { text: getPageLanUrl(), width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+          infoEl.innerHTML = '<span style="color:#DC2626;"><i class="fa-solid fa-triangle-exclamation"></i> L\u1ed7i t\u1ea1o link, ch\u1ec9 m\u1edf web!</span>';
+        });
+      }, 'image/png');
+
       var shareBtn = document.getElementById('ss-btn-share');
       if (navigator.share && navigator.canShare) shareBtn.style.display = 'inline-flex';
       document.getElementById('ss-loading').style.display = 'none';
