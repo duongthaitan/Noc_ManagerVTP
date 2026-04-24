@@ -15,10 +15,11 @@
 <!-- ===== SHARED STYLESHEET ===== -->
 <link rel="stylesheet" href="assets/css/style.css">
 
-<!-- ===== SHEETJS + CHART.JS + QR ===== -->
+<!-- ===== SHEETJS + CHART.JS + QR + html2canvas ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
 /* ================================================================
@@ -563,6 +564,9 @@
           <button class="btn btn-ghost btn-sm" onclick="openChartModal()" style="border-color:var(--vtp-red);color:var(--vtp-red);">
             <i class="fa-solid fa-chart-bar"></i> Biểu đồ
           </button>
+          <button class="btn btn-ghost btn-sm" onclick="captureScreenshot()" style="border-color:#7C3AED;color:#7C3AED;" id="btn-screenshot">
+            <i class="fa-solid fa-camera"></i> Chụp màn hình
+          </button>
           <button class="btn btn-ghost btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> In</button>
           <button class="btn btn-red btn-sm" onclick="exportExcel()" id="btn-export">
             <i class="fa-solid fa-file-arrow-down"></i> Xuất Excel
@@ -680,6 +684,53 @@
         <button class="btn btn-ghost btn-sm" onclick="copyQrUrl()" style="border-color:#7C3AED;color:#7C3AED;">
           <i class="fa-solid fa-copy"></i> Copy link
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREENSHOT MODAL ===== -->
+<div class="chart-overlay" id="screenshot-overlay" onclick="if(event.target===this)closeScreenshotModal()" style="z-index:1200;">
+  <div class="chart-modal" style="max-width:680px;">
+    <div class="chart-modal-header" style="background:linear-gradient(135deg,#EDE9FE,white);">
+      <div class="chart-modal-title">
+        <i class="fa-solid fa-camera" style="color:#7C3AED;"></i>
+        CHỤP MÀN HÌNH BÁO CÁO
+      </div>
+      <button class="chart-close-btn" onclick="closeScreenshotModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="padding:20px;">
+      <div id="ss-loading" style="text-align:center;padding:40px 20px;">
+        <div class="spinner-ring" style="width:36px;height:36px;margin:0 auto 12px;"></div>
+        <div style="font-size:13px;font-weight:700;color:#6B7280;">Đang chụp màn hình...</div>
+      </div>
+      <div id="ss-content" style="display:none;">
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+          <div style="flex:1;min-width:280px;">
+            <div style="font-size:11px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+              <i class="fa-solid fa-image" style="color:#7C3AED;"></i> Xem trước
+            </div>
+            <img id="ss-preview" style="width:100%;border-radius:10px;border:2px solid #E5E7EB;box-shadow:0 4px 16px rgba(0,0,0,0.1);" />
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:11px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+              <i class="fa-solid fa-qrcode" style="color:#7C3AED;"></i> Quét để tải ảnh
+            </div>
+            <div id="ss-qr-container" style="display:inline-block;padding:14px;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:2px solid #E5E7EB;"></div>
+            <div id="ss-qr-info" style="margin-top:10px;font-size:11px;color:#6B7280;font-weight:600;line-height:1.5;"></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;border-top:1px solid #F3F4F6;padding-top:16px;">
+          <button class="btn btn-red btn-sm" onclick="downloadScreenshot()">
+            <i class="fa-solid fa-download"></i> Tải ảnh PNG (full)
+          </button>
+          <button class="btn btn-ghost btn-sm" id="ss-btn-share" onclick="shareScreenshot()" style="border-color:#3B82F6;color:#3B82F6;display:none;">
+            <i class="fa-solid fa-share-nodes"></i> Chia sẻ
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="captureScreenshot()" style="border-color:#7C3AED;color:#7C3AED;">
+            <i class="fa-solid fa-rotate-right"></i> Chụp lại
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1540,6 +1591,83 @@ function copyQrUrl() {
     ta.value = url; document.body.appendChild(ta); ta.select();
     document.execCommand('copy'); document.body.removeChild(ta);
     showToast('\u2705 \u0110\u00e3 copy link!', 'success');
+  });
+}
+
+/* ================================================================
+   SCREENSHOT — Capture report table, generate QR for mobile download
+================================================================ */
+var screenshotDataUrl = null;
+
+function captureScreenshot() {
+  var target = document.getElementById('section-results');
+  if (!target || target.style.display === 'none') {
+    showToast('\u26a0\ufe0f Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u!', 'warning'); return;
+  }
+  document.getElementById('ss-loading').style.display = 'block';
+  document.getElementById('ss-content').style.display = 'none';
+  document.getElementById('screenshot-overlay').classList.add('open');
+  var scrollEl = target.querySelector('.excel-scroll-wrap');
+  var prevMaxH = '';
+  if (scrollEl) { prevMaxH = scrollEl.style.maxHeight; scrollEl.style.maxHeight = 'none'; }
+  var btn = document.getElementById('btn-screenshot');
+  if (btn) btn.disabled = true;
+  setTimeout(function() {
+    html2canvas(target, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', logging: false,
+      ignoreElements: function(el) { return el.classList && el.classList.contains('no-print'); }
+    }).then(function(canvas) {
+      if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
+      if (btn) btn.disabled = false;
+      screenshotDataUrl = canvas.toDataURL('image/png');
+      document.getElementById('ss-preview').src = screenshotDataUrl;
+      var small = document.createElement('canvas');
+      var ratio = canvas.width / canvas.height;
+      small.width = 260; small.height = Math.round(260 / ratio);
+      var ctx = small.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, small.width, small.height);
+      ctx.drawImage(canvas, 0, 0, small.width, small.height);
+      var thumb = small.toDataURL('image/jpeg', 0.20);
+      var qrContainer = document.getElementById('ss-qr-container');
+      qrContainer.innerHTML = '';
+      var infoEl = document.getElementById('ss-qr-info');
+      var qrData = thumb.length <= 2953 ? thumb : getPageLanUrl();
+      var isImg = thumb.length <= 2953;
+      new QRCode(qrContainer, { text: qrData, width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: isImg ? QRCode.CorrectLevel.L : QRCode.CorrectLevel.M });
+      infoEl.innerHTML = isImg ? '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-image"></i> Qu\u00e9t = xem thumbnail!</span><br><span style="color:#6B7280;">Thumbnail ' + Math.round(thumb.length/1024) + 'KB</span>' : '<i class="fa-solid fa-mobile-screen" style="color:#7C3AED;"></i> Qu\u00e9t \u0111\u1ec3 m\u1edf trang web';
+      var shareBtn = document.getElementById('ss-btn-share');
+      if (navigator.share && navigator.canShare) shareBtn.style.display = 'inline-flex';
+      document.getElementById('ss-loading').style.display = 'none';
+      document.getElementById('ss-content').style.display = 'block';
+      showToast('\u2705 Ch\u1ee5p m\u00e0n h\u00ecnh th\u00e0nh c\u00f4ng!', 'success');
+    }).catch(function(err) {
+      if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
+      if (btn) btn.disabled = false;
+      document.getElementById('screenshot-overlay').classList.remove('open');
+      showToast('\u274c L\u1ed7i: ' + err.message, 'error');
+    });
+  }, 80);
+}
+
+function closeScreenshotModal() { document.getElementById('screenshot-overlay').classList.remove('open'); }
+
+function downloadScreenshot() {
+  if (!screenshotDataUrl) return;
+  var a = document.createElement('a');
+  var d = new Date();
+  var ts = d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2) + '_' + ('0'+d.getHours()).slice(-2) + ('0'+d.getMinutes()).slice(-2);
+  a.download = 'BaoCao_KhauPhatTheoCa_' + ts + '.png';
+  a.href = screenshotDataUrl; a.click();
+  showToast('\u2705 \u0110ang t\u1ea3i \u1ea3nh...', 'success');
+}
+
+function shareScreenshot() {
+  if (!screenshotDataUrl) return;
+  fetch(screenshotDataUrl).then(function(r) { return r.blob(); }).then(function(blob) {
+    var file = new File([blob], 'BaoCao_KhauPhatTheoCa.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ title: 'B\u00e1o C\u00e1o Kh\u1ea9u Ph\u00e1t Theo Ca', files: [file] })
+        .then(function() { showToast('\u2705 \u0110\u00e3 chia s\u1ebb!', 'success'); }).catch(function(){});
+    } else { showToast('\u26a0\ufe0f Kh\u00f4ng h\u1ed7 tr\u1ee3 Share API', 'warning'); }
   });
 }
 </script>
