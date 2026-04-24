@@ -15,9 +15,10 @@
 <!-- ===== SHARED STYLESHEET ===== -->
 <link rel="stylesheet" href="assets/css/style.css">
 
-<!-- ===== SHEETJS + CHART.JS ===== -->
+<!-- ===== SHEETJS + CHART.JS + QR ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
 /* ================================================================
@@ -436,6 +437,9 @@
         BIỂU ĐỒ SẢN LƯỢNG THU
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="showQrModal()" style="border-color:#7C3AED;color:#7C3AED;font-size:12px;padding:5px 12px;">
+          <i class="fa-solid fa-qrcode"></i> QR Code
+        </button>
         <button class="btn btn-ghost btn-sm" onclick="downloadChart()" style="border-color:#059669;color:#059669;font-size:12px;padding:5px 12px;">
           <i class="fa-solid fa-download"></i> Tải ảnh
         </button>
@@ -454,6 +458,35 @@
       </button>
     </div>
     <div class="chart-body"><canvas id="chart-canvas"></canvas></div>
+  </div>
+</div>
+
+<!-- ===== QR MODAL ===== -->
+<div class="chart-overlay" id="qr-overlay" onclick="if(event.target===this)closeQrModal()" style="z-index:1100;">
+  <div class="chart-modal" style="max-width:420px;">
+    <div class="chart-modal-header" style="background:linear-gradient(135deg,#EDE9FE,white);">
+      <div class="chart-modal-title">
+        <i class="fa-solid fa-qrcode" style="color:#7C3AED;"></i>
+        QR CODE BIỂU ĐỒ
+      </div>
+      <button class="chart-close-btn" onclick="closeQrModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="padding:24px;text-align:center;">
+      <div id="qr-container" style="display:inline-block;padding:16px;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:2px solid #E5E7EB;"></div>
+      <div style="margin-top:16px;font-size:12.5px;color:#6B7280;font-weight:600;line-height:1.6;">
+        <i class="fa-solid fa-mobile-screen" style="color:#7C3AED;margin-right:4px;"></i>
+        Quét QR bằng điện thoại để mở trang báo cáo trên thiết bị di động
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#9CA3AF;word-break:break-all;" id="qr-url-display"></div>
+      <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;">
+        <button class="btn btn-ghost btn-sm" onclick="downloadChart()" style="border-color:#059669;color:#059669;">
+          <i class="fa-solid fa-download"></i> Tải ảnh trực tiếp
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="copyQrUrl()" style="border-color:#7C3AED;color:#7C3AED;">
+          <i class="fa-solid fa-copy"></i> Copy link
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -959,6 +992,62 @@ function renderChart(type) {
       }
     });
   }
+}
+
+/* ================================================================
+   QR CODE
+================================================================ */
+var qrInstance = null;
+var qrUrl = '';
+
+function getPageLanUrl() {
+  // Build LAN-accessible URL
+  var loc = window.location;
+  // Try to use the current hostname (works if accessed via LAN IP)
+  var host = loc.hostname;
+  // If localhost, try to suggest LAN IP
+  if (host === 'localhost' || host === '127.0.0.1') {
+    host = loc.hostname; // fallback
+  }
+  return loc.protocol + '//' + host + ':' + loc.port + loc.pathname;
+}
+
+function showQrModal() {
+  qrUrl = getPageLanUrl();
+  var container = document.getElementById('qr-container');
+  container.innerHTML = '';
+
+  qrInstance = new QRCode(container, {
+    text: qrUrl,
+    width: 220,
+    height: 220,
+    colorDark: '#1e3a5f',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  document.getElementById('qr-url-display').textContent = qrUrl;
+  document.getElementById('qr-overlay').classList.add('open');
+}
+
+function closeQrModal() {
+  document.getElementById('qr-overlay').classList.remove('open');
+}
+
+function copyQrUrl() {
+  if (!qrUrl) return;
+  navigator.clipboard.writeText(qrUrl).then(function() {
+    showToast('✅ Đã copy link: ' + qrUrl, 'success');
+  }).catch(function() {
+    // Fallback
+    var ta = document.createElement('textarea');
+    ta.value = qrUrl;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✅ Đã copy link!', 'success');
+  });
 }
 </script>
 </body>
