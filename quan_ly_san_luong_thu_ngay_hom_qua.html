@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sáº£n LÆ°á»£ng Thu NgÃ y HÃ´m Qua â€” ViettelPost HBCTVT</title>
-<meta name="description" content="BÃ¡o cÃ¡o sáº£n lÆ°á»£ng thu thÃ nh cÃ´ng ngÃ y hÃ´m qua â€” ViettelPost">
+<title>Sản Lượng Thu Ngày Hôm Qua — ViettelPost HBCTVT</title>
+<meta name="description" content="Báo cáo sản lượng thu thành công ngày hôm qua — ViettelPost">
 
 <!-- ===== FONTS & ICONS ===== -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,10 +23,10 @@
 
 <style>
 /* ================================================================
-   PAGE-SPECIFIC STYLES â€” Sáº£n LÆ°á»£ng Thu
+   PAGE-SPECIFIC STYLES — Sản Lượng Thu
 ================================================================ */
 
-/* â”€â”€ Nav breadcrumb â”€â”€ */
+/* ── Nav breadcrumb ── */
 .page-nav {
   background: white; border-bottom: 1px solid var(--border);
   padding: 10px 20px; display: flex; align-items: center; gap: 8px;
@@ -35,7 +35,7 @@
 .page-nav a { color: var(--vtp-red); font-weight: 600; text-decoration: none; }
 .page-nav a:hover { text-decoration: underline; }
 
-/* â”€â”€ Toolbar â”€â”€ */
+/* ── Toolbar ── */
 .toolbar {
   background: white; border: 1px solid var(--border); border-radius: var(--radius);
   padding: 10px 16px; margin-bottom: 10px; box-shadow: var(--shadow-xs);
@@ -63,7 +63,7 @@
 .toolbar-spacer { flex: 1; }
 .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-/* â”€â”€ Table â”€â”€ */
+/* ── Table ── */
 .excel-table-wrap {
   border: 1px solid var(--border); border-radius: var(--radius);
   overflow: hidden; box-shadow: var(--shadow); background: white;
@@ -71,7 +71,7 @@
 .excel-scroll-wrap { overflow-x: auto; overflow-y: auto; max-height: 80vh; }
 .excel-table { width: 100%; border-collapse: collapse; font-size: 11.5px; min-width: 1100px; }
 
-/* â”€â”€ Header 2 táº§ng â”€â”€ */
+/* ── Header 2 tầng ── */
 .excel-table thead tr th {
   background: #1e3a5f; color: white; font-weight: 700; font-size: 10.5px;
   text-transform: uppercase; letter-spacing: 0.3px;
@@ -115,18 +115,18 @@
   background: linear-gradient(135deg, #264b6f, #345f8a) !important;
 }
 
-/* Color coding tá»· lá»‡ TTC â€” like output file */
+/* Color coding tỷ lệ TTC — like output file */
 .pct-high   { color: #059669 !important; background: #ECFDF5 !important; }
 .pct-medium { color: #D97706 !important; background: #FFFBEB !important; }
 .pct-low    { color: #DC2626 !important; background: #FEF2F2 !important; }
 .pct-zero   { color: var(--gray-300) !important; }
 
-/* TÄƒng/Giáº£m */
+/* Tăng/Giảm */
 .delta-up   { color: #059669; font-weight: 800; }
 .delta-down { color: #DC2626; font-weight: 800; }
 .delta-zero { color: var(--gray-300); }
 
-/* â”€â”€ Summary â”€â”€ */
+/* ── Summary ── */
 .summary-bar {
   background: var(--gray-100); border-top: 2px solid var(--border);
   padding: 6px 12px; display: flex; align-items: center; gap: 16px;
@@ -137,13 +137,13 @@
 .summary-item .val.blue { color: var(--zalo); }
 .summary-item .val.green { color: #059669; }
 
-/* â”€â”€ Empty â”€â”€ */
+/* ── Empty ── */
 .excel-empty { text-align: center; padding: 50px 20px; color: var(--gray-400); }
 .excel-empty .big-icon { font-size: 48px; margin-bottom: 12px; display: block; opacity: 0.5; }
 .excel-empty .empty-title { font-size: 15px; font-weight: 800; color: var(--gray-500); margin-bottom: 4px; }
 .excel-empty .empty-sub { font-size: 12.5px; color: var(--gray-400); }
 
-/* â”€â”€ Stat Cards â”€â”€ */
+/* ── Stat Cards ── */
 .stat-row {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px; margin-bottom: 12px;
@@ -169,7 +169,7 @@
 .stat-info .stat-value { font-size: 18px; font-weight: 900; color: var(--text); margin-top: 1px; }
 .stat-info .stat-value .unit { font-size: 11px; font-weight: 600; color: var(--gray-400); margin-left: 2px; }
 
-/* â”€â”€ Chart Modal â”€â”€ */
+/* ── Chart Modal ── */
 .chart-overlay {
   position: fixed; inset: 0; z-index: 1000;
   background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
@@ -215,7 +215,7 @@
 .chart-body { padding: 20px; overflow-y: auto; flex: 1; display: flex; align-items: center; justify-content: center; }
 .chart-body canvas { max-height: 520px; width: 100% !important; }
 
-/* â”€â”€ Print â”€â”€ */
+/* ── Print ── */
 @media print {
   .site-header, .page-nav, .section-card, .toolbar, .stat-row,
   .summary-bar, .btn, #toast-container, .no-print, .chart-overlay { display: none !important; }
@@ -228,7 +228,6 @@
 }
 .print-only { display: none; }
 </style>
-
 <link rel="icon" type="image/png" href="assets/icons/icon128.png">
 </head>
 <body>
@@ -242,29 +241,29 @@
         <div class="logo-text">VIETTEL<span>POST</span></div>
       </div>
       <div class="header-title-group">
-        <div class="header-title">ðŸ“¥ Sáº¢N LÆ¯á»¢NG THU NGÃ€Y HÃ”M QUA</div>
-        <div class="header-subtitle">Tá»•ng há»£p kháº©u nháº­n â€” Sáº£n lÆ°á»£ng thu thÃ nh cÃ´ng theo tuyáº¿n bÆ°u tÃ¡</div>
+        <div class="header-title">📥 SẢN LƯỢNG THU NGÀY HÔM QUA</div>
+        <div class="header-subtitle">Tổng hợp khẩu nhận — Sản lượng thu thành công theo tuyến bưu tá</div>
       </div>
     </div>
     <div class="header-badges">
       <div class="hbadge danger">
         <i class="fa-solid fa-users"></i>
-        <span>BÆ°u tÃ¡ cÃ³ thu:</span>
+        <span>Bưu tá có thu:</span>
         <span class="num" id="h-total-bt">0</span>
       </div>
       <div class="hbadge">
         <i class="fa-solid fa-clipboard-list"></i>
-        <span>Tá»•ng YC Thu ngÃ y:</span>
+        <span>Tổng YC Thu ngày:</span>
         <span class="num" id="h-total-yc">0</span>
       </div>
       <div class="hbadge">
         <i class="fa-solid fa-box-open"></i>
-        <span>Tá»•ng SL TTC ngÃ y:</span>
+        <span>Tổng SL TTC ngày:</span>
         <span class="num" id="h-total-ttc">0</span>
       </div>
       <div class="hbadge">
         <i class="fa-solid fa-percent"></i>
-        <span>TB TTC ngÃ y:</span>
+        <span>TB TTC ngày:</span>
         <span class="num" id="h-avg-pct">0%</span>
       </div>
     </div>
@@ -274,9 +273,9 @@
 
 <!-- ===== BREADCRUMB ===== -->
 <div class="page-nav no-print">
-  <a href="index.html"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chá»§</a>
+  <a href="index.html"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chủ</a>
   <i class="fa-solid fa-chevron-right" style="font-size:10px;opacity:.5;"></i>
-  <span>Sáº£n LÆ°á»£ng Thu NgÃ y HÃ´m Qua</span>
+  <span>Sản Lượng Thu Ngày Hôm Qua</span>
 </div>
 
 <div class="container">
@@ -284,26 +283,26 @@
   <!-- ===== UPLOAD ===== -->
   <div class="section-card">
     <div class="section-header no-click">
-      <span class="section-title"><i class="fa-solid fa-file-excel"></i> UPLOAD FILE BÃO CÃO Sáº¢N LÆ¯á»¢NG THU</span>
+      <span class="section-title"><i class="fa-solid fa-file-excel"></i> UPLOAD FILE BÁO CÁO SẢN LƯỢNG THU</span>
     </div>
     <div class="section-body">
       <div id="upload-zone" class="upload-zone"
            onclick="document.getElementById('file-input').click()"
            ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
         <div class="upload-icon-wrap"><i class="fa-solid fa-file-excel" style="color:var(--vtp-red);font-size:30px;"></i></div>
-        <div class="upload-text-main">KÃ©o tháº£ file Excel bÃ¡o cÃ¡o Sáº£n LÆ°á»£ng Thu vÃ o Ä‘Ã¢y</div>
-        <div class="upload-text-sub">hoáº·c nháº¥n Ä‘á»ƒ chá»n file tá»« mÃ¡y tÃ­nh Â· Baocaotonghopchitietdon_thu.xlsx</div>
+        <div class="upload-text-main">Kéo thả file Excel báo cáo Sản Lượng Thu vào đây</div>
+        <div class="upload-text-sub">hoặc nhấn để chọn file từ máy tính · Baocaotonghopchitietdon_thu.xlsx</div>
         <button class="btn btn-red" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
-          <i class="fa-solid fa-file-arrow-up"></i> Chá»n file .xlsx
+          <i class="fa-solid fa-file-arrow-up"></i> Chọn file .xlsx
         </button>
         <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFileChange(event)">
       </div>
       <div id="spinner-wrap" class="spinner-wrap">
         <div class="spinner-ring"></div>
-        <span class="spinner-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Äang xá»­ lÃ½ file...</span>
+        <span class="spinner-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Đang xử lý file...</span>
       </div>
       <div id="upload-reset" class="upload-reset">
-        <button class="btn btn-ghost btn-sm" onclick="resetUpload()"><i class="fa-solid fa-rotate-left"></i> Táº£i file khÃ¡c</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetUpload()"><i class="fa-solid fa-rotate-left"></i> Tải file khác</button>
         <span class="file-chip" id="file-name-display"><i class="fa-solid fa-circle-check"></i></span>
       </div>
     </div>
@@ -317,35 +316,35 @@
       <div class="stat-card-mini">
         <div class="stat-icon green"><i class="fa-solid fa-users"></i></div>
         <div class="stat-info">
-          <div class="stat-label">BÆ°u tÃ¡ cÃ³ thu</div>
-          <div class="stat-value" id="st-bt-count">0 <span class="unit">/ 0 tá»•ng</span></div>
+          <div class="stat-label">Bưu tá có thu</div>
+          <div class="stat-value" id="st-bt-count">0 <span class="unit">/ 0 tổng</span></div>
         </div>
       </div>
       <div class="stat-card-mini">
         <div class="stat-icon blue"><i class="fa-solid fa-clipboard-list"></i></div>
         <div class="stat-info">
-          <div class="stat-label">Tá»•ng YC Thu ngÃ y</div>
-          <div class="stat-value" id="st-yc-ngay">0 <span class="unit">Ä‘Æ¡n</span></div>
+          <div class="stat-label">Tổng YC Thu ngày</div>
+          <div class="stat-value" id="st-yc-ngay">0 <span class="unit">đơn</span></div>
         </div>
       </div>
       <div class="stat-card-mini">
         <div class="stat-icon red"><i class="fa-solid fa-box-open"></i></div>
         <div class="stat-info">
-          <div class="stat-label">Tá»•ng SL TTC ngÃ y</div>
-          <div class="stat-value" id="st-ttc-ngay">0 <span class="unit">Ä‘Æ¡n</span></div>
+          <div class="stat-label">Tổng SL TTC ngày</div>
+          <div class="stat-value" id="st-ttc-ngay">0 <span class="unit">đơn</span></div>
         </div>
       </div>
       <div class="stat-card-mini">
         <div class="stat-icon orange"><i class="fa-solid fa-percent"></i></div>
         <div class="stat-info">
-          <div class="stat-label">TL TTC Trung bÃ¬nh</div>
+          <div class="stat-label">TL TTC Trung bình</div>
           <div class="stat-value" id="st-pct-avg">0<span class="unit">%</span></div>
         </div>
       </div>
       <div class="stat-card-mini">
         <div class="stat-icon purple"><i class="fa-solid fa-chart-line"></i></div>
         <div class="stat-info">
-          <div class="stat-label">TL TTC LÅ©y káº¿ TB</div>
+          <div class="stat-label">TL TTC Lũy kế TB</div>
           <div class="stat-value" id="st-pct-lk">0<span class="unit">%</span></div>
         </div>
       </div>
@@ -356,20 +355,20 @@
       <div class="toolbar-row">
         <div class="search-wrap">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="search-input" class="search-input" placeholder="ðŸ” TÃ¬m kiáº¿m tuyáº¿n bÆ°u tÃ¡..." oninput="onFilterChange()">
+          <input type="text" id="search-input" class="search-input" placeholder="🔍 Tìm kiếm tuyến bưu tá..." oninput="onFilterChange()">
         </div>
-        <div class="row-count-badge"><i class="fa-solid fa-list-ol"></i> Hiá»ƒn thá»‹ <span id="display-count">0</span> bÆ°u tÃ¡</div>
+        <div class="row-count-badge"><i class="fa-solid fa-list-ol"></i> Hiển thị <span id="display-count">0</span> bưu tá</div>
         <div class="toolbar-spacer"></div>
         <div class="toolbar-actions">
           <button class="btn btn-ghost btn-sm" onclick="openChartModal()" style="border-color:#059669;color:#059669;">
-            <i class="fa-solid fa-chart-bar"></i> Biá»ƒu Ä‘á»“
+            <i class="fa-solid fa-chart-bar"></i> Biểu đồ
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="captureScreenshot()" style="border-color:#7C3AED;color:#7C3AED;" id="btn-screenshot" title="Chá»¥p áº£nh mÃ n hÃ¬nh bÃ¡o cÃ¡o rá»“i táº¡o QR">
-            <i class="fa-solid fa-camera"></i> Chá»¥p mÃ n hÃ¬nh
+          <button class="btn btn-ghost btn-sm" onclick="captureScreenshot()" style="border-color:#7C3AED;color:#7C3AED;" id="btn-screenshot" title="Chụp ảnh màn hình báo cáo rồi tạo QR">
+            <i class="fa-solid fa-camera"></i> Chụp màn hình
           </button>
           <button class="btn btn-ghost btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> In</button>
           <button class="btn btn-red btn-sm" onclick="exportExcel()" id="btn-export">
-            <i class="fa-solid fa-file-arrow-down"></i> Xuáº¥t Excel
+            <i class="fa-solid fa-file-arrow-down"></i> Xuất Excel
           </button>
         </div>
       </div>
@@ -377,7 +376,7 @@
 
     <!-- Print-only header -->
     <div class="print-only" style="margin-bottom:10px;">
-      <h2 style="font-size:16px;font-weight:900;color:#1e3a5f;">BÃO CÃO Sáº¢N LÆ¯á»¢NG THU â€” VIETTELPOST</h2>
+      <h2 style="font-size:16px;font-weight:900;color:#1e3a5f;">BÁO CÁO SẢN LƯỢNG THU — VIETTELPOST</h2>
     </div>
 
     <!-- Table -->
@@ -388,45 +387,45 @@
             <tr>
               <th rowspan="2" style="width:34px;">STT</th>
               <th rowspan="2" class="col-tuyen sortable" onclick="onSortClick('tuyen',this)">
-                Tuyáº¿n <i class="fa-solid fa-sort sort-icon"></i>
+                Tuyến <i class="fa-solid fa-sort sort-icon"></i>
               </th>
-              <th colspan="3" style="background:#2a5a3a;border-color:#3d7a52;">YÃªu cáº§u thu</th>
-              <th colspan="3" style="background:#1e5a8a;border-color:#2a7ab5;">Sáº£n lÆ°á»£ng TTC</th>
-              <th colspan="3" style="background:#8b1a1a;border-color:#b02020;">Tá»· lá»‡ TTC (%)</th>
-              <th colspan="2" style="background:#4a3a6a;border-color:#6a5090;">CÃ¹ng ká»³ LK TTC</th>
-              <th colspan="2" style="background:#3a5a6a;border-color:#507a90;">TÄƒng / Giáº£m</th>
+              <th colspan="3" style="background:#2a5a3a;border-color:#3d7a52;">Yêu cầu thu</th>
+              <th colspan="3" style="background:#1e5a8a;border-color:#2a7ab5;">Sản lượng TTC</th>
+              <th colspan="3" style="background:#8b1a1a;border-color:#b02020;">Tỷ lệ TTC (%)</th>
+              <th colspan="2" style="background:#4a3a6a;border-color:#6a5090;">Cùng kỳ LK TTC</th>
+              <th colspan="2" style="background:#3a5a6a;border-color:#507a90;">Tăng / Giảm</th>
             </tr>
             <tr>
-              <th class="sortable" onclick="onSortClick('yc_ngay',this)">NgÃ y <i class="fa-solid fa-sort sort-icon"></i></th>
-              <th>NgÃ y má»›i</th>
-              <th>LÅ©y káº¿</th>
+              <th class="sortable" onclick="onSortClick('yc_ngay',this)">Ngày <i class="fa-solid fa-sort sort-icon"></i></th>
+              <th>Ngày mới</th>
+              <th>Lũy kế</th>
               <th class="sortable" onclick="onSortClick('ttc_ngay',this)">
-                NgÃ y <i class="fa-solid fa-sort sort-icon"></i>
+                Ngày <i class="fa-solid fa-sort sort-icon"></i>
               </th>
-              <th>NgÃ y má»›i</th>
-              <th>LÅ©y káº¿</th>
+              <th>Ngày mới</th>
+              <th>Lũy kế</th>
               <th class="sortable" onclick="onSortClick('pct_ngay',this)" style="background:#a02020;">
-                NgÃ y <i class="fa-solid fa-sort-down sort-icon" style="opacity:1;color:#93C5FD;"></i>
+                Ngày <i class="fa-solid fa-sort-down sort-icon" style="opacity:1;color:#93C5FD;"></i>
               </th>
-              <th>NgÃ y má»›i</th>
-              <th>LÅ©y káº¿</th>
-              <th>Sáº£n lÆ°á»£ng</th>
-              <th>Tá»· lá»‡ (%)</th>
-              <th>Sáº£n lÆ°á»£ng</th>
-              <th class="sortable" onclick="onSortClick('delta_pct',this)">Tá»· lá»‡ (%) <i class="fa-solid fa-sort sort-icon"></i></th>
+              <th>Ngày mới</th>
+              <th>Lũy kế</th>
+              <th>Sản lượng</th>
+              <th>Tỷ lệ (%)</th>
+              <th>Sản lượng</th>
+              <th class="sortable" onclick="onSortClick('delta_pct',this)">Tỷ lệ (%) <i class="fa-solid fa-sort sort-icon"></i></th>
             </tr>
           </thead>
           <tbody id="excel-tbody"></tbody>
         </table>
       </div>
       <div class="summary-bar">
-        <div class="summary-item"><i class="fa-solid fa-users" style="color:var(--vtp-red);"></i> <span>BÆ°u tÃ¡:</span> <span class="val" id="sum-bt">0</span></div>
-        <div class="summary-item"><i class="fa-solid fa-clipboard-list" style="color:#2563EB;"></i> <span>YC Thu ngÃ y:</span> <span class="val blue" id="sum-yc">0</span></div>
-        <div class="summary-item"><i class="fa-solid fa-box-open" style="color:#059669;"></i> <span>SL TTC ngÃ y:</span> <span class="val green" id="sum-ttc">0</span></div>
+        <div class="summary-item"><i class="fa-solid fa-users" style="color:var(--vtp-red);"></i> <span>Bưu tá:</span> <span class="val" id="sum-bt">0</span></div>
+        <div class="summary-item"><i class="fa-solid fa-clipboard-list" style="color:#2563EB;"></i> <span>YC Thu ngày:</span> <span class="val blue" id="sum-yc">0</span></div>
+        <div class="summary-item"><i class="fa-solid fa-box-open" style="color:#059669;"></i> <span>SL TTC ngày:</span> <span class="val green" id="sum-ttc">0</span></div>
         <div class="summary-item"><i class="fa-solid fa-percent" style="color:#059669;"></i> <span>TB TTC:</span> <span class="val green" id="sum-pct">0%</span></div>
         <div style="flex:1;"></div>
         <div class="summary-item" style="font-size:11px;color:var(--gray-400);font-weight:500;">
-          <i class="fa-solid fa-circle-info"></i> ÄÃ£ loáº¡i tuyáº¿n cÃ³ YC Thu NgÃ y = 0
+          <i class="fa-solid fa-circle-info"></i> Đã loại tuyến có YC Thu Ngày = 0
         </div>
       </div>
     </div>
@@ -440,24 +439,24 @@
     <div class="chart-modal-header">
       <div class="chart-modal-title">
         <i class="fa-solid fa-chart-bar" style="color:#059669;"></i>
-        BIá»‚U Äá»’ Sáº¢N LÆ¯á»¢NG THU
+        BIỂU ĐỒ SẢN LƯỢNG THU
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button class="btn btn-ghost btn-sm" onclick="showQrModal()" style="border-color:#7C3AED;color:#7C3AED;font-size:12px;padding:5px 12px;">
           <i class="fa-solid fa-qrcode"></i> QR Code
         </button>
         <button class="btn btn-ghost btn-sm" onclick="downloadChart()" style="border-color:#059669;color:#059669;font-size:12px;padding:5px 12px;">
-          <i class="fa-solid fa-download"></i> Táº£i áº£nh
+          <i class="fa-solid fa-download"></i> Tải ảnh
         </button>
         <button class="chart-close-btn" onclick="closeChartModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
     </div>
     <div class="chart-tabs">
       <button class="chart-tab active" data-chart="bar-ttc" onclick="switchChart('bar-ttc',this)">
-        <i class="fa-solid fa-chart-bar"></i> SL TTC NgÃ y
+        <i class="fa-solid fa-chart-bar"></i> SL TTC Ngày
       </button>
       <button class="chart-tab" data-chart="bar-pct" onclick="switchChart('bar-pct',this)">
-        <i class="fa-solid fa-chart-column"></i> TL TTC NgÃ y (%)
+        <i class="fa-solid fa-chart-column"></i> TL TTC Ngày (%)
       </button>
       <button class="chart-tab" data-chart="combo" onclick="switchChart('combo',this)">
         <i class="fa-solid fa-chart-line"></i> YC vs TTC
@@ -473,7 +472,7 @@
     <div class="chart-modal-header" style="background:linear-gradient(135deg,#EDE9FE,white);">
       <div class="chart-modal-title">
         <i class="fa-solid fa-qrcode" style="color:#7C3AED;"></i>
-        QR CODE BIá»‚U Äá»’
+        QR CODE BIỂU ĐỒ
       </div>
       <button class="chart-close-btn" onclick="closeQrModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
@@ -483,10 +482,10 @@
       <div style="margin-top:6px;font-size:11px;color:#9CA3AF;word-break:break-all;" id="qr-url-display"></div>
       <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-ghost btn-sm" onclick="downloadChart()" style="border-color:#059669;color:#059669;">
-          <i class="fa-solid fa-download"></i> Táº£i áº£nh PNG
+          <i class="fa-solid fa-download"></i> Tải ảnh PNG
         </button>
         <button class="btn btn-ghost btn-sm" id="btn-share" onclick="shareChartImage()" style="border-color:#3B82F6;color:#3B82F6;display:none;">
-          <i class="fa-solid fa-share-nodes"></i> Chia sáº»
+          <i class="fa-solid fa-share-nodes"></i> Chia sẻ
         </button>
         <button class="btn btn-ghost btn-sm" onclick="copyQrUrl()" style="border-color:#7C3AED;color:#7C3AED;">
           <i class="fa-solid fa-copy"></i> Copy link
@@ -502,7 +501,7 @@
     <div class="chart-modal-header" style="background:linear-gradient(135deg,#EDE9FE,white);">
       <div class="chart-modal-title">
         <i class="fa-solid fa-camera" style="color:#7C3AED;"></i>
-        CHá»¤P MÃ€N HÃŒNH BÃO CÃO
+        CHỤP MÀN HÌNH BÁO CÁO
       </div>
       <button class="chart-close-btn" onclick="closeScreenshotModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
@@ -510,7 +509,7 @@
       <!-- Status/Loading -->
       <div id="ss-loading" style="text-align:center;padding:40px 20px;">
         <div class="spinner-ring" style="width:36px;height:36px;margin:0 auto 12px;"></div>
-        <div style="font-size:13px;font-weight:700;color:#6B7280;">Äang chá»¥p mÃ n hÃ¬nh...</div>
+        <div style="font-size:13px;font-weight:700;color:#6B7280;">Đang chụp màn hình...</div>
       </div>
       <!-- Preview + QR -->
       <div id="ss-content" style="display:none;">
@@ -518,14 +517,14 @@
           <!-- Preview image -->
           <div style="flex:1;min-width:280px;">
             <div style="font-size:11px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
-              <i class="fa-solid fa-image" style="color:#7C3AED;"></i> Xem trÆ°á»›c
+              <i class="fa-solid fa-image" style="color:#7C3AED;"></i> Xem trước
             </div>
             <img id="ss-preview" style="width:100%;border-radius:10px;border:2px solid #E5E7EB;box-shadow:0 4px 16px rgba(0,0,0,0.1);" />
           </div>
           <!-- QR -->
           <div style="text-align:center;">
             <div style="font-size:11px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
-              <i class="fa-solid fa-qrcode" style="color:#7C3AED;"></i> QuÃ©t Ä‘á»ƒ táº£i áº£nh
+              <i class="fa-solid fa-qrcode" style="color:#7C3AED;"></i> Quét để tải ảnh
             </div>
             <div id="ss-qr-container" style="display:inline-block;padding:14px;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:2px solid #E5E7EB;"></div>
             <div id="ss-qr-info" style="margin-top:10px;font-size:11px;color:#6B7280;font-weight:600;line-height:1.5;"></div>
@@ -534,13 +533,13 @@
         <!-- Action buttons -->
         <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;border-top:1px solid #F3F4F6;padding-top:16px;">
           <button class="btn btn-red btn-sm" onclick="downloadScreenshot()">
-            <i class="fa-solid fa-download"></i> Táº£i áº£nh PNG (full)
+            <i class="fa-solid fa-download"></i> Tải ảnh PNG (full)
           </button>
           <button class="btn btn-ghost btn-sm" id="ss-btn-share" onclick="shareScreenshot()" style="border-color:#3B82F6;color:#3B82F6;display:none;">
-            <i class="fa-solid fa-share-nodes"></i> Chia sáº»
+            <i class="fa-solid fa-share-nodes"></i> Chia sẻ
           </button>
           <button class="btn btn-ghost btn-sm" onclick="captureScreenshot()" style="border-color:#7C3AED;color:#7C3AED;">
-            <i class="fa-solid fa-rotate-right"></i> Chá»¥p láº¡i
+            <i class="fa-solid fa-rotate-right"></i> Chụp lại
           </button>
         </div>
       </div>
@@ -581,7 +580,7 @@ function fmtPct(v) { var n = num(v); return n === 0 ? '0' : n.toFixed(3).replace
 function fmtNum(v) { var n = num(v); return n === 0 ? '' : String(n); }
 function escHtml(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// Color code: TTC cao = xanh (tá»‘t), tháº¥p = Ä‘á» (xáº¥u)
+// Color code: TTC cao = xanh (tốt), thấp = đỏ (xấu)
 function pctClass(v) {
   var n = num(v);
   if (n === 0) return 'pct-zero';
@@ -621,7 +620,7 @@ function handleDrop(e) { e.preventDefault(); document.getElementById('upload-zon
 function handleFileChange(e) { if(e.target.files[0]) processFile(e.target.files[0]); }
 
 function processFile(file) {
-  if (!file.name.match(/\.xlsx?$/i)) { showToast('âš ï¸ Vui lÃ²ng chá»n file .xlsx', 'error'); return; }
+  if (!file.name.match(/\.xlsx?$/i)) { showToast('⚠️ Vui lòng chọn file .xlsx', 'error'); return; }
   document.getElementById('upload-zone').style.display = 'none';
   document.getElementById('spinner-wrap').style.display = 'flex';
 
@@ -639,29 +638,29 @@ function processFile(file) {
           return r.length >= 10 && r[COL.TUYEN] && String(r[COL.TUYEN]).trim() !== '';
         });
 
-        // Remove "Tá»”NG" row if present
+        // Remove "TỔNG" row if present
         dataRows = dataRows.filter(function(r) {
           var stt = String(r[COL.STT] || '').trim().toUpperCase();
-          return stt !== 'Tá»”NG';
+          return stt !== 'TỔNG';
         });
 
         totalBuutaGoc = dataRows.length;
         allDataRows = dataRows;
 
-        // Filter: YC Thu NgÃ y > 0 (has activity) and skip "CHUA_XAC_DINH"
+        // Filter: YC Thu Ngày > 0 (has activity) and skip "CHUA_XAC_DINH"
         filteredRows = dataRows.filter(function(r) { 
           var tuyen = String(r[COL.TUYEN] || '').trim().toUpperCase();
-          return num(r[COL.YC_NGAY]) > 0 && tuyen !== 'CHUA_XAC_DINH' && tuyen !== 'KHÃ”NG XÃC Äá»ŠNH'; 
+          return num(r[COL.YC_NGAY]) > 0 && tuyen !== 'CHUA_XAC_DINH' && tuyen !== 'KHÔNG XÁC ĐỊNH'; 
         });
 
-        // Sort: Tá»¶ Lá»† TTC NgÃ y descending
+        // Sort: TỶ LỆ TTC Ngày descending
         currentSort = { col: 'pct_ngay', dir: 'desc' };
         applySort();
 
         document.getElementById('spinner-wrap').style.display = 'none';
         document.getElementById('upload-reset').style.display = 'flex';
         document.getElementById('file-name-display').innerHTML =
-          '<i class="fa-solid fa-circle-check"></i> ' + escHtml(file.name) + ' (' + totalBuutaGoc + ' bÆ°u tÃ¡ gá»‘c)';
+          '<i class="fa-solid fa-circle-check"></i> ' + escHtml(file.name) + ' (' + totalBuutaGoc + ' bưu tá gốc)';
         document.getElementById('section-results').style.display = 'block';
 
         setTimeout(function() {
@@ -669,12 +668,12 @@ function processFile(file) {
         }, 200);
 
         var removed = totalBuutaGoc - filteredRows.length;
-        showToast('âœ… Äá»c thÃ nh cÃ´ng! ' + filteredRows.length + ' bÆ°u tÃ¡ cÃ³ thu (Ä‘Ã£ loáº¡i ' + removed + ' bÆ°u tÃ¡ YC=0).', 'success');
+        showToast('✅ Đọc thành công! ' + filteredRows.length + ' bưu tá có thu (đã loại ' + removed + ' bưu tá YC=0).', 'success');
 
       } catch(err) {
         document.getElementById('spinner-wrap').style.display = 'none';
         document.getElementById('upload-zone').style.display = 'block';
-        showToast('âŒ Lá»—i: ' + err.message, 'error');
+        showToast('❌ Lỗi: ' + err.message, 'error');
       }
     }, 300);
   };
@@ -750,7 +749,7 @@ function renderTable() {
   document.getElementById('display-count').textContent = rows.length;
 
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="16"><div class="excel-empty"><span class="big-icon"><i class="fa-solid fa-magnifying-glass"></i></span><div class="empty-title">KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u</div><div class="empty-sub">Thá»­ thay Ä‘á»•i tá»« khoÃ¡ tÃ¬m kiáº¿m.</div></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="16"><div class="excel-empty"><span class="big-icon"><i class="fa-solid fa-magnifying-glass"></i></span><div class="empty-title">Không tìm thấy dữ liệu</div><div class="empty-sub">Thử thay đổi từ khoá tìm kiếm.</div></div></td></tr>';
     return;
   }
 
@@ -764,7 +763,7 @@ function renderTable() {
   var tPctN = tYC > 0 ? (tTTC / tYC * 100) : 0;
   var tPctNM = tYCM > 0 ? (tTTCM / tYCM * 100) : 0;
   var tPctLK = tYCLK > 0 ? (tTTCLK / tYCLK * 100) : 0;
-  // CK tá»· lá»‡: sum of CK_SL TTC / total doesn't aggregate easily, average it
+  // CK tỷ lệ: sum of CK_SL TTC / total doesn't aggregate easily, average it
   var tCKPct = 0; var countCK = 0;
   rows.forEach(function(r) { var v = num(r[COL.CK_PCT]); if (v > 0) { tCKPct += v; countCK++; } });
   tCKPct = countCK > 0 ? tCKPct / countCK : 0;
@@ -776,23 +775,23 @@ function renderTable() {
     var pctN = num(r[COL.PCT_NGAY]);
     return '<tr class="fade-in-up" style="animation-delay:' + Math.min(i*0.015,0.3) + 's">' +
       '<td class="col-stt">' + (i+1) + '</td>' +
-      '<td class="col-tuyen">' + (tuyen || 'â€”') + '</td>' +
-      // YÃªu cáº§u thu
+      '<td class="col-tuyen">' + (tuyen || '—') + '</td>' +
+      // Yêu cầu thu
       '<td>' + fmtNum(r[COL.YC_NGAY]) + '</td>' +
       '<td>' + fmtNum(r[COL.YC_NGAYMOI]) + '</td>' +
       '<td>' + fmtNum(r[COL.YC_LUYKE]) + '</td>' +
-      // Sáº£n lÆ°á»£ng TTC
+      // Sản lượng TTC
       '<td style="font-weight:700;">' + fmtNum(r[COL.TTC_NGAY]) + '</td>' +
       '<td>' + fmtNum(r[COL.TTC_NGAYMOI]) + '</td>' +
       '<td>' + fmtNum(r[COL.TTC_LUYKE]) + '</td>' +
-      // Tá»· lá»‡ TTC
+      // Tỷ lệ TTC
       '<td class="col-percent ' + pctClass(pctN) + '">' + fmtPct(pctN) + '%</td>' +
       '<td class="col-percent">' + fmtPct(r[COL.PCT_NGAYMOI]) + '%</td>' +
       '<td class="col-percent">' + fmtPct(r[COL.PCT_LUYKE]) + '%</td>' +
-      // CÃ¹ng ká»³
+      // Cùng kỳ
       '<td>' + fmtNum(r[COL.CK_SL]) + '</td>' +
       '<td>' + fmtPct(r[COL.CK_PCT]) + (num(r[COL.CK_PCT]) ? '%' : '') + '</td>' +
-      // TÄƒng/Giáº£m
+      // Tăng/Giảm
       '<td>' + deltaHtml(r[COL.DELTA_SL]) + '</td>' +
       '<td>' + deltaHtml(r[COL.DELTA_PCT]) + '</td>' +
     '</tr>';
@@ -800,7 +799,7 @@ function renderTable() {
 
   // Total row
   html += '<tr class="total-row">' +
-    '<td></td><td style="text-align:left;font-weight:900;">Tá»”NG</td>' +
+    '<td></td><td style="text-align:left;font-weight:900;">TỔNG</td>' +
     '<td>' + tYC + '</td><td>' + tYCM + '</td><td>' + tYCLK + '</td>' +
     '<td>' + tTTC + '</td><td>' + tTTCM + '</td><td>' + tTTCLK + '</td>' +
     '<td>' + fmtPct(tPctN) + '%</td><td>' + fmtPct(tPctNM) + '%</td><td>' + fmtPct(tPctLK) + '%</td>' +
@@ -826,9 +825,9 @@ function updateStats() {
   var avgPct = count > 0 ? sumPct / count : 0;
   var avgPctLK = count > 0 ? sumPctLK / count : 0;
 
-  document.getElementById('st-bt-count').innerHTML = count + ' <span class="unit">/ ' + totalBuutaGoc + ' tá»•ng</span>';
-  document.getElementById('st-yc-ngay').innerHTML = totalYC + ' <span class="unit">Ä‘Æ¡n</span>';
-  document.getElementById('st-ttc-ngay').innerHTML = totalTTC + ' <span class="unit">Ä‘Æ¡n</span>';
+  document.getElementById('st-bt-count').innerHTML = count + ' <span class="unit">/ ' + totalBuutaGoc + ' tổng</span>';
+  document.getElementById('st-yc-ngay').innerHTML = totalYC + ' <span class="unit">đơn</span>';
+  document.getElementById('st-ttc-ngay').innerHTML = totalTTC + ' <span class="unit">đơn</span>';
   document.getElementById('st-pct-avg').innerHTML = avgPct.toFixed(1) + '<span class="unit">%</span>';
   document.getElementById('st-pct-lk').innerHTML = avgPctLK.toFixed(1) + '<span class="unit">%</span>';
 
@@ -848,19 +847,19 @@ function updateHeaderBadges(bt, yc, ttc, avgPct) {
 }
 
 /* ================================================================
-   EXPORT EXCEL â€” matching output format
+   EXPORT EXCEL — matching output format
 ================================================================ */
 function exportExcel() {
-  if (displayRows.length === 0) { showToast('âš ï¸ KhÃ´ng cÃ³ dá»¯ liá»‡u!', 'warning'); return; }
+  if (displayRows.length === 0) { showToast('⚠️ Không có dữ liệu!', 'warning'); return; }
   var btn = document.getElementById('btn-export');
   btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Äang xuáº¥t...';
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xuất...';
 
   setTimeout(function() {
     try {
       // Header rows matching output file format
-      var h1 = ['TUYáº¾N', 'YÃŠU Cáº¦U THU', '', '', 'Sáº¢N LÆ¯á»¢NG TTC', '', '', 'Tá»¶ Lá»† TTC (%)', '', '', 'CÃ™NG Ká»² LÅ¨Y Káº¾ TTC', '', 'TÄ‚NG/GIáº¢M', ''];
-      var h2 = ['', 'NGÃ€Y', 'NGÃ€Y Má»šI', 'LÅ¨Y Káº¾', 'NGÃ€Y', 'NGÃ€Y Má»šI', 'LÅ¨Y Káº¾', 'NGÃ€Y', 'NGÃ€Y Má»šI', 'LÅ¨Y Káº¾', 'Sáº¢N LÆ¯á»¢NG', 'Tá»¶ Lá»† (%)', 'Sáº¢N LÆ¯á»¢NG', 'Tá»¶ Lá»† (%)'];
+      var h1 = ['TUYẾN', 'YÊU CẦU THU', '', '', 'SẢN LƯỢNG TTC', '', '', 'TỶ LỆ TTC (%)', '', '', 'CÙNG KỲ LŨY KẾ TTC', '', 'TĂNG/GIẢM', ''];
+      var h2 = ['', 'NGÀY', 'NGÀY MỚI', 'LŨY KẾ', 'NGÀY', 'NGÀY MỚI', 'LŨY KẾ', 'NGÀY', 'NGÀY MỚI', 'LŨY KẾ', 'SẢN LƯỢNG', 'TỶ LỆ (%)', 'SẢN LƯỢNG', 'TỶ LỆ (%)'];
 
       // Totals
       var tYC = 0, tYCM = 0, tYCLK = 0, tTTC = 0, tTTCM = 0, tTTCLK = 0;
@@ -894,11 +893,11 @@ function exportExcel() {
 
       // Merges for header
       ws['!merges'] = [
-        { s:{r:0,c:1}, e:{r:0,c:3} },  // YÃŠU Cáº¦U THU
-        { s:{r:0,c:4}, e:{r:0,c:6} },  // Sáº¢N LÆ¯á»¢NG TTC
-        { s:{r:0,c:7}, e:{r:0,c:9} },  // Tá»¶ Lá»† TTC
-        { s:{r:0,c:10}, e:{r:0,c:11} }, // CÃ™NG Ká»²
-        { s:{r:0,c:12}, e:{r:0,c:13} }  // TÄ‚NG/GIáº¢M
+        { s:{r:0,c:1}, e:{r:0,c:3} },  // YÊU CẦU THU
+        { s:{r:0,c:4}, e:{r:0,c:6} },  // SẢN LƯỢNG TTC
+        { s:{r:0,c:7}, e:{r:0,c:9} },  // TỶ LỆ TTC
+        { s:{r:0,c:10}, e:{r:0,c:11} }, // CÙNG KỲ
+        { s:{r:0,c:12}, e:{r:0,c:13} }  // TĂNG/GIẢM
       ];
 
       ws['!cols'] = [
@@ -906,14 +905,14 @@ function exportExcel() {
         {wch:10},{wch:12},{wch:10},{wch:12},{wch:11},{wch:12},{wch:11}
       ];
 
-      XLSX.utils.book_append_sheet(wb, ws, 'TL THU HÃ”M QUA');
+      XLSX.utils.book_append_sheet(wb, ws, 'TL THU HÔM QUA');
       var now = new Date();
       var ds = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
       XLSX.writeFile(wb, 'Ti_le_thu_hom_qua_' + ds + '.xlsx');
-      showToast('âœ… ÄÃ£ xuáº¥t ' + displayRows.length + ' dÃ²ng!', 'success');
-    } catch(err) { showToast('âŒ Lá»—i: ' + err.message, 'error'); }
+      showToast('✅ Đã xuất ' + displayRows.length + ' dòng!', 'success');
+    } catch(err) { showToast('❌ Lỗi: ' + err.message, 'error'); }
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> Xuáº¥t Excel';
+    btn.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> Xuất Excel';
   }, 150);
 }
 
@@ -923,7 +922,7 @@ function exportExcel() {
 var chartInstance = null;
 
 function openChartModal() {
-  if (displayRows.length === 0) { showToast('âš ï¸ ChÆ°a cÃ³ dá»¯ liá»‡u!', 'warning'); return; }
+  if (displayRows.length === 0) { showToast('⚠️ Chưa có dữ liệu!', 'warning'); return; }
   document.getElementById('chart-overlay').classList.add('open');
   document.querySelectorAll('.chart-tab').forEach(function(t) { t.classList.remove('active'); });
   document.querySelector('.chart-tab[data-chart="bar-ttc"]').classList.add('active');
@@ -937,7 +936,7 @@ function closeChartModal() {
 
 function downloadChart() {
   var canvas = document.getElementById('chart-canvas');
-  if (!canvas || !chartInstance) { showToast('âš ï¸ ChÆ°a cÃ³ biá»ƒu Ä‘á»“!', 'warning'); return; }
+  if (!canvas || !chartInstance) { showToast('⚠️ Chưa có biểu đồ!', 'warning'); return; }
   var tabMap = { 'bar-ttc': 'SL_TTC_Ngay', 'bar-pct': 'TyLe_TTC_Ngay', 'combo': 'YC_vs_TTC' };
   var activeTab = document.querySelector('.chart-tab.active');
   var chartLabel = tabMap[activeTab ? activeTab.dataset.chart : ''] || 'BieuDo';
@@ -951,7 +950,7 @@ function downloadChart() {
     a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function() { URL.revokeObjectURL(url); }, 100);
-    showToast('âœ… ÄÃ£ táº£i áº£nh: ' + fileName, 'success');
+    showToast('✅ Đã tải ảnh: ' + fileName, 'success');
   }, 'image/png');
 }
 
@@ -982,7 +981,7 @@ function renderChart(type) {
       data: {
         labels: labels,
         datasets: [{
-          label: 'SL TTC NgÃ y (Ä‘Æ¡n)',
+          label: 'SL TTC Ngày (đơn)',
           data: values,
           backgroundColor: '#059669',
           borderRadius: 4, barPercentage: 0.7,
@@ -1007,7 +1006,7 @@ function renderChart(type) {
       data: {
         labels: labels,
         datasets: [{
-          label: 'TL TTC NgÃ y (%)',
+          label: 'TL TTC Ngày (%)',
           data: values,
           backgroundColor: bgColors,
           borderRadius: 4, barPercentage: 0.7,
@@ -1034,8 +1033,8 @@ function renderChart(type) {
       data: {
         labels: labels,
         datasets: [
-          { type: 'line', label: 'YC Thu NgÃ y', data: ycVals, borderColor: '#DC2626', backgroundColor: '#DC2626', borderWidth: 2, pointRadius: 3, fill: false, tension: 0.3 },
-          { type: 'bar', label: 'SL TTC NgÃ y', data: ttcVals, backgroundColor: 'rgba(5,150,105,0.7)', borderRadius: 3, barPercentage: 0.6 }
+          { type: 'line', label: 'YC Thu Ngày', data: ycVals, borderColor: '#DC2626', backgroundColor: '#DC2626', borderWidth: 2, pointRadius: 3, fill: false, tension: 0.3 },
+          { type: 'bar', label: 'SL TTC Ngày', data: ttcVals, backgroundColor: 'rgba(5,150,105,0.7)', borderRadius: 3, barPercentage: 0.6 }
         ]
       },
       options: {
@@ -1053,7 +1052,7 @@ function renderChart(type) {
 }
 
 /* ================================================================
-   QR CODE â€” Encode chart image directly in QR
+   QR CODE — Encode chart image directly in QR
 ================================================================ */
 var qrInstance = null;
 var qrUrl = '';
@@ -1080,7 +1079,7 @@ var detectedLanIp = '';
 function getPageLanUrl() {
   var loc = window.location;
   var host = loc.hostname;
-  // Public domains (GitHub Pages, Vercel) â€” use full URL directly
+  // Public domains (GitHub Pages, Vercel) — use full URL directly
   if (host.indexOf('github.io') >= 0 || host.indexOf('vercel.app') >= 0) {
     return loc.href;
   }
@@ -1171,7 +1170,7 @@ function copyQrUrl() {
 }
 
 /* ================================================================
-   SCREENSHOT â€” Capture report table, generate QR for mobile download
+   SCREENSHOT — Capture report table, generate QR for mobile download
 ================================================================ */
 var screenshotDataUrl = null;
 
@@ -1215,7 +1214,7 @@ function captureScreenshot() {
       document.getElementById('ss-preview').src = screenshotDataUrl;
       
       var qrContainer = document.getElementById('ss-qr-container');
-      qrContainer.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">Äang t\u1ea1o link t\u1ea3i...</span></div>';
+      qrContainer.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">Đang t\u1ea1o link t\u1ea3i...</span></div>';
       var infoEl = document.getElementById('ss-qr-info');
       infoEl.innerHTML = '';
       
@@ -1283,4 +1282,3 @@ function shareScreenshot() {
 </script>
 </body>
 </html>
-
