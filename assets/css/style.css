@@ -160,7 +160,7 @@ a { color: inherit; text-decoration: none; }
 /* ================================================================
    LAYOUT
 ================================================================ */
-.container { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 36px 48px; }
 
 /* ================================================================
    SECTION CARDS
@@ -968,7 +968,7 @@ hr { border: none; border-top: 1px solid var(--gray-100); margin: 16px 0; }
 ================================================================ */
 @media (max-width: 640px) {
   .header-inner  { padding: 12px 14px 14px; }
-  .container     { padding: 14px 12px 40px; }
+  .container     { padding: 14px 16px 40px; }
   .section-body  { padding: 14px; }
   .group-header  { flex-direction: column; align-items: flex-start; }
   .data-table th, .data-table td { padding: 8px 10px; }

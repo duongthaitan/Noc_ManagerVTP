@@ -20,6 +20,7 @@
 
 <!-- ===== CHART.JS + QR + html2canvas ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.2/dist/html2canvas-pro.min.js"></script>
 
@@ -935,6 +936,18 @@ function exportExcel() {
 /* ================================================================
    CHART MODAL
 ================================================================ */
+// Register datalabels plugin
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', {
+  anchor: 'end',
+  align: 'end',
+  font: { family: "'Be Vietnam Pro', sans-serif", size: 10, weight: 'bold' },
+  color: '#374151',
+  padding: { left: 4, right: 4 },
+  clamp: true,
+  display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] !== 0; },
+});
+
 let chartInstance = null;
 
 function openChartModal() {
@@ -1035,6 +1048,11 @@ function renderChart(type) {
             },
             titleFont: { family: fontFamily, size: 12 },
             bodyFont: { family: fontFamily, size: 13, weight: 'bold' },
+          },
+          datalabels: {
+            anchor: 'end', align: 'end', color: '#1F2937',
+            font: { family: fontFamily, size: 10, weight: 'bold' },
+            formatter: v => v.toFixed(3) + '%'
           }
         },
         scales: {
@@ -1048,7 +1066,7 @@ function renderChart(type) {
             grid: { display: false },
           }
         },
-        layout: { padding: { right: 20 } },
+        layout: { padding: { right: 80 } },
       }
     });
 
@@ -1091,6 +1109,10 @@ function renderChart(type) {
           tooltip: {
             titleFont: { family: fontFamily, size: 12 },
             bodyFont: { family: fontFamily, size: 13 },
+          },
+          datalabels: {
+            anchor: 'end', align: 'end', color: '#1F2937',
+            font: { family: fontFamily, size: 9, weight: 'bold' }
           }
         },
         scales: {
@@ -1157,6 +1179,11 @@ function renderChart(type) {
             callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}%` },
             titleFont: { family: fontFamily, size: 12 },
             bodyFont: { family: fontFamily, size: 13 },
+          },
+          datalabels: {
+            anchor: 'end', align: 'end', color: '#1F2937',
+            font: { family: fontFamily, size: 9, weight: 'bold' },
+            formatter: v => v.toFixed(1) + '%'
           }
         },
         scales: {

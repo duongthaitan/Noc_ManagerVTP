@@ -63,46 +63,83 @@
 
 <div class="container">
 
-  <!-- ===== SECTION A: CẤU HÌNH BƯU TÁ ===== -->
-  <div class="section-card" id="panel-config">
-    <div class="section-header" onclick="toggleCollapse('panel-config')">
-      <span class="section-title">
-        <i class="fa-solid fa-gear"></i>
-        CẤU HÌNH DANH SÁCH BƯU TÁ
-      </span>
-      <div class="collapse-icon"><i class="fa-solid fa-chevron-down"></i></div>
-    </div>
-    <div class="collapsible-content">
+  <!-- ===== SECTION: THỐNG KÊ TỔNG QUAN ===== -->
+  <div id="section-stats" style="display:none;">
+    <div class="section-card">
+      <div class="section-header no-click">
+        <span class="section-title">
+          <i class="fa-solid fa-chart-pie"></i>
+          📊 THỐNG KÊ TỔNG QUAN
+        </span>
+      </div>
       <div class="section-body">
-        <div style="overflow-x:auto;">
-          <table class="config-table" id="buuta-table">
-            <thead>
-              <tr>
-                <th class="stt-cell">STT</th>
-                <th><i class="fa-solid fa-user" style="margin-right:6px;opacity:.8;"></i>Tên bưu tá</th>
-                <th><i class="fa-solid fa-mobile-screen" style="margin-right:6px;opacity:.8;"></i>Số điện thoại Zalo</th>
-                <th class="del-cell"><i class="fa-solid fa-trash-can" style="opacity:.7;"></i></th>
-              </tr>
-            </thead>
-            <tbody id="buuta-tbody"></tbody>
-          </table>
+        <!-- Base stats -->
+        <div class="stats-grid" id="base-stats-row">
+          <div class="stat-card">
+            <div class="stat-icon red"><i class="fa-solid fa-box-open"></i></div>
+            <div>
+              <div class="stat-label">Phiếu TT 500</div>
+              <div class="stat-value red" id="stat-total-tt500">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange"><i class="fa-solid fa-users"></i></div>
+            <div>
+              <div class="stat-label">Bưu tá liên quan</div>
+              <div class="stat-value orange" id="stat-buuta">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div>
+              <div class="stat-label">Phiếu quá hạn</div>
+              <div class="stat-value red" id="stat-quahan">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><i class="fa-solid fa-sack-dollar"></i></div>
+            <div>
+              <div class="stat-label">Tổng COD TT500</div>
+              <div class="stat-value green" id="stat-cod">0đ</div>
+            </div>
+          </div>
         </div>
-        <div class="config-actions">
-          <button class="btn btn-orange" onclick="addBuutaRow(); addRipple(event)">
-            <i class="fa-solid fa-plus"></i> Thêm bưu tá
-          </button>
-          <button class="btn btn-red" onclick="saveBuuta(); addRipple(event)">
-            <i class="fa-solid fa-floppy-disk"></i> Lưu danh sách
-          </button>
-          <button class="btn btn-ghost" onclick="clearBuuta()">
-            <i class="fa-solid fa-trash"></i> Xóa tất cả
-          </button>
+        <!-- DO stats row -->
+        <div class="stats-grid" id="do-stats-row" style="display:none;">
+          <div class="stat-card" id="stat-card-do9">
+            <div class="stat-icon do9"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <div>
+              <div class="stat-label">Tổng phiếu DO_9</div>
+              <div class="stat-value do9" id="stat-do9">0</div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-card-do8">
+            <div class="stat-icon do8"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div>
+              <div class="stat-label">Tổng phiếu DO_8</div>
+              <div class="stat-value do8" id="stat-do8">0</div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-card-do7">
+            <div class="stat-icon do7"><i class="fa-solid fa-bell"></i></div>
+            <div>
+              <div class="stat-label">Tổng phiếu DO_7</div>
+              <div class="stat-value do7" id="stat-do7">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange"><i class="fa-solid fa-money-bill-wave"></i></div>
+            <div>
+              <div class="stat-label">Tổng COD (DO_7+8+9)</div>
+              <div class="stat-value orange" id="stat-cod-do">0đ</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ===== SECTION B: UPLOAD EXCEL ===== -->
+  <!-- ===== SECTION: UPLOAD EXCEL ===== -->
   <div class="section-card">
     <div class="section-header no-click">
       <span class="section-title">
@@ -139,7 +176,7 @@
     </div>
   </div>
 
-  <!-- ===== SECTION B.5: CHỌN CHẾ ĐỘ CẢNH BÁO ===== -->
+  <!-- ===== SECTION: CHỌN CHẾ ĐỘ CẢNH BÁO ===== -->
   <div id="section-mode-select" style="display:none;">
     <div class="section-card">
       <div class="section-header no-click">
@@ -178,16 +215,19 @@
             <div class="mode-card-badge" id="mode-badge-do">0 phiếu</div>
           </div>
         </div>
-        <div class="flex gap-2 flex-wrap">
+        <div class="flex gap-2 flex-wrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button class="btn btn-red" onclick="applyModesAndRender(); addRipple(event)">
             <i class="fa-solid fa-magnifying-glass-chart"></i> Xem kết quả
+          </button>
+          <button class="btn btn-zalo" onclick="openAllModal(); addRipple(event)">
+            <i class="fa-brands fa-rocketchat"></i> Gửi cảnh báo tất cả bưu tá
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ===== SECTION C: KẾT QUẢ ===== -->
+  <!-- ===== SECTION: KẾT QUẢ ===== -->
   <div id="section-results">
     <div class="section-card">
       <div class="section-header no-click">
@@ -202,77 +242,6 @@
     </div>
   </div>
 
-  <!-- ===== SECTION D: THỐNG KÊ ===== -->
-  <div id="section-stats">
-    <div class="section-sep">📊 Thống kê tổng quan</div>
-    <!-- Base stats -->
-    <div class="stats-grid" id="base-stats-row">
-      <div class="stat-card">
-        <div class="stat-icon red"><i class="fa-solid fa-box-open"></i></div>
-        <div>
-          <div class="stat-label">Phiếu TT 500</div>
-          <div class="stat-value red" id="stat-total-tt500">0</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon orange"><i class="fa-solid fa-users"></i></div>
-        <div>
-          <div class="stat-label">Bưu tá liên quan</div>
-          <div class="stat-value orange" id="stat-buuta">0</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon red"><i class="fa-solid fa-clock-rotate-left"></i></div>
-        <div>
-          <div class="stat-label">Phiếu quá hạn</div>
-          <div class="stat-value red" id="stat-quahan">0</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon green"><i class="fa-solid fa-sack-dollar"></i></div>
-        <div>
-          <div class="stat-label">Tổng COD TT500</div>
-          <div class="stat-value green" id="stat-cod">0đ</div>
-        </div>
-      </div>
-    </div>
-    <!-- DO stats row -->
-    <div class="stats-grid" id="do-stats-row" style="display:none;">
-      <div class="stat-card" id="stat-card-do9">
-        <div class="stat-icon do9"><i class="fa-solid fa-circle-exclamation"></i></div>
-        <div>
-          <div class="stat-label">Tổng phiếu DO_9</div>
-          <div class="stat-value do9" id="stat-do9">0</div>
-        </div>
-      </div>
-      <div class="stat-card" id="stat-card-do8">
-        <div class="stat-icon do8"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div>
-          <div class="stat-label">Tổng phiếu DO_8</div>
-          <div class="stat-value do8" id="stat-do8">0</div>
-        </div>
-      </div>
-      <div class="stat-card" id="stat-card-do7">
-        <div class="stat-icon do7"><i class="fa-solid fa-bell"></i></div>
-        <div>
-          <div class="stat-label">Tổng phiếu DO_7</div>
-          <div class="stat-value do7" id="stat-do7">0</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon orange"><i class="fa-solid fa-money-bill-wave"></i></div>
-        <div>
-          <div class="stat-label">Tổng COD (DO_7+8+9)</div>
-          <div class="stat-value orange" id="stat-cod-do">0đ</div>
-        </div>
-      </div>
-    </div>
-    <div class="stats-actions">
-      <button class="btn btn-zalo btn-lg" onclick="openAllModal(); addRipple(event)">
-        <i class="fa-brands fa-rocketchat"></i> Gửi cảnh báo tất cả bưu tá
-      </button>
-    </div>
-  </div>
 
 </div><!-- end .container -->
 

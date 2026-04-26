@@ -1,7 +1,14 @@
 /**
  * buuta.js — Quản lý danh sách Bưu tá
- * CRUD bưu tá, đồng bộ từ file Excel, lưu vào localStorage
+ * Lưu trữ trong localStorage (không cần bảng DOM nữa)
  */
+
+// ================================================================
+// IN-MEMORY STATE
+// ================================================================
+
+/** Danh sách bưu tá hiện tại [{name, phone}] */
+var _buutaList = [];
 
 // ================================================================
 // LOAD / SAVE / CLEAR
@@ -10,15 +17,12 @@
 /** Tải danh sách bưu tá từ localStorage khi khởi động */
 function loadBuuta() {
   const saved = localStorage.getItem('buuta_list');
-  const list  = saved ? JSON.parse(saved) : [];
-  document.getElementById('buuta-tbody').innerHTML = '';
-  list.forEach(bt => addBuutaRow(bt.name, bt.phone));
+  _buutaList = saved ? JSON.parse(saved) : [];
 }
 
 /** Lưu danh sách bưu tá hiện tại vào localStorage */
 function saveBuuta() {
-  const list = getBuutaList();
-  localStorage.setItem('buuta_list', JSON.stringify(list));
+  localStorage.setItem('buuta_list', JSON.stringify(_buutaList));
   showToast('💾 Đã lưu danh sách bưu tá!', 'success');
   if (allRawRows.length > 0) applyModesAndRender();
 }
@@ -26,7 +30,7 @@ function saveBuuta() {
 /** Xóa toàn bộ danh sách bưu tá */
 function clearBuuta() {
   if (!confirm('Xác nhận xóa toàn bộ danh sách bưu tá?')) return;
-  document.getElementById('buuta-tbody').innerHTML = '';
+  _buutaList = [];
   localStorage.removeItem('buuta_list');
   showToast('🗑️ Đã xóa toàn bộ danh sách bưu tá!', 'warning');
 }
@@ -36,71 +40,37 @@ function clearBuuta() {
 // ================================================================
 
 /**
- * Tự động thêm bưu tá mới từ dữ liệu Excel vào bảng
+ * Tự động thêm bưu tá mới từ dữ liệu Excel vào danh sách
  * (chỉ thêm nếu chưa tồn tại trong danh sách)
  */
 function syncBuutaFromFile(groups) {
-  const existing = getBuutaList();
   let added = 0;
   groups.forEach(g => {
     const name = g.parsedName.toUpperCase();
     if (!name) return;
-    const alreadyIn = existing.some(bt =>
+    const alreadyIn = _buutaList.some(bt =>
       bt.name.toLowerCase() === name.toLowerCase() ||
       (g.parsedPhone && bt.phone && bt.phone === g.parsedPhone)
     );
-    if (!alreadyIn) { addBuutaRow(name, g.parsedPhone || ''); added++; }
+    if (!alreadyIn) {
+      _buutaList.push({ name: name, phone: g.parsedPhone || '' });
+      added++;
+    }
   });
-  if (added > 0)
-    showToast(`🔄 Đã đồng bộ ${added} bưu tá mới từ file! Nhấn 💾 Lưu để giữ lại.`, 'info');
+  if (added > 0) {
+    // Tự động lưu
+    localStorage.setItem('buuta_list', JSON.stringify(_buutaList));
+    showToast(`🔄 Đã đồng bộ ${added} bưu tá mới từ file!`, 'info');
+  }
 }
 
 // ================================================================
-// THÊM / XÓA HÀNG
+// ĐỌC DỮ LIỆU
 // ================================================================
 
-/** Thêm một hàng bưu tá vào bảng */
-function addBuutaRow(name = '', phone = '') {
-  const tbody = document.getElementById('buuta-tbody');
-  const idx   = tbody.rows.length + 1;
-  const tr    = document.createElement('tr');
-  tr.innerHTML = `
-    <td class="stt-cell">${idx}</td>
-    <td><input type="text" placeholder="Nhập tên bưu tá..." value="${escHtml(name)}"
-         style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></td>
-    <td><input type="tel"  placeholder="0xxxxxxxxx (10 số)" value="${escHtml(phone)}" maxlength="11"></td>
-    <td class="del-cell">
-      <button class="btn-icon" onclick="deleteRow(this)" title="Xóa hàng này">
-        <i class="fa-solid fa-trash-can"></i>
-      </button>
-    </td>
-  `;
-  tbody.appendChild(tr);
-  updateStt();
-}
-
-/** Xóa một hàng bưu tá */
-function deleteRow(btn) { btn.closest('tr').remove(); updateStt(); }
-
-/** Cập nhật lại cột số thứ tự */
-function updateStt() {
-  document.querySelectorAll('#buuta-tbody tr').forEach((tr, i) => {
-    tr.cells[0].textContent = i + 1;
-  });
-}
-
-// ================================================================
-// ĐỌC DỮ LIỆU TỪ BẢNG
-// ================================================================
-
-/** Lấy toàn bộ danh sách bưu tá từ bảng DOM */
+/** Lấy toàn bộ danh sách bưu tá */
 function getBuutaList() {
-  return Array.from(document.querySelectorAll('#buuta-tbody tr'))
-    .map(tr => ({
-      name:  tr.cells[1].querySelector('input').value.trim().toUpperCase(),
-      phone: tr.cells[2].querySelector('input').value.trim(),
-    }))
-    .filter(bt => bt.name);
+  return _buutaList.filter(bt => bt.name);
 }
 
 // ================================================================

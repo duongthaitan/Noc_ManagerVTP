@@ -18,6 +18,7 @@
 <!-- ===== SHEETJS + CHART.JS + QR + html2canvas ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.2/dist/html2canvas-pro.min.js"></script>
 
@@ -1325,6 +1326,18 @@ document.head.appendChild(style);
 /* ================================================================
    CHART MODAL
 ================================================================ */
+// Register datalabels plugin
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', {
+  anchor: 'end',
+  align: 'end',
+  font: { family: "'Be Vietnam Pro', sans-serif", size: 10, weight: 'bold' },
+  color: '#374151',
+  padding: { left: 4, right: 4 },
+  clamp: true,
+  display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] !== 0; },
+});
+
 var chartInstance = null;
 
 function openChartModal() {
@@ -1399,12 +1412,14 @@ function renderChart(type) {
       options: {
         indexAxis: 'y', responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false },
-          tooltip: { titleFont:{family:ff,size:12}, bodyFont:{family:ff,size:13,weight:'bold'} }
+          tooltip: { titleFont:{family:ff,size:12}, bodyFont:{family:ff,size:13,weight:'bold'} },
+          datalabels: { anchor: 'end', align: 'end', color: '#1F2937', font: { family: ff, size: 10, weight: 'bold' } }
         },
         scales: {
           x: { beginAtZero:true, grid:{color:'rgba(0,0,0,0.05)'}, border:{dash:[4,4]}, ticks:{font:{family:ff}} },
           y: { grid:{display:false}, ticks:{font:{family:ff,size:11}} }
-        }
+        },
+        layout: { padding: { right: 60 } }
       }
     });
 
@@ -1429,13 +1444,16 @@ function renderChart(type) {
           legend: { position:'top', labels:{font:{family:ff,size:12,weight:'bold'}, usePointStyle:true} },
           tooltip: { titleFont:{family:ff,size:12}, bodyFont:{family:ff,size:13,weight:'bold'},
             callbacks: { label: function(c) { return c.dataset.label + ': ' + c.parsed.x.toFixed(1) + '%'; } }
-          }
+          },
+          datalabels: { anchor: 'end', align: 'end', color: '#1F2937', font: { family: ff, size: 9, weight: 'bold' },
+            formatter: function(v) { return v.toFixed(1) + '%'; } }
         },
         scales: {
           x: { max:100, beginAtZero:true, grid:{color:'rgba(0,0,0,0.05)'}, border:{dash:[4,4]},
                ticks:{font:{family:ff}, callback:function(v){return v+'%'}} },
           y: { grid:{display:false}, ticks:{font:{family:ff,size:10}} }
-        }
+        },
+        layout: { padding: { right: 70 } }
       }
     });
 
@@ -1462,12 +1480,14 @@ function renderChart(type) {
         responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { position:'top', labels:{font:{family:ff,size:12,weight:'bold'}, usePointStyle:true} },
-          tooltip: { titleFont:{family:ff,size:12}, bodyFont:{family:ff,size:13,weight:'bold'} }
+          tooltip: { titleFont:{family:ff,size:12}, bodyFont:{family:ff,size:13,weight:'bold'} },
+          datalabels: { anchor: 'end', align: 'end', color: '#1F2937', font: { family: ff, size: 9, weight: 'bold' } }
         },
         scales: {
           y: { beginAtZero:true, grid:{color:'rgba(0,0,0,0.05)'}, border:{dash:[4,4]}, ticks:{font:{family:ff}} },
           x: { grid:{display:false}, ticks:{font:{family:ff,size:10,weight:'600'}, maxRotation:45, minRotation:45} }
-        }
+        },
+        layout: { padding: { top: 20 } }
       }
     });
   }
