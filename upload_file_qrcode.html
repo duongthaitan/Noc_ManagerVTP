@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Chuyển File — ViettelPost HBCTVT</title>
+<meta name="description" content="Công cụ upload file và tạo mã QR để chuyển về điện thoại — ViettelPost HBCTVT">
+
+<!-- ===== FONTS & ICONS ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- ===== SHARED STYLESHEET ===== -->
+<link rel="stylesheet" href="assets/css/style.css">
+
+<!-- ===== QR CODE ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+/* ================================================================
+   PAGE-SPECIFIC STYLES — QR Chuyển File
+================================================================ */
+
+/* ── Nav breadcrumb ── */
+.page-nav {
+  background: white; border-bottom: 1px solid var(--border);
+  padding: 10px 20px; display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--gray-500);
+}
+.page-nav a { color: var(--vtp-red); font-weight: 600; text-decoration: none; }
+.page-nav a:hover { text-decoration: underline; }
+
+/* ── Layout grid ── */
+.qr-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .qr-main-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Big Drop Zone ── */
+.big-drop-zone {
+  border: 3px dashed var(--gray-300);
+  border-radius: var(--radius);
+  padding: 60px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  background: var(--gray-50);
+  position: relative;
+}
+.big-drop-zone:hover,
+.big-drop-zone.dragover {
+  border-color: var(--vtp-red);
+  background: var(--vtp-red-light);
+  box-shadow: 0 0 0 6px rgba(238,0,51,.06);
+}
+.big-drop-zone.dragover { transform: scale(1.01); }
+
+.dz-icon-wrap {
+  width: 88px; height: 88px;
+  background: linear-gradient(135deg, #7C3AED22, #A78BFA22);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 38px;
+  box-shadow: 0 4px 20px rgba(124,58,237,.15);
+  transition: var(--transition);
+  color: #7C3AED;
+}
+.big-drop-zone:hover .dz-icon-wrap,
+.big-drop-zone.dragover .dz-icon-wrap {
+  transform: scale(1.1) rotate(-8deg);
+  background: linear-gradient(135deg, #7C3AED33, #A78BFA33);
+}
+.dz-title {
+  font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 8px;
+}
+.dz-sub {
+  font-size: 13.5px; color: var(--gray-500); margin-bottom: 28px; line-height: 1.65;
+}
+.dz-types {
+  display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; margin-top: 18px;
+}
+.dz-type-chip {
+  padding: 4px 12px; border-radius: 99px;
+  border: 1.5px solid var(--border);
+  font-size: 11px; font-weight: 700;
+  background: white; color: var(--gray-500);
+}
+
+/* ── Upload Progress ── */
+.upload-progress-wrap {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 24px;
+  gap: 18px;
+}
+.upload-progress-wrap .spinner-ring { width: 58px; height: 58px; }
+.upload-progress-wrap .spinner-ring::before { border-top-color: #7C3AED; border-right-color: #7C3AED; }
+.upload-progress-wrap .spinner-ring::after { border-bottom-color: #EDE9FE; border-left-color: #EDE9FE; }
+.progress-filename {
+  font-size: 14px; font-weight: 700; color: var(--text); text-align: center;
+  max-width: 280px; word-break: break-all;
+}
+.progress-sub { font-size: 12.5px; color: var(--gray-500); }
+
+/* ── QR Result Panel (right side) ── */
+.qr-panel {
+  background: white; border: 1.5px solid rgba(124,58,237,.2);
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow);
+  position: sticky; top: 20px;
+}
+.qr-panel-header {
+  background: linear-gradient(135deg, #7C3AED, #A78BFA);
+  padding: 16px 20px;
+  color: white;
+}
+.qr-panel-title {
+  font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 9px;
+  margin-bottom: 4px;
+}
+.qr-panel-sub { font-size: 11px; opacity: .85; font-weight: 500; }
+
+.qr-panel-body { padding: 22px 20px; }
+
+/* Empty state */
+.qr-empty-state {
+  text-align: center; padding: 32px 16px; color: var(--gray-400);
+}
+.qr-empty-state i { font-size: 48px; margin-bottom: 12px; display: block; opacity: .35; }
+.qr-empty-state p { font-size: 12.5px; font-weight: 600; line-height: 1.6; }
+
+/* QR box */
+.qr-box-wrap {
+  display: none; text-align: center;
+}
+.qr-box-wrap.show { display: block; }
+.qr-code-box {
+  display: inline-block; padding: 16px; background: white;
+  border-radius: 14px; border: 2px solid #EDE9FE;
+  box-shadow: 0 4px 20px rgba(124,58,237,.12);
+  margin-bottom: 14px;
+}
+.qr-result-file-info {
+  background: var(--gray-50); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  margin-bottom: 14px; text-align: left;
+}
+.qr-file-name {
+  font-size: 12.5px; font-weight: 800; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; gap: 7px;
+}
+.qr-file-size {
+  font-size: 11px; color: var(--gray-400); font-weight: 500; margin-top: 3px;
+}
+
+/* Countdown */
+.qr-countdown {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 99px;
+  background: #FFF7ED; border: 1px solid rgba(249,115,22,.3);
+  font-size: 11.5px; font-weight: 700; color: #EA580C;
+  margin-bottom: 14px;
+}
+.qr-countdown.expired {
+  background: #FEF2F2; border-color: rgba(220,38,38,.3); color: #DC2626;
+}
+
+/* Action buttons */
+.qr-actions { display: flex; flex-direction: column; gap: 8px; }
+.qr-btn {
+  width: 100%; padding: 10px 16px; border-radius: var(--radius-sm);
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; border: none; transition: var(--transition);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.qr-btn.purple {
+  background: linear-gradient(135deg, #7C3AED, #A78BFA);
+  color: white; box-shadow: 0 3px 12px rgba(124,58,237,.3);
+}
+.qr-btn.purple:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,.4); }
+.qr-btn.outline-gray {
+  background: white; color: var(--gray-600);
+  border: 1.5px solid var(--gray-200);
+}
+.qr-btn.outline-gray:hover { background: var(--gray-50); border-color: var(--gray-300); }
+.qr-btn.outline-red {
+  background: white; color: var(--vtp-red);
+  border: 1.5px solid rgba(238,0,51,.3);
+}
+.qr-btn.outline-red:hover { background: var(--vtp-red-light); border-color: var(--vtp-red); }
+
+/* ── History section ── */
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-item {
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px;
+  transition: var(--transition); cursor: pointer;
+}
+.history-item:hover { box-shadow: var(--shadow); border-color: rgba(124,58,237,.3); background: #FAFAFA; }
+.history-item.expired { opacity: .55; cursor: default; }
+.history-item.expired:hover { box-shadow: none; border-color: var(--border); }
+.history-icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.history-info { flex: 1; min-width: 0; }
+.history-name {
+  font-size: 12.5px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.history-meta { font-size: 10.5px; color: var(--gray-400); margin-top: 2px; }
+.history-badge {
+  padding: 2px 9px; border-radius: 99px; font-size: 9.5px; font-weight: 800;
+  white-space: nowrap; flex-shrink: 0;
+}
+.history-badge.ok { background: #D1FAE5; color: #059669; border: 1px solid rgba(5,150,105,.2); }
+.history-badge.expired { background: var(--gray-100); color: var(--gray-400); border: 1px solid var(--border); }
+
+/* ── Tips section ── */
+.tips-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
+}
+@media (max-width: 640px) { .tips-grid { grid-template-columns: 1fr; } }
+.tip-card {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 16px 14px; text-align: center;
+  box-shadow: var(--shadow-xs);
+}
+.tip-icon { font-size: 26px; margin-bottom: 9px; display: block; }
+.tip-title { font-size: 12.5px; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+.tip-desc { font-size: 11.5px; color: var(--gray-500); line-height: 1.6; }
+
+/* ── Toast ── */
+#toast-container {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast-item {
+  background: white; border-radius: 10px;
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  font-size: 13px; font-weight: 600; color: var(--text);
+  border-left: 4px solid var(--gray-300);
+  opacity: 0; transform: translateX(20px);
+  transition: all .3s ease; max-width: 340px;
+}
+.toast-item.show { opacity: 1; transform: translateX(0); }
+.toast-success { border-color: var(--green); }
+.toast-error   { border-color: var(--vtp-red); }
+.toast-warning { border-color: #D97706; }
+.toast-info    { border-color: #2563EB; }
+.toast-icon    { font-size: 16px; flex-shrink: 0; }
+.toast-success .toast-icon { color: var(--green); }
+.toast-error   .toast-icon { color: var(--vtp-red); }
+.toast-warning .toast-icon { color: #D97706; }
+.toast-info    .toast-icon { color: #2563EB; }
+
+/* Utility */
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+.fu1 { animation: fadeUp .35s ease both .04s; }
+.fu2 { animation: fadeUp .35s ease both .10s; }
+.fu3 { animation: fadeUp .35s ease both .16s; }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="vtp-logo-box">
+        <i class="fa-solid fa-truck-fast logo-icon"></i>
+        <div class="logo-text">VIETTEL<span>POST</span></div>
+      </div>
+      <div class="header-title-group">
+        <div class="header-title">📲 QR CHUYỂN FILE — TẢI VỀ ĐIỆN THOẠI</div>
+        <div class="header-subtitle">Upload file → tạo mã QR → quét bằng điện thoại để tải xuống tức thì</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="hbadge danger">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <span>Đã upload:</span>
+        <span class="num" id="h-count">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-database"></i>
+        <span>Còn hiệu lực:</span>
+        <span class="num" id="h-active">0</span>
+      </div>
+      <div class="hbadge">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Tối đa:</span>
+        <span class="num">100MB/file</span>
+      </div>
+    </div>
+  </div>
+  <div class="header-accent-bar"></div>
+</header>
+
+<!-- ===== BREADCRUMB ===== -->
+<div class="page-nav">
+  <a href="index.html"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chủ</a>
+  <i class="fa-solid fa-chevron-right" style="font-size:10px;opacity:.5;"></i>
+  <span>QR Chuyển File</span>
+</div>
+
+<div class="container">
+
+  <!-- ===== TIPS ROW ===== -->
+  <div class="tips-grid fu1" style="margin-bottom:18px;">
+    <div class="tip-card">
+      <span class="tip-icon">📤</span>
+      <div class="tip-title">1. Upload file</div>
+      <div class="tip-desc">Kéo thả hoặc nhấn chọn file từ máy tính. Hỗ trợ mọi định dạng, tối đa 100MB.</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">📱</span>
+      <div class="tip-title">2. Quét mã QR</div>
+      <div class="tip-desc">Dùng camera điện thoại quét mã QR xuất hiện. Không cần cài app thêm.</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">⬇️</span>
+      <div class="tip-title">3. Tải xuống</div>
+      <div class="tip-desc">File tự động tải về điện thoại. Link hết hạn sau 60 phút.</div>
+    </div>
+  </div>
+
+  <!-- ===== MAIN GRID ===== -->
+  <div class="qr-main-grid fu2">
+
+    <!-- LEFT: Upload + History -->
+    <div>
+      <!-- Upload Section -->
+      <div class="section-card" style="margin-bottom:18px;">
+        <div class="section-header no-click">
+          <span class="section-title"><i class="fa-solid fa-cloud-arrow-up"></i> UPLOAD FILE</span>
+          <span style="font-size:11px;color:var(--gray-400);font-weight:600;">Tối đa 100MB · Mọi định dạng</span>
+        </div>
+        <div class="section-body" style="padding:20px;">
+
+          <!-- File input OUTSIDE drop zone to prevent event loop -->
+          <input type="file" id="file-input" multiple onchange="onFileSelected(event)" style="display:none;">
+
+          <!-- Drop Zone (shown by default) -->
+          <div class="big-drop-zone" id="drop-zone"
+               onclick="document.getElementById('file-input').click()"
+               ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
+            <div class="dz-icon-wrap">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div class="dz-title">Kéo thả file vào đây</div>
+            <div class="dz-sub">
+              hoặc <strong style="color:#7C3AED;">nhấn để chọn file</strong> từ máy tính của bạn<br>
+              Mỗi lần có thể chọn nhiều file cùng lúc
+            </div>
+            <button class="btn btn-sm" onclick="event.stopPropagation(); document.getElementById('file-input').click()"
+              style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:white;box-shadow:0 3px 12px rgba(124,58,237,.3);">
+              <i class="fa-solid fa-folder-open"></i> Chọn file
+            </button>
+            <div class="dz-types">
+              <span class="dz-type-chip">📊 Excel</span>
+              <span class="dz-type-chip">🖼️ Ảnh</span>
+              <span class="dz-type-chip">📄 PDF</span>
+              <span class="dz-type-chip">📁 ZIP</span>
+              <span class="dz-type-chip">📝 Word</span>
+              <span class="dz-type-chip">+ Mọi định dạng</span>
+            </div>
+          </div>
+
+          <!-- Upload Progress (hidden) -->
+          <div class="upload-progress-wrap" id="upload-progress">
+            <div class="spinner-ring"></div>
+            <div>
+              <div class="progress-filename" id="progress-filename">đang upload...</div>
+              <div class="progress-sub" style="margin-top:6px;">⬆️ Đang tải lên máy chủ...</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- History Section -->
+      <div class="section-card">
+        <div class="section-header no-click">
+          <span class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> LỊCH SỬ UPLOAD</span>
+          <button class="btn btn-ghost btn-xs" onclick="clearHistory()" id="btn-clear-history" style="display:none;">
+            <i class="fa-solid fa-trash"></i> Xoá tất cả
+          </button>
+        </div>
+        <div class="section-body" style="padding:16px 20px;" id="history-body">
+          <div style="text-align:center;padding:32px 16px;color:var(--gray-400);">
+            <i class="fa-solid fa-inbox" style="font-size:36px;display:block;margin-bottom:10px;opacity:.35;"></i>
+            <div style="font-size:12.5px;font-weight:600;">Chưa có file nào được upload</div>
+            <div style="font-size:11.5px;margin-top:4px;">Upload file ở bên trên để bắt đầu</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: QR Panel -->
+    <div>
+      <div class="qr-panel">
+        <div class="qr-panel-header">
+          <div class="qr-panel-title"><i class="fa-solid fa-qrcode"></i> MÃ QR TẢI FILE</div>
+          <div class="qr-panel-sub">Quét để tải về điện thoại ngay lập tức</div>
+        </div>
+        <div class="qr-panel-body">
+
+          <!-- Empty state -->
+          <div class="qr-empty-state" id="qr-empty">
+            <i class="fa-solid fa-qrcode" style="color:#A78BFA;"></i>
+            <p>Upload một file để tạo mã QR tương ứng.<br>Mã QR sẽ xuất hiện tại đây.</p>
+          </div>
+
+          <!-- QR Result -->
+          <div class="qr-box-wrap" id="qr-result-wrap">
+            <!-- QR Code -->
+            <div class="qr-code-box" id="qr-code-el"></div>
+
+            <!-- File info -->
+            <div class="qr-result-file-info">
+              <div class="qr-file-name" id="qr-file-name">
+                <i class="fa-solid fa-file" style="color:#7C3AED;flex-shrink:0;"></i>
+                <span id="qr-name-text">—</span>
+              </div>
+              <div class="qr-file-size" id="qr-file-size">—</div>
+            </div>
+
+            <!-- Countdown -->
+            <div class="qr-countdown" id="qr-countdown">
+              <i class="fa-solid fa-hourglass-half"></i>
+              <span id="qr-timer-text">⏱ Link còn 60:00</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="qr-actions">
+              <button class="qr-btn purple" onclick="copyCurrentLink()">
+                <i class="fa-solid fa-copy"></i> Copy link tải
+              </button>
+              <button class="qr-btn outline-gray" onclick="triggerUploadNew()">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Upload file khác
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Info box -->
+      <div class="section-card" style="margin-top:14px;">
+        <div class="section-body" style="padding:16px;">
+          <div style="font-size:11.5px;color:var(--gray-500);line-height:1.75;">
+            <div style="font-weight:800;color:var(--text);margin-bottom:8px;font-size:12px;">
+              <i class="fa-solid fa-circle-info" style="color:#7C3AED;"></i> Lưu ý sử dụng
+            </div>
+            <div>⏱ Link tự động hủy sau <strong>60 phút</strong></div>
+            <div>📦 Kích thước tối đa <strong>100MB / file</strong></div>
+            <div>🔒 Không lưu dữ liệu trên server của bạn</div>
+            <div>📱 Mở bằng bất kỳ trình duyệt nào trên điện thoại</div>
+            <div style="margin-top:8px;padding:8px 10px;background:var(--vtp-red-light);border-radius:6px;color:var(--vtp-red-dark);font-weight:600;border-left:3px solid var(--vtp-red);">
+              ⚠️ Không chia sẻ link chứa thông tin bảo mật
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.qr-main-grid -->
+
+</div><!-- /.container -->
+
+<!-- ===== TOAST ===== -->
+<div id="toast-container"></div>
+
+<script>
+/* ================================================================
+   STATE
+================================================================ */
+var uploadHistory = []; // [{name, size, url, ts, expired}]
+var currentLink = '';
+var countdownInterval = null;
+
+/* ================================================================
+   DRAG & DROP
+================================================================ */
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('dragover');
+}
+function onDragLeave() {
+  document.getElementById('drop-zone').classList.remove('dragover');
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dragover');
+  var files = e.dataTransfer.files;
+  if (files && files.length > 0) processFiles(Array.from(files));
+}
+function onFileSelected(e) {
+  if (e.target.files && e.target.files.length > 0) processFiles(Array.from(e.target.files));
+}
+function triggerUploadNew() {
+  document.getElementById('file-input').value = '';
+  document.getElementById('file-input').click();
+}
+
+/* ================================================================
+   FILE PROCESSING
+================================================================ */
+function processFiles(files) {
+  // Upload one by one, starting with first; subsequent ones queue
+  var first = files[0];
+  if (files.length > 1) {
+    showToast('📂 Đang upload ' + files.length + ' file (lần lượt từng file)', 'info');
+  }
+  uploadFile(first, 0, files);
+}
+
+function uploadFile(file, idx, allFiles) {
+  var maxBytes = 100 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    showToast('⚠️ File "' + file.name + '" vượt quá 100MB, bỏ qua.', 'warning');
+    if (idx + 1 < allFiles.length) uploadFile(allFiles[idx + 1], idx + 1, allFiles);
+    return;
+  }
+
+  // Show progress
+  showProgress(true, file.name);
+
+  var fd = new FormData();
+  fd.append('file', file, file.name);
+
+  // Try fetch first, fallback to XHR
+  function handleSuccess(dlUrl) {
+    showProgress(false, '');
+    var entry = {
+      name: file.name,
+      size: file.size,
+      url: dlUrl,
+      ts: Date.now(),
+      expiry: Date.now() + 60 * 60 * 1000
+    };
+    uploadHistory.unshift(entry);
+    updateHeaderBadges();
+    renderHistory();
+    showQrResult(entry);
+    showToast('✅ Upload thành công: ' + file.name, 'success');
+    // Reset file input so same file can be re-uploaded
+    document.getElementById('file-input').value = '';
+    // Upload next if any
+    if (idx + 1 < allFiles.length) {
+      setTimeout(function() {
+        uploadFile(allFiles[idx + 1], idx + 1, allFiles);
+      }, 600);
+    }
+  }
+
+  function handleError(errMsg) {
+    showProgress(false, '');
+    showToast('❌ Lỗi upload "' + file.name + '": ' + (errMsg || 'Không xác định'), 'error');
+    document.getElementById('file-input').value = '';
+  }
+
+  function parseResponse(text) {
+    try {
+      var res = JSON.parse(text);
+      if (res && res.status === 'success' && res.data && res.data.url) {
+        var dlUrl = res.data.url
+          .replace('tmpfiles.org/', 'tmpfiles.org/dl/')
+          .replace('http://', 'https://');
+        return dlUrl;
+      }
+      return null;
+    } catch(e) { return null; }
+  }
+
+  // Method 1: fetch
+  if (typeof fetch !== 'undefined') {
+    fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd })
+      .then(function(r) { return r.text(); })
+      .then(function(text) {
+        var dlUrl = parseResponse(text);
+        if (dlUrl) {
+          handleSuccess(dlUrl);
+        } else {
+          handleError('Server trả về lỗi');
+        }
+      })
+      .catch(function(err) {
+        // Fallback to XHR
+        console.warn('fetch failed, trying XHR:', err);
+        uploadViaXHR(fd, handleSuccess, handleError, parseResponse);
+      });
+  } else {
+    uploadViaXHR(fd, handleSuccess, handleError, parseResponse);
+  }
+}
+
+function uploadViaXHR(fd, onSuccess, onError, parseResponse) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', 'https://tmpfiles.org/api/v1/upload', true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        var dlUrl = parseResponse(xhr.responseText);
+        if (dlUrl) { onSuccess(dlUrl); }
+        else { onError('Phản hồi không hợp lệ'); }
+      } else {
+        onError('HTTP ' + xhr.status);
+      }
+    }
+  };
+  xhr.onerror = function() { onError('Lỗi mạng'); };
+  xhr.ontimeout = function() { onError('Hết thời gian chờ'); };
+  xhr.timeout = 120000; // 2 min timeout
+  xhr.send(fd);
+}
+
+function showProgress(show, filename) {
+  var dz = document.getElementById('drop-zone');
+  if (dz) dz.style.display = show ? 'none' : 'block';
+  var pw = document.getElementById('upload-progress');
+  if (pw) pw.style.display = show ? 'flex' : 'none';
+  if (show && filename) {
+    var fn = document.getElementById('progress-filename');
+    if (fn) fn.textContent = filename;
+  }
+}
+
+/* ================================================================
+   QR RESULT
+================================================================ */
+function showQrResult(entry) {
+  document.getElementById('qr-empty').style.display = 'none';
+  var wrap = document.getElementById('qr-result-wrap');
+  wrap.classList.add('show');
+
+  // Generate QR
+  var qrEl = document.getElementById('qr-code-el');
+  qrEl.innerHTML = '';
+  new QRCode(qrEl, {
+    text: entry.url,
+    width: 200, height: 200,
+    colorDark: '#4C1D95',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  // File info
+  document.getElementById('qr-name-text').textContent = entry.name;
+  document.getElementById('qr-file-size').textContent = formatSize(entry.size) + ' · Tải về điện thoại bằng cách quét QR';
+  currentLink = entry.url;
+
+  // Countdown
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(function() {
+    var rem = Math.max(0, entry.expiry - Date.now());
+    var m = Math.floor(rem / 60000);
+    var s = Math.floor((rem % 60000) / 1000);
+    var cdEl = document.getElementById('qr-countdown');
+    var timerEl = document.getElementById('qr-timer-text');
+    if (rem === 0) {
+      clearInterval(countdownInterval);
+      cdEl.classList.add('expired');
+      timerEl.textContent = '⚠️ Link đã hết hạn';
+    } else {
+      cdEl.classList.remove('expired');
+      timerEl.textContent = '⏱ Link còn ' + m + ':' + String(s).padStart(2,'0');
+    }
+  }, 1000);
+}
+
+/* ================================================================
+   HISTORY
+================================================================ */
+function renderHistory() {
+  var body = document.getElementById('history-body');
+  var clearBtn = document.getElementById('btn-clear-history');
+  if (uploadHistory.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--gray-400);"><i class="fa-solid fa-inbox" style="font-size:36px;display:block;margin-bottom:10px;opacity:.35;"></i><div style="font-size:12.5px;font-weight:600;">Chưa có file nào được upload</div><div style="font-size:11.5px;margin-top:4px;">Upload file ở bên trên để bắt đầu</div></div>';
+    clearBtn.style.display = 'none';
+    return;
+  }
+  clearBtn.style.display = 'inline-flex';
+
+  var now = Date.now();
+  body.innerHTML = '<div class="history-list">' + uploadHistory.map(function(e, i) {
+    var expired = now > e.expiry;
+    var remMs = Math.max(0, e.expiry - now);
+    var remMin = Math.floor(remMs / 60000);
+    var ext = e.name.split('.').pop().toLowerCase();
+    var iconColor = getFileColor(ext);
+    var icon = getFileIcon(ext);
+    var timeAgo = formatTimeAgo(e.ts);
+    return '<div class="history-item' + (expired ? ' expired' : '') + '" onclick="' + (expired ? '' : 'selectHistory(' + i + ')') + '">' +
+      '<div class="history-icon" style="background:' + iconColor.bg + ';color:' + iconColor.color + ';">' +
+        '<i class="' + icon + '"></i>' +
+      '</div>' +
+      '<div class="history-info">' +
+        '<div class="history-name">' + escHtml(e.name) + '</div>' +
+        '<div class="history-meta">' + formatSize(e.size) + ' · ' + timeAgo + '</div>' +
+      '</div>' +
+      '<span class="history-badge ' + (expired ? 'expired' : 'ok') + '">' +
+        (expired ? '⏰ Hết hạn' : '● Còn ' + remMin + ' phút') +
+      '</span>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+function selectHistory(idx) {
+  var entry = uploadHistory[idx];
+  if (!entry) return;
+  if (Date.now() > entry.expiry) { showToast('⚠️ Link đã hết hạn!', 'warning'); return; }
+  showQrResult(entry);
+  showToast('📲 Đã tải QR của "' + entry.name + '"', 'info');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function clearHistory() {
+  uploadHistory = [];
+  currentLink = '';
+  clearInterval(countdownInterval);
+  document.getElementById('qr-empty').style.display = 'block';
+  document.getElementById('qr-result-wrap').classList.remove('show');
+  renderHistory();
+  updateHeaderBadges();
+  showToast('🗑️ Đã xoá lịch sử upload', 'info');
+}
+
+/* ================================================================
+   COPY LINK
+================================================================ */
+function copyCurrentLink() {
+  if (!currentLink) return;
+  navigator.clipboard.writeText(currentLink).then(function() {
+    showToast('✅ Đã copy link!', 'success');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = currentLink;
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('✅ Đã copy link!', 'success');
+  });
+}
+
+/* ================================================================
+   HEADER BADGES
+================================================================ */
+function updateHeaderBadges() {
+  var now = Date.now();
+  var total = uploadHistory.length;
+  var active = uploadHistory.filter(function(e) { return now < e.expiry; }).length;
+  document.getElementById('h-count').textContent = total;
+  document.getElementById('h-active').textContent = active;
+}
+
+/* ================================================================
+   HELPERS
+================================================================ */
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function formatTimeAgo(ts) {
+  var sec = Math.floor((Date.now() - ts) / 1000);
+  if (sec < 60) return 'Vừa xong';
+  var min = Math.floor(sec / 60);
+  if (min < 60) return min + ' phút trước';
+  return Math.floor(min / 60) + ' giờ trước';
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getFileIcon(ext) {
+  var map = {
+    xlsx: 'fa-solid fa-file-excel', xls: 'fa-solid fa-file-excel',
+    pdf: 'fa-solid fa-file-pdf',
+    doc: 'fa-solid fa-file-word', docx: 'fa-solid fa-file-word',
+    ppt: 'fa-solid fa-file-powerpoint', pptx: 'fa-solid fa-file-powerpoint',
+    zip: 'fa-solid fa-file-zipper', rar: 'fa-solid fa-file-zipper',
+    png: 'fa-solid fa-file-image', jpg: 'fa-solid fa-file-image',
+    jpeg: 'fa-solid fa-file-image', gif: 'fa-solid fa-file-image',
+    webp: 'fa-solid fa-file-image', mp4: 'fa-solid fa-file-video',
+    mp3: 'fa-solid fa-file-audio', txt: 'fa-solid fa-file-lines',
+    csv: 'fa-solid fa-file-csv'
+  };
+  return map[ext] || 'fa-solid fa-file';
+}
+
+function getFileColor(ext) {
+  var colors = {
+    xlsx: { bg: '#D1FAE5', color: '#059669' }, xls: { bg: '#D1FAE5', color: '#059669' },
+    pdf: { bg: '#FEE2E2', color: '#DC2626' },
+    doc: { bg: '#DBEAFE', color: '#2563EB' }, docx: { bg: '#DBEAFE', color: '#2563EB' },
+    ppt: { bg: '#FFEDD5', color: '#EA580C' }, pptx: { bg: '#FFEDD5', color: '#EA580C' },
+    zip: { bg: '#FEF3C7', color: '#D97706' }, rar: { bg: '#FEF3C7', color: '#D97706' },
+    png: { bg: '#F3E8FF', color: '#7C3AED' }, jpg: { bg: '#F3E8FF', color: '#7C3AED' },
+    jpeg: { bg: '#F3E8FF', color: '#7C3AED' }, gif: { bg: '#F3E8FF', color: '#7C3AED' },
+    mp4: { bg: '#FEE2E2', color: '#EE0033' }, mp3: { bg: '#D1FAE5', color: '#059669' }
+  };
+  return colors[ext] || { bg: '#F3F4F6', color: '#6B7280' };
+}
+
+/* ================================================================
+   TOAST
+================================================================ */
+function showToast(msg, type) {
+  type = type || 'success';
+  var c = document.getElementById('toast-container');
+  var el = document.createElement('div');
+  var icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', warning: 'fa-triangle-exclamation', info: 'fa-circle-info' };
+  el.className = 'toast-item toast-' + type;
+  el.innerHTML = '<i class="fa-solid ' + (icons[type] || icons.info) + ' toast-icon"></i><span>' + msg + '</span>';
+  c.appendChild(el);
+  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('show'); }); });
+  setTimeout(function() { el.classList.remove('show'); setTimeout(function() { el.remove(); }, 400); }, 3500);
+}
+
+/* ================================================================
+   INIT — Update history render every minute for time-ago labels
+================================================================ */
+setInterval(function() { renderHistory(); updateHeaderBadges(); }, 60000);
+</script>
+</body>
+</html>

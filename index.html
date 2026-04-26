@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 /* ================================================================
    SIDEBAR TOGGLE
@@ -545,6 +546,88 @@ body {
   .sidebar { display: none; }
   .main { margin-left: 0; }
 }
+
+/* ================================================================
+   QR TRANSFER WIDGET
+================================================================ */
+.qr-transfer-widget {
+  margin: 6px 10px 4px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(124,58,237,.22);
+  background: linear-gradient(135deg,#F5F3FF,#FAF8FF);
+  overflow: hidden;
+  transition: all .25s var(--ease);
+}
+.qr-transfer-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px;
+  cursor: pointer; user-select: none;
+}
+.qr-transfer-header:hover { background: rgba(124,58,237,.06); }
+.qr-transfer-title {
+  flex: 1; font-size: 11.5px; font-weight: 800; color: #7C3AED;
+  display: flex; align-items: center; gap: 6px;
+}
+.qr-transfer-chevron { font-size: 9px; color: var(--gray-400); transition: transform .25s var(--ease); }
+.qr-transfer-widget.open .qr-transfer-chevron { transform: rotate(180deg); }
+.qr-transfer-body { display: none; padding: 0 10px 10px; }
+.qr-transfer-widget.open .qr-transfer-body { display: block; }
+
+/* Drop zone */
+.qr-drop-zone {
+  border: 2px dashed rgba(124,58,237,.35); border-radius: 8px;
+  padding: 14px 10px; text-align: center; cursor: pointer;
+  background: white; transition: all .2s var(--ease);
+}
+.qr-drop-zone:hover, .qr-drop-zone.dragover { border-color: #7C3AED; background: #F5F3FF; }
+.qr-drop-zone input { display: none; }
+.qr-drop-icon { font-size: 22px; color: #7C3AED; margin-bottom: 5px; display: block; }
+.qr-drop-text { font-size: 10.5px; font-weight: 700; color: var(--gray-700); }
+.qr-drop-hint { font-size: 9.5px; color: var(--gray-400); margin-top: 2px; }
+
+/* Progress */
+.qr-progress-bar {
+  height: 3px; background: var(--gray-200); border-radius: 99px;
+  margin: 8px 0 4px; overflow: hidden; display: none;
+}
+.qr-progress-bar.show { display: block; }
+.qr-progress-fill {
+  height: 100%; background: #7C3AED; border-radius: 99px;
+  animation: qr-progress-anim 1.2s ease infinite;
+}
+@keyframes qr-progress-anim {
+  0%   { width: 10%; margin-left: 0; }
+  50%  { width: 70%; margin-left: 15%; }
+  100% { width: 10%; margin-left: 0; }
+}
+
+/* QR result */
+.qr-result-box { display: none; text-align: center; padding-top: 8px; }
+.qr-result-box.show { display: block; }
+.qr-result-qr {
+  display: inline-block; padding: 10px; background: white;
+  border-radius: 10px; border: 2px solid var(--border);
+  box-shadow: 0 2px 10px rgba(0,0,0,.08); margin-bottom: 6px;
+}
+.qr-result-label { font-size: 9.5px; font-weight: 700; color: var(--gray-500); margin-bottom: 6px; }
+.qr-result-name {
+  font-size: 9.5px; color: var(--gray-600); font-weight: 600;
+  word-break: break-all; margin-bottom: 7px;
+  padding: 3px 7px; background: white; border-radius: 4px; border: 1px solid var(--border);
+  text-align: left;
+}
+.qr-result-actions { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
+.qr-mini-btn {
+  padding: 4px 10px; border-radius: 99px;
+  font-size: 10px; font-weight: 700; cursor: pointer; border: 1.5px solid;
+  font-family: inherit; transition: all .15s var(--ease);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.qr-mini-btn.purple { border-color: #7C3AED; color: #7C3AED; background: white; }
+.qr-mini-btn.purple:hover { background: #7C3AED; color: white; }
+.qr-mini-btn.gray { border-color: var(--gray-300); color: var(--gray-500); background: white; }
+.qr-mini-btn.gray:hover { background: var(--gray-100); }
+.qr-timer { font-size: 9px; color: var(--gray-400); margin-top: 5px; }
 </style>
 </head>
 <body>
@@ -631,6 +714,18 @@ body {
         <span class="sb-item-sub">TTC · Chart · Excel</span>
       </div>
       <span class="sb-badge new">Mới</span>
+    </div>
+
+    <!-- ══ QR Transfer nav item ══ -->
+    <div class="sb-item" id="nav-qr" onclick="loadPage('upload_file_qrcode.html','nav-qr','QR Chuyển File')">
+      <div class="sb-icon" style="background:linear-gradient(135deg,#7C3AED22,#A78BFA22);color:#7C3AED;">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+      <div class="sb-item-text">
+        QR Chuyển File
+        <span class="sb-item-sub">Upload · QR · Điện thoại</span>
+      </div>
+      <span class="sb-badge" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);font-size:8px;padding:1px 6px;">Mới</span>
     </div>
 
     <div class="sb-label">Hệ Thống</div>
@@ -886,6 +981,136 @@ function loadPage(url, navId, title) {
   frame.style.display = 'block';
   frame.src = url;
   document.getElementById('topbar-current').textContent = title;
+}
+
+/* ─── QR Transfer Widget ─── */
+var qrWidgetOpen = false;
+var qrCurrentLink = '';
+
+function toggleQrWidget() {
+  qrWidgetOpen = !qrWidgetOpen;
+  document.getElementById('qr-transfer-widget').classList.toggle('open', qrWidgetOpen);
+}
+
+function qrDragOver(e) {
+  e.preventDefault();
+  document.getElementById('qr-drop-zone').classList.add('dragover');
+}
+function qrDragLeave() {
+  document.getElementById('qr-drop-zone').classList.remove('dragover');
+}
+function qrDrop(e) {
+  e.preventDefault();
+  document.getElementById('qr-drop-zone').classList.remove('dragover');
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) qrUploadFile(e.dataTransfer.files[0]);
+}
+function qrFileSelected(e) {
+  if (e.target.files && e.target.files[0]) qrUploadFile(e.target.files[0]);
+}
+
+function qrUploadFile(file) {
+  var maxMB = 100;
+  if (file.size > maxMB * 1024 * 1024) {
+    qrSetStatus('⚠️ File quá lớn (tối đa ' + maxMB + 'MB)', '#D97706');
+    return;
+  }
+  // Reset UI
+  document.getElementById('qr-result-box').classList.remove('show');
+  document.getElementById('qr-result-qr').innerHTML = '';
+  document.getElementById('qr-result-name').textContent = '';
+  qrCurrentLink = '';
+  clearInterval(window._qrCountdown);
+
+  // Show progress
+  document.getElementById('qr-pbar').classList.add('show');
+  var shortName = file.name.length > 22 ? file.name.substring(0, 22) + '…' : file.name;
+  qrSetStatus('⬆️ Đang upload "' + shortName + '"…', '#7C3AED');
+  var dz = document.getElementById('qr-drop-zone');
+  dz.style.opacity = '0.5';
+  dz.style.pointerEvents = 'none';
+
+  var fd = new FormData();
+  fd.append('file', file, file.name);
+
+  fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      document.getElementById('qr-pbar').classList.remove('show');
+      dz.style.opacity = '';
+      dz.style.pointerEvents = '';
+      if (res && res.status === 'success') {
+        var dlUrl = res.data.url
+          .replace('tmpfiles.org/', 'tmpfiles.org/dl/')
+          .replace('http://', 'https://');
+        qrCurrentLink = dlUrl;
+        qrSetStatus('✅ Upload thành công!', '#059669');
+        qrShowResult(dlUrl, file.name);
+      } else {
+        throw new Error('Upload failed');
+      }
+    })
+    .catch(function() {
+      document.getElementById('qr-pbar').classList.remove('show');
+      dz.style.opacity = '';
+      dz.style.pointerEvents = '';
+      qrSetStatus('❌ Lỗi upload. Vui lòng thử lại.', '#DC2626');
+    });
+}
+
+function qrShowResult(url, fileName) {
+  var qrEl = document.getElementById('qr-result-qr');
+  qrEl.innerHTML = '';
+  new QRCode(qrEl, {
+    text: url,
+    width: 148, height: 148,
+    colorDark: '#4C1D95',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+  document.getElementById('qr-result-name').textContent = '📎 ' + fileName;
+  document.getElementById('qr-result-box').classList.add('show');
+
+  // 60-min countdown
+  var expiry = Date.now() + 60 * 60 * 1000;
+  window._qrCountdown = setInterval(function() {
+    var rem = Math.max(0, expiry - Date.now());
+    var m = Math.floor(rem / 60000);
+    var s = Math.floor((rem % 60000) / 1000);
+    document.getElementById('qr-timer').textContent =
+      '⏱ Còn ' + m + ' phút ' + String(s).padStart(2,'0') + 'giây';
+    if (rem === 0) { clearInterval(window._qrCountdown); document.getElementById('qr-timer').textContent = '⚠️ Link đã hết hạn'; }
+  }, 1000);
+}
+
+function qrSetStatus(msg, color) {
+  var el = document.getElementById('qr-status-text');
+  el.textContent = msg;
+  el.style.color = color || '#6B7280';
+}
+
+function qrCopyLink() {
+  if (!qrCurrentLink) return;
+  navigator.clipboard.writeText(qrCurrentLink).then(function() {
+    qrSetStatus('✅ Đã copy link!', '#059669');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = qrCurrentLink;
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    qrSetStatus('✅ Đã copy link!', '#059669');
+  });
+}
+
+function qrReset() {
+  document.getElementById('qr-result-box').classList.remove('show');
+  document.getElementById('qr-result-qr').innerHTML = '';
+  document.getElementById('qr-result-name').textContent = '';
+  document.getElementById('qr-status-text').textContent = '';
+  document.getElementById('qr-file-input').value = '';
+  document.getElementById('qr-timer').textContent = '⏱ Link tự hủy sau 60 phút';
+  document.getElementById('qr-pbar').classList.remove('show');
+  clearInterval(window._qrCountdown);
+  qrCurrentLink = '';
 }
 </script>
 </body>

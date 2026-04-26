@@ -1578,6 +1578,32 @@ function copyQrUrl() {
   });
 }
 
+function closeQrModal() { document.getElementById('qr-overlay').classList.remove('open'); }
+
+function shareChartImage() {
+  var canvas = document.getElementById('chart-canvas');
+  if (!canvas) return;
+  canvas.toBlob(function(blob) {
+    var file = new File([blob], 'bieu_do_khau_phat.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ title: 'Bi\u1ec3u \u0111\u1ed3 Kh\u1ea9u Ph\u00e1t', files: [file] })
+        .then(function() { showToast('\u2705 \u0110\u00e3 chia s\u1ebb!', 'success'); }).catch(function(){});
+    } else { showToast('\u26a0\ufe0f Kh\u00f4ng h\u1ed7 tr\u1ee3 Share API', 'warning'); }
+  }, 'image/png');
+}
+
+function copyQrUrl() {
+  var url = getPageLanUrl();
+  navigator.clipboard.writeText(url).then(function() {
+    showToast('\u2705 \u0110\u00e3 copy: ' + url, 'success');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('\u2705 \u0110\u00e3 copy link!', 'success');
+  });
+}
+
 /* ================================================================
    SCREENSHOT — Capture report table, generate QR for mobile download
 ================================================================ */
@@ -1586,47 +1612,66 @@ var screenshotDataUrl = null;
 function captureScreenshot() {
   var target = document.getElementById('section-results');
   if (!target || target.style.display === 'none') {
-    showToast('\u26a0\ufe0f Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u!', 'warning'); return;
+    showToast('⚠️ Chưa có dữ liệu!', 'warning'); return;
   }
   document.getElementById('ss-loading').style.display = 'block';
   document.getElementById('ss-content').style.display = 'none';
   document.getElementById('screenshot-overlay').classList.add('open');
-  var scrollEl = target.querySelector('.excel-scroll-wrap');
-  var prevMaxH = '';
-  if (scrollEl) { prevMaxH = scrollEl.style.maxHeight; scrollEl.style.maxHeight = 'none'; }
   var btn = document.getElementById('btn-screenshot');
   if (btn) btn.disabled = true;
 
-  var animEls = target.querySelectorAll('.fade-in-up, .pulse-red');
+  // Pre-strip animations on LIVE DOM before clone
+  var animEls = target.querySelectorAll('*');
   for (var i = 0; i < animEls.length; i++) {
-    animEls[i].classList.remove('fade-in-up', 'pulse-red');
     animEls[i].style.animation = 'none';
-    animEls[i].style.opacity = '1';
-    animEls[i].style.transform = 'none';
+    animEls[i].style.transition = 'none';
   }
 
   setTimeout(function() {
-    html2canvas(target, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', logging: false,
-      ignoreElements: function(el) { return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot'); },
+    html2canvas(target, {
+      scale: 1.8,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      ignoreElements: function(el) {
+        return el.classList && (
+          el.classList.contains('no-print') ||
+          el.id === 'btn-screenshot'
+        );
+      },
       onclone: function(doc) {
-        var els = doc.querySelectorAll('.fade-in-up, .pulse-red');
-        for (var i = 0; i < els.length; i++) {
-          els[i].style.animation = 'none';
-          els[i].style.opacity = '1';
-          els[i].style.transform = 'none';
-        }
+        // === KEY FIX: Expand all scroll containers ===
+        doc.querySelectorAll('.excel-scroll-wrap').forEach(function(el) {
+          el.style.maxHeight = 'none';
+          el.style.height = 'auto';
+          el.style.overflow = 'visible';
+          el.style.overflowX = 'visible';
+          el.style.overflowY = 'visible';
+        });
+        doc.querySelectorAll('.excel-table-wrap').forEach(function(el) {
+          el.style.overflow = 'visible';
+        });
+        // Strip all animations/transforms in cloned doc
+        doc.querySelectorAll('*').forEach(function(el) {
+          el.style.animation = 'none';
+          el.style.transition = 'none';
+          if (el.style.opacity === '0') el.style.opacity = '1';
+          if (el.style.transform && el.style.transform !== 'none') el.style.transform = 'none';
+        });
       }
     }).then(function(canvas) {
-      if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
       if (btn) btn.disabled = false;
       screenshotDataUrl = canvas.toDataURL('image/png');
       document.getElementById('ss-preview').src = screenshotDataUrl;
-      
+
       var qrContainer = document.getElementById('ss-qr-container');
-      qrContainer.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">Đang t\u1ea1o link t\u1ea3i...</span></div>';
+      qrContainer.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">Đang tạo link tải...</span></div>';
       var infoEl = document.getElementById('ss-qr-info');
       infoEl.innerHTML = '';
-      
+
       canvas.toBlob(function(blob) {
         var fd = new FormData();
         fd.append('file', blob, 'BaoCao.png');
@@ -1637,13 +1682,13 @@ function captureScreenshot() {
           if (res && res.status === 'success') {
             var dlUrl = res.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/').replace('http://', 'https://');
             new QRCode(qrContainer, { text: dlUrl, width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-            infoEl.innerHTML = '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-cloud-arrow-down"></i> Qu\u00e9t \u0111\u1ec3 t\u1ea3i \u1ea3nh x\u1ecbn!</span><br><span style="color:#6B7280;">(Link t\u1ef1 h\u1ee7y sau 60 ph\u00fat)</span>';
+            infoEl.innerHTML = '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-cloud-arrow-down"></i> Quét để tải ảnh xịn!</span><br><span style="color:#6B7280;">(Link tự hủy sau 60 phút)</span>';
           } else { throw new Error('Upload err'); }
         })
         .catch(function() {
           qrContainer.innerHTML = '';
           new QRCode(qrContainer, { text: getPageLanUrl(), width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-          infoEl.innerHTML = '<span style="color:#DC2626;"><i class="fa-solid fa-triangle-exclamation"></i> L\u1ed7i t\u1ea1o link, ch\u1ec9 m\u1edf web!</span>';
+          infoEl.innerHTML = '<span style="color:#DC2626;"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi tạo link, chỉ mở web!</span>';
         });
       }, 'image/png');
 
@@ -1651,14 +1696,13 @@ function captureScreenshot() {
       if (navigator.share && navigator.canShare) shareBtn.style.display = 'inline-flex';
       document.getElementById('ss-loading').style.display = 'none';
       document.getElementById('ss-content').style.display = 'block';
-      showToast('\u2705 Ch\u1ee5p m\u00e0n h\u00ecnh th\u00e0nh c\u00f4ng!', 'success');
+      showToast('✅ Chụp màn hình thành công!', 'success');
     }).catch(function(err) {
-      if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
       if (btn) btn.disabled = false;
       document.getElementById('screenshot-overlay').classList.remove('open');
-      showToast('\u274c L\u1ed7i: ' + err.message, 'error');
+      showToast('❌ Lỗi: ' + err.message, 'error');
     });
-  }, 80);
+  }, 200);
 }
 
 function closeScreenshotModal() { document.getElementById('screenshot-overlay').classList.remove('open'); }
@@ -1670,7 +1714,7 @@ function downloadScreenshot() {
   var ts = d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2) + '_' + ('0'+d.getHours()).slice(-2) + ('0'+d.getMinutes()).slice(-2);
   a.download = 'BaoCao_KhauPhatTheoCa_' + ts + '.png';
   a.href = screenshotDataUrl; a.click();
-  showToast('\u2705 \u0110ang t\u1ea3i \u1ea3nh...', 'success');
+  showToast('✅ Đang tải ảnh...', 'success');
 }
 
 function shareScreenshot() {
@@ -1678,9 +1722,9 @@ function shareScreenshot() {
   fetch(screenshotDataUrl).then(function(r) { return r.blob(); }).then(function(blob) {
     var file = new File([blob], 'BaoCao_KhauPhatTheoCa.png', { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ title: 'B\u00e1o C\u00e1o Kh\u1ea9u Ph\u00e1t Theo Ca', files: [file] })
-        .then(function() { showToast('\u2705 \u0110\u00e3 chia s\u1ebb!', 'success'); }).catch(function(){});
-    } else { showToast('\u26a0\ufe0f Kh\u00f4ng h\u1ed7 tr\u1ee3 Share API', 'warning'); }
+      navigator.share({ title: 'Báo Cáo Khẩu Phát Theo Ca', files: [file] })
+        .then(function() { showToast('✅ Đã chia sẻ!', 'success'); }).catch(function(){});
+    } else { showToast('⚠️ Không hỗ trợ Share API', 'warning'); }
   });
 }
 </script>
