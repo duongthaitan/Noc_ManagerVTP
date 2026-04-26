@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quản Lý Phiếu Gửi Tồn Phát - ViettelPost</title>
-<meta name="description" content="Công cụ quản lý phiếu gửi tồn phát trạng thái 500 và cảnh báo DO_7/DO_8/DO_9 — ViettelPost">
+<title>Quáº£n LÃ½ Phiáº¿u Gá»­i Tá»“n PhÃ¡t - ViettelPost</title>
+<meta name="description" content="CÃ´ng cá»¥ quáº£n lÃ½ phiáº¿u gá»­i tá»“n phÃ¡t tráº¡ng thÃ¡i 500 vÃ  cáº£nh bÃ¡o DO_7/DO_8/DO_9 â€” ViettelPost">
 
 <!-- ===== EXTERNAL FONTS & ICONS ===== -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +17,8 @@
 
 <!-- ===== THIRD-PARTY LIBS ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<link rel="icon" type="image/png" href="assets/icons/icon128.png">
 </head>
 <body>
 
@@ -29,8 +31,8 @@
         <div class="logo-text">VIETTEL<span>POST</span></div>
       </div>
       <div class="header-title-group">
-        <div class="header-title">🚨 QUẢN LÝ PHIẾU GỬI TỒN PHÁT</div>
-        <div class="header-subtitle">Hệ thống cảnh báo &amp; theo dõi trạng thái TT500 / DO_7 / DO_8 / DO_9</div>
+        <div class="header-title">ðŸš¨ QUáº¢N LÃ PHIáº¾U Gá»¬I Tá»’N PHÃT</div>
+        <div class="header-subtitle">Há»‡ thá»‘ng cáº£nh bÃ¡o &amp; theo dÃµi tráº¡ng thÃ¡i TT500 / DO_7 / DO_8 / DO_9</div>
       </div>
     </div>
     <div class="header-badges">
@@ -41,12 +43,12 @@
       </div>
       <div class="hbadge danger">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        <span>Cảnh báo DO:</span>
+        <span>Cáº£nh bÃ¡o DO:</span>
         <span class="num" id="h-total-do">0</span>
       </div>
       <div class="hbadge">
         <i class="fa-solid fa-clock"></i>
-        <span>Quá hạn:</span>
+        <span>QuÃ¡ háº¡n:</span>
         <span class="num" id="h-total-quahan">0</span>
       </div>
     </div>
@@ -55,19 +57,19 @@
 </header>
 
 <div class="page-nav" style="background:white;border-bottom:1px solid #e5e7eb;padding:10px 20px;display:flex;align-items:center;gap:8px;font-size:12.5px;color:#6b7280;">
-  <a href="index.html" style="color:#EE0033;font-weight:600;text-decoration:none;"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chủ</a>
+  <a href="index.html" style="color:#EE0033;font-weight:600;text-decoration:none;"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chá»§</a>
   <i class="fa-solid fa-chevron-right" style="font-size:10px;opacity:.5;"></i>
-  <span>Quản Lý Phiếu Gửi Tồn Phát</span>
+  <span>Quáº£n LÃ½ Phiáº¿u Gá»­i Tá»“n PhÃ¡t</span>
 </div>
 
 <div class="container">
 
-  <!-- ===== SECTION A: CẤU HÌNH BƯU TÁ ===== -->
+  <!-- ===== SECTION A: Cáº¤U HÃŒNH BÆ¯U TÃ ===== -->
   <div class="section-card" id="panel-config">
     <div class="section-header" onclick="toggleCollapse('panel-config')">
       <span class="section-title">
         <i class="fa-solid fa-gear"></i>
-        CẤU HÌNH DANH SÁCH BƯU TÁ
+        Cáº¤U HÃŒNH DANH SÃCH BÆ¯U TÃ
       </span>
       <div class="collapse-icon"><i class="fa-solid fa-chevron-down"></i></div>
     </div>
@@ -78,8 +80,8 @@
             <thead>
               <tr>
                 <th class="stt-cell">STT</th>
-                <th><i class="fa-solid fa-user" style="margin-right:6px;opacity:.8;"></i>Tên bưu tá</th>
-                <th><i class="fa-solid fa-mobile-screen" style="margin-right:6px;opacity:.8;"></i>Số điện thoại Zalo</th>
+                <th><i class="fa-solid fa-user" style="margin-right:6px;opacity:.8;"></i>TÃªn bÆ°u tÃ¡</th>
+                <th><i class="fa-solid fa-mobile-screen" style="margin-right:6px;opacity:.8;"></i>Sá»‘ Ä‘iá»‡n thoáº¡i Zalo</th>
                 <th class="del-cell"><i class="fa-solid fa-trash-can" style="opacity:.7;"></i></th>
               </tr>
             </thead>
@@ -88,13 +90,13 @@
         </div>
         <div class="config-actions">
           <button class="btn btn-orange" onclick="addBuutaRow(); addRipple(event)">
-            <i class="fa-solid fa-plus"></i> Thêm bưu tá
+            <i class="fa-solid fa-plus"></i> ThÃªm bÆ°u tÃ¡
           </button>
           <button class="btn btn-red" onclick="saveBuuta(); addRipple(event)">
-            <i class="fa-solid fa-floppy-disk"></i> Lưu danh sách
+            <i class="fa-solid fa-floppy-disk"></i> LÆ°u danh sÃ¡ch
           </button>
           <button class="btn btn-ghost" onclick="clearBuuta()">
-            <i class="fa-solid fa-trash"></i> Xóa tất cả
+            <i class="fa-solid fa-trash"></i> XÃ³a táº¥t cáº£
           </button>
         </div>
       </div>
@@ -115,21 +117,21 @@
            ondragover="handleDragOver(event)"
            ondragleave="handleDragLeave(event)"
            ondrop="handleDrop(event)">
-        <div class="upload-icon-wrap">📁</div>
-        <div class="upload-text-main">Kéo thả file Excel vào đây</div>
-        <div class="upload-text-sub">hoặc nhấn để chọn file từ máy tính</div>
+        <div class="upload-icon-wrap">ðŸ“</div>
+        <div class="upload-text-main">KÃ©o tháº£ file Excel vÃ o Ä‘Ã¢y</div>
+        <div class="upload-text-sub">hoáº·c nháº¥n Ä‘á»ƒ chá»n file tá»« mÃ¡y tÃ­nh</div>
         <button class="btn btn-red" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
-          <i class="fa-solid fa-file-arrow-up"></i> Chọn file .xlsx
+          <i class="fa-solid fa-file-arrow-up"></i> Chá»n file .xlsx
         </button>
         <input type="file" id="file-input" accept=".xlsx" onchange="handleFileChange(event)">
       </div>
       <div id="spinner-wrap" class="spinner-wrap">
         <div class="spinner-ring"></div>
-        <span class="spinner-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Đang xử lý file Excel...</span>
+        <span class="spinner-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Äang xá»­ lÃ½ file Excel...</span>
       </div>
       <div id="upload-reset" class="upload-reset">
         <button class="btn btn-ghost btn-sm" onclick="resetUpload()">
-          <i class="fa-solid fa-rotate-left"></i> Tải file khác
+          <i class="fa-solid fa-rotate-left"></i> Táº£i file khÃ¡c
         </button>
         <span class="file-chip" id="file-name-display">
           <i class="fa-solid fa-circle-check"></i>
@@ -138,21 +140,21 @@
     </div>
   </div>
 
-  <!-- ===== SECTION B.5: CHỌN CHẾ ĐỘ CẢNH BÁO ===== -->
+  <!-- ===== SECTION B.5: CHá»ŒN CHáº¾ Äá»˜ Cáº¢NH BÃO ===== -->
   <div id="section-mode-select" style="display:none;">
     <div class="section-card">
       <div class="section-header no-click">
         <span class="section-title">
           <i class="fa-solid fa-sliders"></i>
-          CHỌN LOẠI DỮ LIỆU CẦN CẢNH BÁO
+          CHá»ŒN LOáº I Dá»® LIá»†U Cáº¦N Cáº¢NH BÃO
         </span>
         <div class="mode-actions">
           <button class="btn-link" onclick="selectAllModes(true)">
-            <i class="fa-solid fa-check-double"></i> Chọn tất cả
+            <i class="fa-solid fa-check-double"></i> Chá»n táº¥t cáº£
           </button>
           <span style="color:var(--gray-300)">|</span>
           <button class="btn-link" onclick="selectAllModes(false)">
-            <i class="fa-solid fa-xmark"></i> Bỏ chọn
+            <i class="fa-solid fa-xmark"></i> Bá» chá»n
           </button>
         </div>
       </div>
@@ -162,36 +164,36 @@
           <div class="mode-card mode-tt500 selected" id="mode-card-tt500" onclick="toggleMode('tt500')">
             <div class="mode-header-row">
               <div class="mode-card-check" id="mode-check-tt500"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
-              <div class="mode-card-title">TRẠNG THÁI 500</div>
+              <div class="mode-card-title">TRáº NG THÃI 500</div>
             </div>
-            <div class="mode-card-sub">Phiếu hoàn/tồn phát chưa xử lý</div>
-            <div class="mode-card-badge" id="mode-badge-tt500">0 phiếu</div>
+            <div class="mode-card-sub">Phiáº¿u hoÃ n/tá»“n phÃ¡t chÆ°a xá»­ lÃ½</div>
+            <div class="mode-card-badge" id="mode-badge-tt500">0 phiáº¿u</div>
           </div>
-          <!-- DO_7 + DO_8 + DO_9 gộp -->
+          <!-- DO_7 + DO_8 + DO_9 gá»™p -->
           <div class="mode-card mode-do selected" id="mode-card-do" onclick="toggleMode('do')">
             <div class="mode-header-row">
               <div class="mode-card-check" id="mode-check-do"><i class="fa-solid fa-check" style="font-size:11px;"></i></div>
-              <div class="mode-card-title">⚠️ DO_7 + DO_8 + DO_9</div>
+              <div class="mode-card-title">âš ï¸ DO_7 + DO_8 + DO_9</div>
             </div>
-            <div class="mode-card-sub">Cảnh báo tồn hàng theo mức độ</div>
-            <div class="mode-card-badge" id="mode-badge-do">0 phiếu</div>
+            <div class="mode-card-sub">Cáº£nh bÃ¡o tá»“n hÃ ng theo má»©c Ä‘á»™</div>
+            <div class="mode-card-badge" id="mode-badge-do">0 phiáº¿u</div>
           </div>
         </div>
         <div class="flex gap-2 flex-wrap">
           <button class="btn btn-red" onclick="applyModesAndRender(); addRipple(event)">
-            <i class="fa-solid fa-magnifying-glass-chart"></i> Xem kết quả
+            <i class="fa-solid fa-magnifying-glass-chart"></i> Xem káº¿t quáº£
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ===== SECTION C: KẾT QUẢ ===== -->
+  <!-- ===== SECTION C: Káº¾T QUáº¢ ===== -->
   <div id="section-results">
     <div class="section-card">
       <div class="section-header no-click">
         <span class="section-title" id="results-title">
-          <i class="fa-solid fa-clipboard-list"></i> KẾT QUẢ
+          <i class="fa-solid fa-clipboard-list"></i> Káº¾T QUáº¢
         </span>
       </div>
       <div class="section-body">
@@ -201,37 +203,37 @@
     </div>
   </div>
 
-  <!-- ===== SECTION D: THỐNG KÊ ===== -->
+  <!-- ===== SECTION D: THá»NG KÃŠ ===== -->
   <div id="section-stats">
-    <div class="section-sep">📊 Thống kê tổng quan</div>
+    <div class="section-sep">ðŸ“Š Thá»‘ng kÃª tá»•ng quan</div>
     <!-- Base stats -->
     <div class="stats-grid" id="base-stats-row">
       <div class="stat-card">
         <div class="stat-icon red"><i class="fa-solid fa-box-open"></i></div>
         <div>
-          <div class="stat-label">Phiếu TT 500</div>
+          <div class="stat-label">Phiáº¿u TT 500</div>
           <div class="stat-value red" id="stat-total-tt500">0</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon orange"><i class="fa-solid fa-users"></i></div>
         <div>
-          <div class="stat-label">Bưu tá liên quan</div>
+          <div class="stat-label">BÆ°u tÃ¡ liÃªn quan</div>
           <div class="stat-value orange" id="stat-buuta">0</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon red"><i class="fa-solid fa-clock-rotate-left"></i></div>
         <div>
-          <div class="stat-label">Phiếu quá hạn</div>
+          <div class="stat-label">Phiáº¿u quÃ¡ háº¡n</div>
           <div class="stat-value red" id="stat-quahan">0</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon green"><i class="fa-solid fa-sack-dollar"></i></div>
         <div>
-          <div class="stat-label">Tổng COD TT500</div>
-          <div class="stat-value green" id="stat-cod">0đ</div>
+          <div class="stat-label">Tá»•ng COD TT500</div>
+          <div class="stat-value green" id="stat-cod">0Ä‘</div>
         </div>
       </div>
     </div>
@@ -240,35 +242,35 @@
       <div class="stat-card" id="stat-card-do9">
         <div class="stat-icon do9"><i class="fa-solid fa-circle-exclamation"></i></div>
         <div>
-          <div class="stat-label">Tổng phiếu DO_9</div>
+          <div class="stat-label">Tá»•ng phiáº¿u DO_9</div>
           <div class="stat-value do9" id="stat-do9">0</div>
         </div>
       </div>
       <div class="stat-card" id="stat-card-do8">
         <div class="stat-icon do8"><i class="fa-solid fa-triangle-exclamation"></i></div>
         <div>
-          <div class="stat-label">Tổng phiếu DO_8</div>
+          <div class="stat-label">Tá»•ng phiáº¿u DO_8</div>
           <div class="stat-value do8" id="stat-do8">0</div>
         </div>
       </div>
       <div class="stat-card" id="stat-card-do7">
         <div class="stat-icon do7"><i class="fa-solid fa-bell"></i></div>
         <div>
-          <div class="stat-label">Tổng phiếu DO_7</div>
+          <div class="stat-label">Tá»•ng phiáº¿u DO_7</div>
           <div class="stat-value do7" id="stat-do7">0</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon orange"><i class="fa-solid fa-money-bill-wave"></i></div>
         <div>
-          <div class="stat-label">Tổng COD (DO_7+8+9)</div>
-          <div class="stat-value orange" id="stat-cod-do">0đ</div>
+          <div class="stat-label">Tá»•ng COD (DO_7+8+9)</div>
+          <div class="stat-value orange" id="stat-cod-do">0Ä‘</div>
         </div>
       </div>
     </div>
     <div class="stats-actions">
       <button class="btn btn-zalo btn-lg" onclick="openAllModal(); addRipple(event)">
-        <i class="fa-brands fa-rocketchat"></i> Gửi cảnh báo tất cả bưu tá
+        <i class="fa-brands fa-rocketchat"></i> Gá»­i cáº£nh bÃ¡o táº¥t cáº£ bÆ°u tÃ¡
       </button>
     </div>
   </div>
@@ -281,7 +283,7 @@
     <div class="modal-header">
       <div class="modal-title" id="modal-title">
         <i class="fa-brands fa-rocketchat" style="color:var(--zalo);"></i>
-        Gửi cảnh báo Zalo
+        Gá»­i cáº£nh bÃ¡o Zalo
       </div>
       <button class="modal-close-btn" onclick="closeModal()">
         <i class="fa-solid fa-xmark"></i>
@@ -289,21 +291,21 @@
     </div>
     <div class="modal-body">
       <div class="modal-tabs" id="modal-tabs"></div>
-      <textarea class="msg-textarea" id="modal-textarea" placeholder="Nội dung tin nhắn..."></textarea>
+      <textarea class="msg-textarea" id="modal-textarea" placeholder="Ná»™i dung tin nháº¯n..."></textarea>
       <div class="modal-note">
         <i class="fa-solid fa-circle-info" style="color:var(--zalo);"></i>
-        Sau khi Zalo mở, hãy dán nội dung đã copy vào khung chat.
+        Sau khi Zalo má»Ÿ, hÃ£y dÃ¡n ná»™i dung Ä‘Ã£ copy vÃ o khung chat.
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="copyModal()">
-        <i class="fa-solid fa-copy"></i> Copy nội dung
+        <i class="fa-solid fa-copy"></i> Copy ná»™i dung
       </button>
       <button class="btn btn-zalo" id="btn-open-zalo" onclick="openZalo()">
-        <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Zalo
+        <i class="fa-solid fa-arrow-up-right-from-square"></i> Má»Ÿ Zalo
       </button>
       <button class="btn btn-ghost" onclick="closeModal()" style="margin-left:auto;">
-        <i class="fa-solid fa-xmark"></i> Đóng
+        <i class="fa-solid fa-xmark"></i> ÄÃ³ng
       </button>
     </div>
   </div>
@@ -312,7 +314,7 @@
 <!-- ===== TOAST CONTAINER ===== -->
 <div id="toast-container"></div>
 
-<!-- ===== APP SCRIPTS (thứ tự quan trọng) ===== -->
+<!-- ===== APP SCRIPTS (thá»© tá»± quan trá»ng) ===== -->
 <script src="assets/js/state.js"></script>
 <script src="assets/js/utils.js"></script>
 <script src="assets/js/buuta.js"></script>
@@ -324,3 +326,4 @@
 
 </body>
 </html>
+

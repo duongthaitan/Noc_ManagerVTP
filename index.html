@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="icon" type="image/png" href="assets/icons/icon128.png">
 <style>
 /* ================================================================
    SIDEBAR TOGGLE
@@ -661,63 +662,63 @@ body {
   <!-- Nav -->
   <nav class="sb-nav">
     <div class="sb-label">Tổng Quan</div>
-    <div class="sb-item active" id="nav-home" onclick="showHome()">
+    <a href="index.html" class="sb-item active" id="nav-home" onclick="event.preventDefault(); showHome()">
       <div class="sb-icon"><i class="fa-solid fa-house-chimney"></i></div>
       <div class="sb-item-text">
         Dashboard
         <span class="sb-item-sub">Trang chủ tổng quan</span>
       </div>
-    </div>
+    </a>
 
     <div class="sb-label">Công Cụ Báo Cáo</div>
-    <div class="sb-item" id="nav-ton" onclick="loadPage('quan_ly_phieu_ton_phat.html','nav-ton','Phiếu Tồn Phát')">
+    <a href="quan_ly_phieu_ton_phat.html" class="sb-item" id="nav-ton" onclick="event.preventDefault(); loadPage('quan_ly_phieu_ton_phat.html','nav-ton','Phiếu Tồn Phát')">
       <div class="sb-icon"><i class="fa-solid fa-clipboard-list"></i></div>
       <div class="sb-item-text">
         Phiếu Tồn Phát
         <span class="sb-item-sub">TT500 · DO_7/8/9 · Zalo</span>
       </div>
       <span class="sb-badge">Hot</span>
-    </div>
-    <div class="sb-item" id="nav-thu" onclick="loadPage('quan_ly_thu_sai_gio.html','nav-thu','Thu Sai Giờ')">
+    </a>
+    <a href="quan_ly_thu_sai_gio.html" class="sb-item" id="nav-thu" onclick="event.preventDefault(); loadPage('quan_ly_thu_sai_gio.html','nav-thu','Thu Sai Giờ')">
       <div class="sb-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
       <div class="sb-item-text">
         Thu Sai Giờ
         <span class="sb-item-sub">Lọc đơn · Xuất Excel</span>
       </div>
-    </div>
-    <div class="sb-item" id="nav-hoan" onclick="loadPage('ti_le_hoan_ngay_hom_qua.html','nav-hoan','Tỉ Lệ Hoàn')">
+    </a>
+    <a href="ti_le_hoan_ngay_hom_qua.html" class="sb-item" id="nav-hoan" onclick="event.preventDefault(); loadPage('ti_le_hoan_ngay_hom_qua.html','nav-hoan','Tỉ Lệ Hoàn')">
       <div class="sb-icon"><i class="fa-solid fa-arrow-rotate-left"></i></div>
       <div class="sb-item-text">
         Tỉ Lệ Hoàn
         <span class="sb-item-sub">Biểu đồ · PNG export</span>
       </div>
-    </div>
-    <div class="sb-item" id="nav-sl" onclick="loadPage('quan_ly_san_luong_phat_ngay_hom_qua.html','nav-sl','Sản Lượng Phát')">
+    </a>
+    <a href="quan_ly_san_luong_phat_ngay_hom_qua.html" class="sb-item" id="nav-sl" onclick="event.preventDefault(); loadPage('quan_ly_san_luong_phat_ngay_hom_qua.html','nav-sl','Sản Lượng Phát')">
       <div class="sb-icon"><i class="fa-solid fa-box-open"></i></div>
       <div class="sb-item-text">
         Sản Lượng Phát
         <span class="sb-item-sub">Chart.js · Export Excel</span>
       </div>
-    </div>
-    <div class="sb-item" id="nav-kptc" onclick="loadPage('quan_ly_khau_phat_theo_ca.html','nav-kptc','Khẩu Phát Theo Ca')">
+    </a>
+    <a href="quan_ly_khau_phat_theo_ca.html" class="sb-item" id="nav-kptc" onclick="event.preventDefault(); loadPage('quan_ly_khau_phat_theo_ca.html','nav-kptc','Khẩu Phát Theo Ca')">
       <div class="sb-icon"><i class="fa-solid fa-chart-pie"></i></div>
       <div class="sb-item-text">
         Khẩu Phát Theo Ca
         <span class="sb-item-sub">PTC · Đúng giờ · Excel</span>
       </div>
       <span class="sb-badge new">Mới</span>
-    </div>
-    <div class="sb-item" id="nav-slt" onclick="loadPage('quan_ly_san_luong_thu_ngay_hom_qua.html','nav-slt','Sản Lượng Thu')">
+    </a>
+    <a href="quan_ly_san_luong_thu_ngay_hom_qua.html" class="sb-item" id="nav-slt" onclick="event.preventDefault(); loadPage('quan_ly_san_luong_thu_ngay_hom_qua.html','nav-slt','Sản Lượng Thu')">
       <div class="sb-icon"><i class="fa-solid fa-inbox"></i></div>
       <div class="sb-item-text">
         Sản Lượng Thu
         <span class="sb-item-sub">TTC · Chart · Excel</span>
       </div>
       <span class="sb-badge new">Mới</span>
-    </div>
+    </a>
 
     <!-- ══ QR Transfer nav item ══ -->
-    <div class="sb-item" id="nav-qr" onclick="loadPage('upload_file_qrcode.html','nav-qr','QR Chuyển File')">
+    <a href="upload_file_qrcode.html" class="sb-item" id="nav-qr" onclick="event.preventDefault(); loadPage('upload_file_qrcode.html','nav-qr','QR Chuyển File')">
       <div class="sb-icon" style="background:linear-gradient(135deg,#7C3AED22,#A78BFA22);color:#7C3AED;">
         <i class="fa-solid fa-qrcode"></i>
       </div>
@@ -726,7 +727,7 @@ body {
         <span class="sb-item-sub">Upload · QR · Điện thoại</span>
       </div>
       <span class="sb-badge" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);font-size:8px;padding:1px 6px;">Mới</span>
-    </div>
+    </a>
 
     <div class="sb-label">Hệ Thống</div>
     <div class="sb-item" style="opacity:.45;pointer-events:none;">
@@ -756,9 +757,9 @@ body {
       <div class="home-icon" onclick="toggleSidebar()" id="topbar-menu-btn" title="Thu/Mở thanh công cụ" style="background:var(--gray-100);color:var(--gray-500);">
         <i class="fa-solid fa-bars"></i>
       </div>
-      <div class="home-icon" onclick="showHome()" title="Về trang chủ">
+      <a href="index.html" class="home-icon" onclick="event.preventDefault(); showHome()" title="Về trang chủ">
         <i class="fa-solid fa-house"></i>
-      </div>
+      </a>
       <i class="fa-solid fa-chevron-right sep"></i>
       <span class="topbar-current" id="topbar-current">Dashboard</span>
     </div>

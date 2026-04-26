@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../CanhBaoTuyenPhatTheoCa/Phát Đúng Giờ"
+		},
+		{
+			"path": "../CanhBaoTuyenPhatTheoCa/Sản Lượng Thu"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "App_BaoCao"
+	}
+}

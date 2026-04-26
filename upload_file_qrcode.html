@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Chuyển File — ViettelPost HBCTVT</title>
-<meta name="description" content="Công cụ upload file và tạo mã QR để chuyển về điện thoại — ViettelPost HBCTVT">
+<title>QR Chuyá»ƒn File â€” ViettelPost HBCTVT</title>
+<meta name="description" content="CÃ´ng cá»¥ upload file vÃ  táº¡o mÃ£ QR Ä‘á»ƒ chuyá»ƒn vá» Ä‘iá»‡n thoáº¡i â€” ViettelPost HBCTVT">
 
 <!-- ===== FONTS & ICONS ===== -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,10 +20,10 @@
 
 <style>
 /* ================================================================
-   PAGE-SPECIFIC STYLES — QR Chuyển File
+   PAGE-SPECIFIC STYLES â€” QR Chuyá»ƒn File
 ================================================================ */
 
-/* ── Nav breadcrumb ── */
+/* â”€â”€ Nav breadcrumb â”€â”€ */
 .page-nav {
   background: white; border-bottom: 1px solid var(--border);
   padding: 10px 20px; display: flex; align-items: center; gap: 8px;
@@ -32,7 +32,7 @@
 .page-nav a { color: var(--vtp-red); font-weight: 600; text-decoration: none; }
 .page-nav a:hover { text-decoration: underline; }
 
-/* ── Layout grid ── */
+/* â”€â”€ Layout grid â”€â”€ */
 .qr-main-grid {
   display: grid;
   grid-template-columns: 1fr 380px;
@@ -43,7 +43,7 @@
   .qr-main-grid { grid-template-columns: 1fr; }
 }
 
-/* ── Big Drop Zone ── */
+/* â”€â”€ Big Drop Zone â”€â”€ */
 .big-drop-zone {
   border: 3px dashed var(--gray-300);
   border-radius: var(--radius);
@@ -94,7 +94,7 @@
   background: white; color: var(--gray-500);
 }
 
-/* ── Upload Progress ── */
+/* â”€â”€ Upload Progress â”€â”€ */
 .upload-progress-wrap {
   display: none;
   flex-direction: column;
@@ -111,7 +111,7 @@
 }
 .progress-sub { font-size: 12.5px; color: var(--gray-500); }
 
-/* ── QR Result Panel (right side) ── */
+/* â”€â”€ QR Result Panel (right side) â”€â”€ */
 .qr-panel {
   background: white; border: 1.5px solid rgba(124,58,237,.2);
   border-radius: var(--radius); overflow: hidden;
@@ -199,7 +199,7 @@
 }
 .qr-btn.outline-red:hover { background: var(--vtp-red-light); border-color: var(--vtp-red); }
 
-/* ── History section ── */
+/* â”€â”€ History section â”€â”€ */
 .history-list { display: flex; flex-direction: column; gap: 10px; }
 .history-item {
   background: white; border: 1px solid var(--border);
@@ -227,7 +227,7 @@
 .history-badge.ok { background: #D1FAE5; color: #059669; border: 1px solid rgba(5,150,105,.2); }
 .history-badge.expired { background: var(--gray-100); color: var(--gray-400); border: 1px solid var(--border); }
 
-/* ── Tips section ── */
+/* â”€â”€ Tips section â”€â”€ */
 .tips-grid {
   display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
 }
@@ -241,7 +241,7 @@
 .tip-title { font-size: 12.5px; font-weight: 800; color: var(--text); margin-bottom: 5px; }
 .tip-desc { font-size: 11.5px; color: var(--gray-500); line-height: 1.6; }
 
-/* ── Toast ── */
+/* â”€â”€ Toast â”€â”€ */
 #toast-container {
   position: fixed; bottom: 24px; right: 24px; z-index: 9999;
   display: flex; flex-direction: column; gap: 8px;
@@ -272,6 +272,8 @@
 .fu2 { animation: fadeUp .35s ease both .10s; }
 .fu3 { animation: fadeUp .35s ease both .16s; }
 </style>
+
+<link rel="icon" type="image/png" href="assets/icons/icon128.png">
 </head>
 <body>
 
@@ -284,24 +286,24 @@
         <div class="logo-text">VIETTEL<span>POST</span></div>
       </div>
       <div class="header-title-group">
-        <div class="header-title">📲 QR CHUYỂN FILE — TẢI VỀ ĐIỆN THOẠI</div>
-        <div class="header-subtitle">Upload file → tạo mã QR → quét bằng điện thoại để tải xuống tức thì</div>
+        <div class="header-title">ðŸ“² QR CHUYá»‚N FILE â€” Táº¢I Vá»€ ÄIá»†N THOáº I</div>
+        <div class="header-subtitle">Upload file â†’ táº¡o mÃ£ QR â†’ quÃ©t báº±ng Ä‘iá»‡n thoáº¡i Ä‘á»ƒ táº£i xuá»‘ng tá»©c thÃ¬</div>
       </div>
     </div>
     <div class="header-badges">
       <div class="hbadge danger">
         <i class="fa-solid fa-cloud-arrow-up"></i>
-        <span>Đã upload:</span>
+        <span>ÄÃ£ upload:</span>
         <span class="num" id="h-count">0</span>
       </div>
       <div class="hbadge">
         <i class="fa-solid fa-database"></i>
-        <span>Còn hiệu lực:</span>
+        <span>CÃ²n hiá»‡u lá»±c:</span>
         <span class="num" id="h-active">0</span>
       </div>
       <div class="hbadge">
         <i class="fa-solid fa-shield-halved"></i>
-        <span>Tối đa:</span>
+        <span>Tá»‘i Ä‘a:</span>
         <span class="num">100MB/file</span>
       </div>
     </div>
@@ -311,9 +313,9 @@
 
 <!-- ===== BREADCRUMB ===== -->
 <div class="page-nav">
-  <a href="index.html"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chủ</a>
+  <a href="index.html"><i class="fa-solid fa-house" style="font-size:11px;"></i> Trang chá»§</a>
   <i class="fa-solid fa-chevron-right" style="font-size:10px;opacity:.5;"></i>
-  <span>QR Chuyển File</span>
+  <span>QR Chuyá»ƒn File</span>
 </div>
 
 <div class="container">
@@ -321,19 +323,19 @@
   <!-- ===== TIPS ROW ===== -->
   <div class="tips-grid fu1" style="margin-bottom:18px;">
     <div class="tip-card">
-      <span class="tip-icon">📤</span>
+      <span class="tip-icon">ðŸ“¤</span>
       <div class="tip-title">1. Upload file</div>
-      <div class="tip-desc">Kéo thả hoặc nhấn chọn file từ máy tính. Hỗ trợ mọi định dạng, tối đa 100MB.</div>
+      <div class="tip-desc">KÃ©o tháº£ hoáº·c nháº¥n chá»n file tá»« mÃ¡y tÃ­nh. Há»— trá»£ má»i Ä‘á»‹nh dáº¡ng, tá»‘i Ä‘a 100MB.</div>
     </div>
     <div class="tip-card">
-      <span class="tip-icon">📱</span>
-      <div class="tip-title">2. Quét mã QR</div>
-      <div class="tip-desc">Dùng camera điện thoại quét mã QR xuất hiện. Không cần cài app thêm.</div>
+      <span class="tip-icon">ðŸ“±</span>
+      <div class="tip-title">2. QuÃ©t mÃ£ QR</div>
+      <div class="tip-desc">DÃ¹ng camera Ä‘iá»‡n thoáº¡i quÃ©t mÃ£ QR xuáº¥t hiá»‡n. KhÃ´ng cáº§n cÃ i app thÃªm.</div>
     </div>
     <div class="tip-card">
-      <span class="tip-icon">⬇️</span>
-      <div class="tip-title">3. Tải xuống</div>
-      <div class="tip-desc">File tự động tải về điện thoại. Link hết hạn sau 60 phút.</div>
+      <span class="tip-icon">â¬‡ï¸</span>
+      <div class="tip-title">3. Táº£i xuá»‘ng</div>
+      <div class="tip-desc">File tá»± Ä‘á»™ng táº£i vá» Ä‘iá»‡n thoáº¡i. Link háº¿t háº¡n sau 60 phÃºt.</div>
     </div>
   </div>
 
@@ -346,7 +348,7 @@
       <div class="section-card" style="margin-bottom:18px;">
         <div class="section-header no-click">
           <span class="section-title"><i class="fa-solid fa-cloud-arrow-up"></i> UPLOAD FILE</span>
-          <span style="font-size:11px;color:var(--gray-400);font-weight:600;">Tối đa 100MB · Mọi định dạng</span>
+          <span style="font-size:11px;color:var(--gray-400);font-weight:600;">Tá»‘i Ä‘a 100MB Â· Má»i Ä‘á»‹nh dáº¡ng</span>
         </div>
         <div class="section-body" style="padding:20px;">
 
@@ -360,22 +362,22 @@
             <div class="dz-icon-wrap">
               <i class="fa-solid fa-cloud-arrow-up"></i>
             </div>
-            <div class="dz-title">Kéo thả file vào đây</div>
+            <div class="dz-title">KÃ©o tháº£ file vÃ o Ä‘Ã¢y</div>
             <div class="dz-sub">
-              hoặc <strong style="color:#7C3AED;">nhấn để chọn file</strong> từ máy tính của bạn<br>
-              Mỗi lần có thể chọn nhiều file cùng lúc
+              hoáº·c <strong style="color:#7C3AED;">nháº¥n Ä‘á»ƒ chá»n file</strong> tá»« mÃ¡y tÃ­nh cá»§a báº¡n<br>
+              Má»—i láº§n cÃ³ thá»ƒ chá»n nhiá»u file cÃ¹ng lÃºc
             </div>
             <button class="btn btn-sm" onclick="event.stopPropagation(); document.getElementById('file-input').click()"
               style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:white;box-shadow:0 3px 12px rgba(124,58,237,.3);">
-              <i class="fa-solid fa-folder-open"></i> Chọn file
+              <i class="fa-solid fa-folder-open"></i> Chá»n file
             </button>
             <div class="dz-types">
-              <span class="dz-type-chip">📊 Excel</span>
-              <span class="dz-type-chip">🖼️ Ảnh</span>
-              <span class="dz-type-chip">📄 PDF</span>
-              <span class="dz-type-chip">📁 ZIP</span>
-              <span class="dz-type-chip">📝 Word</span>
-              <span class="dz-type-chip">+ Mọi định dạng</span>
+              <span class="dz-type-chip">ðŸ“Š Excel</span>
+              <span class="dz-type-chip">ðŸ–¼ï¸ áº¢nh</span>
+              <span class="dz-type-chip">ðŸ“„ PDF</span>
+              <span class="dz-type-chip">ðŸ“ ZIP</span>
+              <span class="dz-type-chip">ðŸ“ Word</span>
+              <span class="dz-type-chip">+ Má»i Ä‘á»‹nh dáº¡ng</span>
             </div>
           </div>
 
@@ -383,8 +385,8 @@
           <div class="upload-progress-wrap" id="upload-progress">
             <div class="spinner-ring"></div>
             <div>
-              <div class="progress-filename" id="progress-filename">đang upload...</div>
-              <div class="progress-sub" style="margin-top:6px;">⬆️ Đang tải lên máy chủ...</div>
+              <div class="progress-filename" id="progress-filename">Ä‘ang upload...</div>
+              <div class="progress-sub" style="margin-top:6px;">â¬†ï¸ Äang táº£i lÃªn mÃ¡y chá»§...</div>
             </div>
           </div>
 
@@ -394,16 +396,16 @@
       <!-- History Section -->
       <div class="section-card">
         <div class="section-header no-click">
-          <span class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> LỊCH SỬ UPLOAD</span>
+          <span class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Lá»ŠCH Sá»¬ UPLOAD</span>
           <button class="btn btn-ghost btn-xs" onclick="clearHistory()" id="btn-clear-history" style="display:none;">
-            <i class="fa-solid fa-trash"></i> Xoá tất cả
+            <i class="fa-solid fa-trash"></i> XoÃ¡ táº¥t cáº£
           </button>
         </div>
         <div class="section-body" style="padding:16px 20px;" id="history-body">
           <div style="text-align:center;padding:32px 16px;color:var(--gray-400);">
             <i class="fa-solid fa-inbox" style="font-size:36px;display:block;margin-bottom:10px;opacity:.35;"></i>
-            <div style="font-size:12.5px;font-weight:600;">Chưa có file nào được upload</div>
-            <div style="font-size:11.5px;margin-top:4px;">Upload file ở bên trên để bắt đầu</div>
+            <div style="font-size:12.5px;font-weight:600;">ChÆ°a cÃ³ file nÃ o Ä‘Æ°á»£c upload</div>
+            <div style="font-size:11.5px;margin-top:4px;">Upload file á»Ÿ bÃªn trÃªn Ä‘á»ƒ báº¯t Ä‘áº§u</div>
           </div>
         </div>
       </div>
@@ -413,15 +415,15 @@
     <div>
       <div class="qr-panel">
         <div class="qr-panel-header">
-          <div class="qr-panel-title"><i class="fa-solid fa-qrcode"></i> MÃ QR TẢI FILE</div>
-          <div class="qr-panel-sub">Quét để tải về điện thoại ngay lập tức</div>
+          <div class="qr-panel-title"><i class="fa-solid fa-qrcode"></i> MÃƒ QR Táº¢I FILE</div>
+          <div class="qr-panel-sub">QuÃ©t Ä‘á»ƒ táº£i vá» Ä‘iá»‡n thoáº¡i ngay láº­p tá»©c</div>
         </div>
         <div class="qr-panel-body">
 
           <!-- Empty state -->
           <div class="qr-empty-state" id="qr-empty">
             <i class="fa-solid fa-qrcode" style="color:#A78BFA;"></i>
-            <p>Upload một file để tạo mã QR tương ứng.<br>Mã QR sẽ xuất hiện tại đây.</p>
+            <p>Upload má»™t file Ä‘á»ƒ táº¡o mÃ£ QR tÆ°Æ¡ng á»©ng.<br>MÃ£ QR sáº½ xuáº¥t hiá»‡n táº¡i Ä‘Ã¢y.</p>
           </div>
 
           <!-- QR Result -->
@@ -433,24 +435,24 @@
             <div class="qr-result-file-info">
               <div class="qr-file-name" id="qr-file-name">
                 <i class="fa-solid fa-file" style="color:#7C3AED;flex-shrink:0;"></i>
-                <span id="qr-name-text">—</span>
+                <span id="qr-name-text">â€”</span>
               </div>
-              <div class="qr-file-size" id="qr-file-size">—</div>
+              <div class="qr-file-size" id="qr-file-size">â€”</div>
             </div>
 
             <!-- Countdown -->
             <div class="qr-countdown" id="qr-countdown">
               <i class="fa-solid fa-hourglass-half"></i>
-              <span id="qr-timer-text">⏱ Link còn 60:00</span>
+              <span id="qr-timer-text">â± Link cÃ²n 60:00</span>
             </div>
 
             <!-- Actions -->
             <div class="qr-actions">
               <button class="qr-btn purple" onclick="copyCurrentLink()">
-                <i class="fa-solid fa-copy"></i> Copy link tải
+                <i class="fa-solid fa-copy"></i> Copy link táº£i
               </button>
               <button class="qr-btn outline-gray" onclick="triggerUploadNew()">
-                <i class="fa-solid fa-cloud-arrow-up"></i> Upload file khác
+                <i class="fa-solid fa-cloud-arrow-up"></i> Upload file khÃ¡c
               </button>
             </div>
           </div>
@@ -463,14 +465,14 @@
         <div class="section-body" style="padding:16px;">
           <div style="font-size:11.5px;color:var(--gray-500);line-height:1.75;">
             <div style="font-weight:800;color:var(--text);margin-bottom:8px;font-size:12px;">
-              <i class="fa-solid fa-circle-info" style="color:#7C3AED;"></i> Lưu ý sử dụng
+              <i class="fa-solid fa-circle-info" style="color:#7C3AED;"></i> LÆ°u Ã½ sá»­ dá»¥ng
             </div>
-            <div>⏱ Link tự động hủy sau <strong>60 phút</strong></div>
-            <div>📦 Kích thước tối đa <strong>100MB / file</strong></div>
-            <div>🔒 Không lưu dữ liệu trên server của bạn</div>
-            <div>📱 Mở bằng bất kỳ trình duyệt nào trên điện thoại</div>
+            <div>â± Link tá»± Ä‘á»™ng há»§y sau <strong>60 phÃºt</strong></div>
+            <div>ðŸ“¦ KÃ­ch thÆ°á»›c tá»‘i Ä‘a <strong>100MB / file</strong></div>
+            <div>ðŸ”’ KhÃ´ng lÆ°u dá»¯ liá»‡u trÃªn server cá»§a báº¡n</div>
+            <div>ðŸ“± Má»Ÿ báº±ng báº¥t ká»³ trÃ¬nh duyá»‡t nÃ o trÃªn Ä‘iá»‡n thoáº¡i</div>
             <div style="margin-top:8px;padding:8px 10px;background:var(--vtp-red-light);border-radius:6px;color:var(--vtp-red-dark);font-weight:600;border-left:3px solid var(--vtp-red);">
-              ⚠️ Không chia sẻ link chứa thông tin bảo mật
+              âš ï¸ KhÃ´ng chia sáº» link chá»©a thÃ´ng tin báº£o máº­t
             </div>
           </div>
         </div>
@@ -523,7 +525,7 @@ function processFiles(files) {
   // Upload one by one, starting with first; subsequent ones queue
   var first = files[0];
   if (files.length > 1) {
-    showToast('📂 Đang upload ' + files.length + ' file (lần lượt từng file)', 'info');
+    showToast('ðŸ“‚ Äang upload ' + files.length + ' file (láº§n lÆ°á»£t tá»«ng file)', 'info');
   }
   uploadFile(first, 0, files);
 }
@@ -531,7 +533,7 @@ function processFiles(files) {
 function uploadFile(file, idx, allFiles) {
   var maxBytes = 100 * 1024 * 1024;
   if (file.size > maxBytes) {
-    showToast('⚠️ File "' + file.name + '" vượt quá 100MB, bỏ qua.', 'warning');
+    showToast('âš ï¸ File "' + file.name + '" vÆ°á»£t quÃ¡ 100MB, bá» qua.', 'warning');
     if (idx + 1 < allFiles.length) uploadFile(allFiles[idx + 1], idx + 1, allFiles);
     return;
   }
@@ -556,7 +558,7 @@ function uploadFile(file, idx, allFiles) {
     updateHeaderBadges();
     renderHistory();
     showQrResult(entry);
-    showToast('✅ Upload thành công: ' + file.name, 'success');
+    showToast('âœ… Upload thÃ nh cÃ´ng: ' + file.name, 'success');
     // Reset file input so same file can be re-uploaded
     document.getElementById('file-input').value = '';
     // Upload next if any
@@ -569,7 +571,7 @@ function uploadFile(file, idx, allFiles) {
 
   function handleError(errMsg) {
     showProgress(false, '');
-    showToast('❌ Lỗi upload "' + file.name + '": ' + (errMsg || 'Không xác định'), 'error');
+    showToast('âŒ Lá»—i upload "' + file.name + '": ' + (errMsg || 'KhÃ´ng xÃ¡c Ä‘á»‹nh'), 'error');
     document.getElementById('file-input').value = '';
   }
 
@@ -595,7 +597,7 @@ function uploadFile(file, idx, allFiles) {
         if (dlUrl) {
           handleSuccess(dlUrl);
         } else {
-          handleError('Server trả về lỗi');
+          handleError('Server tráº£ vá» lá»—i');
         }
       })
       .catch(function(err) {
@@ -616,14 +618,14 @@ function uploadViaXHR(fd, onSuccess, onError, parseResponse) {
       if (xhr.status >= 200 && xhr.status < 300) {
         var dlUrl = parseResponse(xhr.responseText);
         if (dlUrl) { onSuccess(dlUrl); }
-        else { onError('Phản hồi không hợp lệ'); }
+        else { onError('Pháº£n há»“i khÃ´ng há»£p lá»‡'); }
       } else {
         onError('HTTP ' + xhr.status);
       }
     }
   };
-  xhr.onerror = function() { onError('Lỗi mạng'); };
-  xhr.ontimeout = function() { onError('Hết thời gian chờ'); };
+  xhr.onerror = function() { onError('Lá»—i máº¡ng'); };
+  xhr.ontimeout = function() { onError('Háº¿t thá»i gian chá»'); };
   xhr.timeout = 120000; // 2 min timeout
   xhr.send(fd);
 }
@@ -660,7 +662,7 @@ function showQrResult(entry) {
 
   // File info
   document.getElementById('qr-name-text').textContent = entry.name;
-  document.getElementById('qr-file-size').textContent = formatSize(entry.size) + ' · Tải về điện thoại bằng cách quét QR';
+  document.getElementById('qr-file-size').textContent = formatSize(entry.size) + ' Â· Táº£i vá» Ä‘iá»‡n thoáº¡i báº±ng cÃ¡ch quÃ©t QR';
   currentLink = entry.url;
 
   // Countdown
@@ -674,10 +676,10 @@ function showQrResult(entry) {
     if (rem === 0) {
       clearInterval(countdownInterval);
       cdEl.classList.add('expired');
-      timerEl.textContent = '⚠️ Link đã hết hạn';
+      timerEl.textContent = 'âš ï¸ Link Ä‘Ã£ háº¿t háº¡n';
     } else {
       cdEl.classList.remove('expired');
-      timerEl.textContent = '⏱ Link còn ' + m + ':' + String(s).padStart(2,'0');
+      timerEl.textContent = 'â± Link cÃ²n ' + m + ':' + String(s).padStart(2,'0');
     }
   }, 1000);
 }
@@ -689,7 +691,7 @@ function renderHistory() {
   var body = document.getElementById('history-body');
   var clearBtn = document.getElementById('btn-clear-history');
   if (uploadHistory.length === 0) {
-    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--gray-400);"><i class="fa-solid fa-inbox" style="font-size:36px;display:block;margin-bottom:10px;opacity:.35;"></i><div style="font-size:12.5px;font-weight:600;">Chưa có file nào được upload</div><div style="font-size:11.5px;margin-top:4px;">Upload file ở bên trên để bắt đầu</div></div>';
+    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--gray-400);"><i class="fa-solid fa-inbox" style="font-size:36px;display:block;margin-bottom:10px;opacity:.35;"></i><div style="font-size:12.5px;font-weight:600;">ChÆ°a cÃ³ file nÃ o Ä‘Æ°á»£c upload</div><div style="font-size:11.5px;margin-top:4px;">Upload file á»Ÿ bÃªn trÃªn Ä‘á»ƒ báº¯t Ä‘áº§u</div></div>';
     clearBtn.style.display = 'none';
     return;
   }
@@ -710,10 +712,10 @@ function renderHistory() {
       '</div>' +
       '<div class="history-info">' +
         '<div class="history-name">' + escHtml(e.name) + '</div>' +
-        '<div class="history-meta">' + formatSize(e.size) + ' · ' + timeAgo + '</div>' +
+        '<div class="history-meta">' + formatSize(e.size) + ' Â· ' + timeAgo + '</div>' +
       '</div>' +
       '<span class="history-badge ' + (expired ? 'expired' : 'ok') + '">' +
-        (expired ? '⏰ Hết hạn' : '● Còn ' + remMin + ' phút') +
+        (expired ? 'â° Háº¿t háº¡n' : 'â— CÃ²n ' + remMin + ' phÃºt') +
       '</span>' +
     '</div>';
   }).join('') + '</div>';
@@ -722,9 +724,9 @@ function renderHistory() {
 function selectHistory(idx) {
   var entry = uploadHistory[idx];
   if (!entry) return;
-  if (Date.now() > entry.expiry) { showToast('⚠️ Link đã hết hạn!', 'warning'); return; }
+  if (Date.now() > entry.expiry) { showToast('âš ï¸ Link Ä‘Ã£ háº¿t háº¡n!', 'warning'); return; }
   showQrResult(entry);
-  showToast('📲 Đã tải QR của "' + entry.name + '"', 'info');
+  showToast('ðŸ“² ÄÃ£ táº£i QR cá»§a "' + entry.name + '"', 'info');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -736,7 +738,7 @@ function clearHistory() {
   document.getElementById('qr-result-wrap').classList.remove('show');
   renderHistory();
   updateHeaderBadges();
-  showToast('🗑️ Đã xoá lịch sử upload', 'info');
+  showToast('ðŸ—‘ï¸ ÄÃ£ xoÃ¡ lá»‹ch sá»­ upload', 'info');
 }
 
 /* ================================================================
@@ -745,13 +747,13 @@ function clearHistory() {
 function copyCurrentLink() {
   if (!currentLink) return;
   navigator.clipboard.writeText(currentLink).then(function() {
-    showToast('✅ Đã copy link!', 'success');
+    showToast('âœ… ÄÃ£ copy link!', 'success');
   }).catch(function() {
     var ta = document.createElement('textarea');
     ta.value = currentLink;
     document.body.appendChild(ta); ta.select();
     document.execCommand('copy'); document.body.removeChild(ta);
-    showToast('✅ Đã copy link!', 'success');
+    showToast('âœ… ÄÃ£ copy link!', 'success');
   });
 }
 
@@ -777,10 +779,10 @@ function formatSize(bytes) {
 
 function formatTimeAgo(ts) {
   var sec = Math.floor((Date.now() - ts) / 1000);
-  if (sec < 60) return 'Vừa xong';
+  if (sec < 60) return 'Vá»«a xong';
   var min = Math.floor(sec / 60);
-  if (min < 60) return min + ' phút trước';
-  return Math.floor(min / 60) + ' giờ trước';
+  if (min < 60) return min + ' phÃºt trÆ°á»›c';
+  return Math.floor(min / 60) + ' giá» trÆ°á»›c';
 }
 
 function escHtml(s) {
@@ -833,9 +835,10 @@ function showToast(msg, type) {
 }
 
 /* ================================================================
-   INIT — Update history render every minute for time-ago labels
+   INIT â€” Update history render every minute for time-ago labels
 ================================================================ */
 setInterval(function() { renderHistory(); updateHeaderBadges(); }, 60000);
 </script>
 </body>
 </html>
+
