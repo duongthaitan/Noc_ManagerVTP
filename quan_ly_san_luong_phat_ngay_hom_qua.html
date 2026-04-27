@@ -1088,39 +1088,53 @@ function captureScreenshot() {
   document.getElementById('ss-loading').style.display = 'block';
   document.getElementById('ss-content').style.display = 'none';
   document.getElementById('screenshot-overlay').classList.add('open');
-  var scrollEl = target.querySelector('.excel-scroll-wrap');
-  var prevMaxH = '';
-  if (scrollEl) { prevMaxH = scrollEl.style.maxHeight; scrollEl.style.maxHeight = 'none'; }
   var btn = document.getElementById('btn-screenshot');
   if (btn) btn.disabled = true;
 
-  var animEls = target.querySelectorAll('.fade-in-up, .pulse-red');
-  for (var i = 0; i < animEls.length; i++) {
-    animEls[i].classList.remove('fade-in-up', 'pulse-red');
-    animEls[i].style.animation = 'none';
-    animEls[i].style.opacity = '1';
-    animEls[i].style.transform = 'none';
-  }
+  // Strip live animations
+  target.querySelectorAll('*').forEach(function(el) {
+    el.style.animation = 'none';
+    el.style.transition = 'none';
+  });
 
   setTimeout(function() {
-    html2canvas(target, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', logging: false,
-      ignoreElements: function(el) { return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot'); },
+    html2canvas(target, {
+      scale: 2.5,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      ignoreElements: function(el) {
+        return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot');
+      },
       onclone: function(doc) {
-        var els = doc.querySelectorAll('.fade-in-up, .pulse-red');
-        for (var i = 0; i < els.length; i++) {
-          els[i].style.animation = 'none';
-          els[i].style.opacity = '1';
-          els[i].style.transform = 'none';
-        }
+        // Expand ALL scroll/overflow containers so entire table is captured
+        doc.querySelectorAll('.excel-scroll-wrap').forEach(function(el) {
+          el.style.maxHeight = 'none';
+          el.style.height = 'auto';
+          el.style.overflow = 'visible';
+        });
+        doc.querySelectorAll('.excel-table-wrap').forEach(function(el) {
+          el.style.overflow = 'visible';
+          el.style.height = 'auto';
+        });
+        // Strip animations in clone
+        doc.querySelectorAll('*').forEach(function(el) {
+          el.style.animation = 'none';
+          el.style.transition = 'none';
+          if (el.style.opacity === '0') el.style.opacity = '1';
+          if (el.style.transform && el.style.transform !== 'none') el.style.transform = 'none';
+        });
       }
     }).then(function(canvas) {
-      if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
       if (btn) btn.disabled = false;
       screenshotDataUrl = canvas.toDataURL('image/png');
       document.getElementById('ss-preview').src = screenshotDataUrl;
       
       var qrContainer = document.getElementById('ss-qr-container');
-      qrContainer.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">Đang t\u1ea1o link t\u1ea3i...</span></div>';
+      qrContainer.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">\u0110ang t\u1ea1o link t\u1ea3i...</span></div>';
       var infoEl = document.getElementById('ss-qr-info');
       infoEl.innerHTML = '';
       
@@ -1134,7 +1148,7 @@ function captureScreenshot() {
           if (res && res.status === 'success') {
             var dlUrl = res.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/').replace('http://', 'https://');
             new QRCode(qrContainer, { text: dlUrl, width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-            infoEl.innerHTML = '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-cloud-arrow-down"></i> Qu\u00e9t \u0111\u1ec3 t\u1ea3i \u1ea3nh x\u1ecbn!</span><br><span style="color:#6B7280;">(Link t\u1ef1 h\u1ee7y sau 60 ph\u00fat)</span>';
+            infoEl.innerHTML = '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-cloud-arrow-down"></i> Qu\u00e9t \u0111\u1ec3 t\u1ea3i \u1ea3nh xu\u1ed1ng!</span><br><span style="color:#6B7280;">(Link t\u1ef1 h\u1ee7y sau 60 ph\u00fat)</span>';
           } else { throw new Error('Upload err'); }
         })
         .catch(function() {
@@ -1150,12 +1164,11 @@ function captureScreenshot() {
       document.getElementById('ss-content').style.display = 'block';
       showToast('\u2705 Ch\u1ee5p m\u00e0n h\u00ecnh th\u00e0nh c\u00f4ng!', 'success');
     }).catch(function(err) {
-      if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
       if (btn) btn.disabled = false;
       document.getElementById('screenshot-overlay').classList.remove('open');
       showToast('\u274c L\u1ed7i: ' + err.message, 'error');
     });
-  }, 80);
+  }, 100);
 }
 
 function closeScreenshotModal() { document.getElementById('screenshot-overlay').classList.remove('open'); }

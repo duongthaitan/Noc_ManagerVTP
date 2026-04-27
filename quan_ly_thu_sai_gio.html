@@ -1245,15 +1245,29 @@ function captureScreenshot() {
   }
 
   setTimeout(function() {
-    html2canvas(target, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', logging: false,
-      ignoreElements: function(el) { return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot'); },
+    html2canvas(target, {
+      scale: 2.5,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      ignoreElements: function(el) {
+        return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot');
+      },
       onclone: function(doc) {
-        var els = doc.querySelectorAll('.fade-in-up, .pulse-red');
-        for (var i = 0; i < els.length; i++) {
-          els[i].style.animation = 'none';
-          els[i].style.opacity = '1';
-          els[i].style.transform = 'none';
-        }
+        doc.querySelectorAll('.excel-scroll-wrap').forEach(function(el) {
+          el.style.maxHeight = 'none'; el.style.height = 'auto'; el.style.overflow = 'visible';
+        });
+        doc.querySelectorAll('.excel-table-wrap').forEach(function(el) {
+          el.style.overflow = 'visible'; el.style.height = 'auto';
+        });
+        doc.querySelectorAll('*').forEach(function(el) {
+          el.style.animation = 'none'; el.style.transition = 'none';
+          if (el.style.opacity === '0') el.style.opacity = '1';
+          if (el.style.transform && el.style.transform !== 'none') el.style.transform = 'none';
+        });
       }
     }).then(function(canvas) {
       if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
