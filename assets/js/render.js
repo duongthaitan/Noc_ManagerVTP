@@ -221,6 +221,9 @@ function renderRow(r, tab, showLevelCol, showStatusCol) {
   const trangThai  = r['TRANG_THAI'];
   const isOverdue  = ttt > tqd;
   const isNoiTinh  = tinh_nhan === 'CTO';
+  const maUpper    = ma.toUpperCase();
+  const isShopee   = maUpper.startsWith('SHOPEEVTPVN');
+  const isTikTok   = !isShopee && maUpper.startsWith('VTPVN');
 
   const lanPhatHtml = (lan_phat === 0 || lan_phat === '0' || lan_phat === '')
     ? '<span class="lan-phat-none">Chưa phát</span>'
@@ -232,10 +235,16 @@ function renderRow(r, tab, showLevelCol, showStatusCol) {
 
   const noiTinhBadge = isNoiTinh
     ? '<span class="badge-noi-tinh"><i class="fa-solid fa-house"></i> NỘI TỈNH</span>' : '';
+  const tikTokBadge = isTikTok
+    ? '<span class="badge-tiktok"><i class="fa-brands fa-tiktok"></i> TikTok</span>' : '';
+  const shopeeBadge = isShopee
+    ? '<span class="badge-shopee"><i class="fa-solid fa-cart-shopping"></i> Shopee</span>' : '';
 
   // Level badge & row highlight class
   let levelBadgesHtml = '';
   let rowClass = isNoiTinh ? 'row-noi-tinh' : '';
+  if (isTikTok) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-tiktok';
+  if (isShopee) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-shopee';
 
   if (tab === 'all') {
     if (cls.isTT500 && selectedModes.tt500) levelBadgesHtml += '<span class="badge-level badge-tt500">TT500</span> ';
@@ -252,7 +261,7 @@ function renderRow(r, tab, showLevelCol, showStatusCol) {
   }
 
   return `<tr class="${rowClass}">
-    <td><span class="ma-phieu">${escHtml(ma)}</span>${noiTinhBadge}</td>
+    <td><span class="ma-phieu">${escHtml(ma)}</span>${noiTinhBadge}${tikTokBadge}${shopeeBadge}</td>
     <td><span class="hanh-trinh">${escHtml(huyen_nhan)} → ${escHtml(huyen_phat)}</span></td>
     <td>${escHtml(ngay_gui)}</td>
     <td>${lanPhatHtml}</td>

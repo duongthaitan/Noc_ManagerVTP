@@ -1223,63 +1223,104 @@ var screenshotDataUrl = null;
 function getPageLanUrl() { return window.location.href; }
 
 function captureScreenshot() {
-  var target = document.getElementById('section-results');
-  if (!target || target.style.display === 'none') {
-    showToast('\u26a0\ufe0f Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u!', 'warning'); return;
+  var tbody = document.getElementById('excel-tbody');
+  if (!tbody || tbody.children.length === 0) {
+    showToast('⚠️ Chưa có dữ liệu!', 'warning'); return;
   }
   document.getElementById('ss-loading').style.display = 'block';
   document.getElementById('ss-content').style.display = 'none';
   document.getElementById('screenshot-overlay').classList.add('open');
-  var scrollEl = target.querySelector('.excel-scroll-wrap');
-  var prevMaxH = '';
-  if (scrollEl) { prevMaxH = scrollEl.style.maxHeight; scrollEl.style.maxHeight = 'none'; }
   var btn = document.getElementById('btn-screenshot');
   if (btn) btn.disabled = true;
 
-  var animEls = target.querySelectorAll('.fade-in-up, .pulse-red');
-  for (var i = 0; i < animEls.length; i++) {
-    animEls[i].classList.remove('fade-in-up', 'pulse-red');
-    animEls[i].style.animation = 'none';
-    animEls[i].style.opacity = '1';
-    animEls[i].style.transform = 'none';
+  var wrap = document.createElement('div');
+  wrap.style.cssText = [
+    'position:fixed','left:-9999px','top:0',
+    'width:9999px',
+    'background:#f1f3f8','padding:14px 20px',
+    'font-family:"Be Vietnam Pro",sans-serif',
+    'box-sizing:border-box','z-index:-1','overflow:visible'
+  ].join(';');
+
+  var now = new Date();
+  var ts = now.toLocaleDateString('vi-VN')+' '+now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+  var sumsEl = document.querySelector('.summary-bar');
+  var sumsTxt = sumsEl ? sumsEl.innerText.replace(/\n+/g,' | ') : '';
+
+  wrap.innerHTML = [
+    '<div style="background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:28px 36px;border-radius:14px 14px 0 0;',
+    'display:flex;align-items:center;justify-content:space-between;">',
+      '<div style="display:flex;align-items:center;gap:16px;">',
+        '<span style="font-size:48px;font-weight:900;color:white;letter-spacing:-0.8px;line-height:1.1;">🕐 THU SAI GIỜ</span>',
+        '<span style="background:rgba(255,255,255,0.2);padding:6px 18px;border-radius:99px;font-size:24px;font-weight:800;color:white;">ViettelPost HBCTVT</span>',
+      '</div>',
+      '<span style="font-size:26px;color:rgba(255,255,255,0.9);font-weight:700;">⏱ '+ts+'</span>',
+    '</div>',
+    '<div style="background:white;padding:18px 36px;font-size:24px;font-weight:800;color:#374151;',
+    'border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;display:flex;gap:36px;flex-wrap:wrap;align-items:center;">',
+      sumsTxt,
+    '</div>',
+    '<div id="ss-table-host" style="background:white;border-radius:0 0 12px 12px;overflow:visible;"></div>'
+  ].join('');
+  document.body.appendChild(wrap);
+
+  var tableHost = wrap.querySelector('#ss-table-host');
+  var origTable = document.getElementById('excel-table');
+  if (origTable) {
+    var tbl = origTable.cloneNode(true);
+    tbl.style.cssText = 'width:auto;border-collapse:collapse;font-weight:800;';
+    tbl.querySelectorAll('th').forEach(function(th) {
+      th.style.padding = '12px 16px'; th.style.fontSize = '26px';
+      th.style.fontWeight = '900'; th.style.position = 'static';
+      th.style.letterSpacing = '0.3px'; th.style.whiteSpace = 'nowrap';
+    });
+    tbl.querySelectorAll('td').forEach(function(td) {
+      td.style.padding = '11px 16px'; td.style.fontSize = '34px';
+      td.style.fontWeight = '800'; td.style.lineHeight = '1.45'; td.style.whiteSpace = 'nowrap';
+    });
+    tbl.querySelectorAll('td.col-route').forEach(function(td) {
+      td.style.fontSize = '30px'; td.style.fontWeight = '900'; td.style.color = '#1e3a5f';
+    });
+    tbl.querySelectorAll('td.col-code').forEach(function(td) {
+      td.style.fontSize = '30px'; td.style.fontWeight = '800';
+    });
+    tbl.querySelectorAll('td.col-stt').forEach(function(td) {
+      td.style.fontSize = '18px'; td.style.fontWeight = '800';
+    });
+    tbl.querySelectorAll('.badge-sai-gio').forEach(function(el) {
+      el.style.fontSize = '22px'; el.style.fontWeight = '900'; el.style.padding = '5px 16px';
+    });
+    tableHost.appendChild(tbl);
   }
 
+  // ── Auto-measure ──
   setTimeout(function() {
-    html2canvas(target, {
-      scale: 2.5,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      scrollX: 0,
-      scrollY: 0,
-      ignoreElements: function(el) {
-        return el.classList && (el.classList.contains('no-print') || el.id === 'btn-screenshot');
-      },
+    var tblEl = tableHost ? tableHost.querySelector('table') : null;
+    var contentW = tblEl ? tblEl.offsetWidth : 2400;
+    var measuredW = Math.max(contentW + 60, 2400);
+    wrap.style.width = measuredW + 'px';
+
+    html2canvas(wrap, {
+      scale: 1.5, useCORS: true, allowTaint: true,
+      backgroundColor: '#f1f3f8', logging: false,
+      width: measuredW, scrollX: 0, scrollY: 0,
       onclone: function(doc) {
-        doc.querySelectorAll('.excel-scroll-wrap').forEach(function(el) {
-          el.style.maxHeight = 'none'; el.style.height = 'auto'; el.style.overflow = 'visible';
-        });
-        doc.querySelectorAll('.excel-table-wrap').forEach(function(el) {
-          el.style.overflow = 'visible'; el.style.height = 'auto';
-        });
         doc.querySelectorAll('*').forEach(function(el) {
           el.style.animation = 'none'; el.style.transition = 'none';
-          if (el.style.opacity === '0') el.style.opacity = '1';
-          if (el.style.transform && el.style.transform !== 'none') el.style.transform = 'none';
         });
       }
     }).then(function(canvas) {
-      if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
+      document.body.removeChild(wrap);
       if (btn) btn.disabled = false;
+
       screenshotDataUrl = canvas.toDataURL('image/png');
       document.getElementById('ss-preview').src = screenshotDataUrl;
-      
+
       var qrContainer = document.getElementById('ss-qr-container');
-      qrContainer.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">\u0110ang t\u1ea1o link t\u1ea3i...</span></div>';
+      qrContainer.innerHTML = '<div style="padding:20px 0;text-align:center;"><div class="spinner-ring" style="width:24px;height:24px;margin:0 auto 8px;"></div><span style="font-size:11px;color:#6B7280;font-weight:600;">Đang tạo link tải...</span></div>';
       var infoEl = document.getElementById('ss-qr-info');
       infoEl.innerHTML = '';
-      
+
       canvas.toBlob(function(blob) {
         var fd = new FormData();
         fd.append('file', blob, 'BaoCao.png');
@@ -1290,13 +1331,13 @@ function captureScreenshot() {
           if (res && res.status === 'success') {
             var dlUrl = res.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/').replace('http://', 'https://');
             new QRCode(qrContainer, { text: dlUrl, width: 220, height: 220, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-            infoEl.innerHTML = '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-cloud-arrow-down"></i> Qu\u00e9t \u0111\u1ec3 t\u1ea3i \u1ea3nh x\u1ecbn!</span><br><span style="color:#6B7280;">(Link t\u1ef1 h\u1ee7y sau 60 ph\u00fat)</span>';
-          } else { throw new Error('Upload err'); }
+            infoEl.innerHTML = '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-cloud-arrow-down"></i> Quét để tải ảnh 16:9!</span><br><span style="color:#6B7280;">(Link tự hủy sau 60 phút)</span>';
+          } else { throw new Error('err'); }
         })
         .catch(function() {
           qrContainer.innerHTML = '';
           new QRCode(qrContainer, { text: getPageLanUrl(), width: 220, height: 220, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-          infoEl.innerHTML = '<span style="color:#DC2626;"><i class="fa-solid fa-triangle-exclamation"></i> L\u1ed7i t\u1ea1o link, ch\u1ec9 m\u1edf web!</span>';
+          infoEl.innerHTML = '<span style="color:#DC2626;"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi tạo link!</span>';
         });
       }, 'image/png');
 
@@ -1304,14 +1345,14 @@ function captureScreenshot() {
       if (navigator.share && navigator.canShare) shareBtn.style.display = 'inline-flex';
       document.getElementById('ss-loading').style.display = 'none';
       document.getElementById('ss-content').style.display = 'block';
-      showToast('\u2705 Ch\u1ee5p m\u00e0n h\u00ecnh th\u00e0nh c\u00f4ng!', 'success');
+      showToast('✅ Chụp màn hình 16:9 thành công!', 'success');
     }).catch(function(err) {
-      if (scrollEl) scrollEl.style.maxHeight = prevMaxH;
+      if (wrap.parentNode) document.body.removeChild(wrap);
       if (btn) btn.disabled = false;
       document.getElementById('screenshot-overlay').classList.remove('open');
-      showToast('\u274c L\u1ed7i: ' + err.message, 'error');
+      showToast('❌ Lỗi: ' + err.message, 'error');
     });
-  }, 80);
+  }, 120);
 }
 
 function closeScreenshotModal() { document.getElementById('screenshot-overlay').classList.remove('open'); }

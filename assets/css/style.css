@@ -705,6 +705,29 @@ a { color: inherit; text-decoration: none; }
   margin-left: 4px;
   white-space: nowrap;
 }
+.badge-tiktok {
+  background: linear-gradient(135deg, #010101, #25F4EE);
+  color: white;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: 4px;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.badge-shopee {
+  background: linear-gradient(135deg, #EE4D2D, #FF6633);
+  color: white;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
 .badge-level {
   border-radius: 999px;
   padding: 3px 10px;
@@ -724,6 +747,10 @@ a { color: inherit; text-decoration: none; }
    ROW HIGHLIGHTS FOR DO
 ================================================================ */
 .row-noi-tinh td { border-left: 3px solid #F97316 !important; background: #FFF7ED; }
+.row-tiktok td   { border-left: 3px solid #010101 !important; background: #F0FDFA; }
+.row-tiktok:hover td  { background: #CCFBF1 !important; }
+.row-shopee td   { border-left: 3px solid #EE4D2D !important; background: #FFF5F2; }
+.row-shopee:hover td  { background: #FFE4DE !important; }
 .row-do9 td      { border-left: 3px solid #DC2626 !important; background: #FFF5F5; }
 .row-do9:hover td  { background: #FEE2E2 !important; }
 .row-do8 td      { border-left: 3px solid var(--orange) !important; background: #FFFBF5; }
@@ -869,6 +896,8 @@ a { color: inherit; text-decoration: none; }
 }
 .modal-tab:hover { border-color: var(--vtp-red); color: var(--vtp-red); }
 .modal-tab.active { background: var(--vtp-red); color: white; border-color: var(--vtp-red); }
+.modal-tab.no-phone { opacity: 0.55; border-style: dashed; }
+.modal-tab.no-phone.active { background: #9CA3AF; border-color: #9CA3AF; opacity: 0.8; }
 .msg-textarea {
   width: 100%;
   height: 310px;

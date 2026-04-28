@@ -136,16 +136,20 @@ function openSingleModal(groupIdx) {
   openModal();
 }
 
-/** Mở modal cho tất cả bưu tá (có SĐT) */
+/** Mở modal cho tất cả bưu tá */
 function openAllModal() {
   currentModalGroups = groupedData.map(g => {
     const matched = matchBuuta(g.parsedName, g.parsedPhone);
     return { name: g.parsedName || g.rawName, phone: matched ? matched.phone : '', rows: g.rows };
-  }).filter(g => g.phone);
+  });
 
   if (currentModalGroups.length === 0) {
-    showToast('⚠️ Không có bưu tá nào có số điện thoại.', 'warning');
+    showToast('⚠️ Không có bưu tá nào.', 'warning');
     return;
+  }
+  const noPhone = currentModalGroups.filter(g => !g.phone).length;
+  if (noPhone > 0) {
+    showToast(`⚠️ Có ${noPhone} bưu tá chưa có SĐT — không thể gửi Zalo`, 'warning');
   }
   currentModalIdx = 0;
   renderModal(true);
@@ -162,8 +166,8 @@ function renderModal(multiTab) {
   if (multiTab && currentModalGroups.length > 1) {
     currentModalGroups.forEach((g, i) => {
       const tab = document.createElement('button');
-      tab.className = 'modal-tab' + (i === 0 ? ' active' : '');
-      tab.textContent = g.name;
+      tab.className = 'modal-tab' + (i === 0 ? ' active' : '') + (!g.phone ? ' no-phone' : '');
+      tab.innerHTML = (!g.phone ? '<i class="fa-solid fa-circle-exclamation" style="color:#F59E0B;font-size:10px;"></i> ' : '') + escHtml(g.name);
       tab.onclick = () => switchTab(i);
       tabsEl.appendChild(tab);
     });

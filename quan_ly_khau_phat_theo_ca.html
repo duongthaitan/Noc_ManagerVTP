@@ -1642,14 +1642,14 @@ function captureScreenshot() {
   if (btn) btn.disabled = true;
 
   // ── Build a 16:9 off-screen render container ──────────────────
-  var W = 1920, H = 1080;
   var wrap = document.createElement('div');
   wrap.style.cssText = [
     'position:fixed', 'left:-9999px', 'top:0',
-    'width:' + W + 'px', 'min-height:' + H + 'px',
+    'width:auto', 'min-width:1920px',
     'background:#f1f3f8', 'padding:24px 32px',
     'font-family:"Be Vietnam Pro",sans-serif',
-    'box-sizing:border-box', 'z-index:-1'
+    'box-sizing:border-box', 'z-index:-1',
+    'overflow:visible'
   ].join(';');
 
   // Header strip
@@ -1658,19 +1658,19 @@ function captureScreenshot() {
   var sumsEl = document.querySelector('.summary-bar');
   var sumsTxt = sumsEl ? sumsEl.innerText.replace(/\n+/g,' | ') : '';
   wrap.innerHTML = [
-    '<div style="background:linear-gradient(135deg,#1e3a5f,#2d5a8f);padding:14px 20px;border-radius:10px 10px 0 0;',
+    '<div style="background:linear-gradient(135deg,#1e3a5f,#2d5a8f);padding:28px 36px;border-radius:14px 14px 0 0;',
     'display:flex;align-items:center;justify-content:space-between;margin-bottom:0;">',
-      '<div style="display:flex;align-items:center;gap:12px;">',
-        '<span style="font-size:26px;font-weight:900;color:white;letter-spacing:-0.5px;">📊 KHẨU PHÁT THEO CA</span>',
-        '<span style="background:rgba(255,255,255,0.2);padding:3px 12px;border-radius:99px;font-size:14px;font-weight:700;color:white;">ViettelPost HBCTVT</span>',
+      '<div style="display:flex;align-items:center;gap:16px;">',
+        '<span style="font-size:42px;font-weight:900;color:white;letter-spacing:-0.8px;line-height:1.1;">📊 KHẨU PHÁT THEO CA</span>',
+        '<span style="background:rgba(255,255,255,0.2);padding:6px 18px;border-radius:99px;font-size:20px;font-weight:800;color:white;">ViettelPost HBCTVT</span>',
       '</div>',
-      '<span style="font-size:14px;color:rgba(255,255,255,0.8);font-weight:600;">⏱ ' + ts + '</span>',
+      '<span style="font-size:22px;color:rgba(255,255,255,0.9);font-weight:700;">⏱ ' + ts + '</span>',
     '</div>',
-    '<div style="background:white;padding:8px 20px;font-size:14px;font-weight:700;color:#374151;',
-    'border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;display:flex;gap:24px;flex-wrap:wrap;">',
+    '<div style="background:white;padding:18px 36px;font-size:20px;font-weight:800;color:#374151;',
+    'border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;display:flex;gap:36px;flex-wrap:wrap;align-items:center;">',
       sumsTxt,
     '</div>',
-    '<div id="ss-table-host" style="background:white;border-radius:0 0 10px 10px;overflow:visible;"></div>'
+    '<div id="ss-table-host" style="background:white;border-radius:0 0 12px 12px;overflow:visible;"></div>'
   ].join('');
   document.body.appendChild(wrap);
 
@@ -1679,28 +1679,63 @@ function captureScreenshot() {
   var origTable = document.getElementById('excel-table');
   if (origTable) {
     var tbl = origTable.cloneNode(true);
-    // Apply large 16:9 styles to clone
-    tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:16px;';
+    // Apply large bold styles for mobile readability
+    // KHÔNG dùng table-layout:fixed và KHÔNG overflow:hidden trên td vì sẽ ẩn nội dung
+    tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:26px;font-weight:800;';
     tbl.querySelectorAll('th').forEach(function(th) {
-      th.style.padding = '10px 14px';
-      th.style.fontSize = '14px';
+      th.style.padding = '12px 10px';
+      th.style.fontSize = '16px';
+      th.style.fontWeight = '900';
       th.style.position = 'static';
+      th.style.letterSpacing = '0.2px';
+      th.style.whiteSpace = 'nowrap';
     });
     tbl.querySelectorAll('td').forEach(function(td) {
-      td.style.padding = '8px 14px';
-      td.style.fontSize = '16px';
+      td.style.padding = '11px 10px';
+      td.style.fontSize = '26px';
+      td.style.fontWeight = '800';
+      td.style.lineHeight = '1.45';
+      td.style.whiteSpace = 'nowrap';
+    });
+    // Cột tuyến — tên bưu tá to rõ, ellipsis nếu quá dài
+    tbl.querySelectorAll('td.col-tuyen').forEach(function(td) {
+      td.style.fontSize = '22px';
+      td.style.fontWeight = '900';
+      td.style.color = '#1e3a5f';
+      td.style.whiteSpace = 'nowrap';
+      td.style.maxWidth = '280px';
+      td.style.overflow = 'hidden';
+      td.style.textOverflow = 'ellipsis';
+    });
+    // Cột STT — nhỏ gọn
+    tbl.querySelectorAll('td.col-stt').forEach(function(td) {
+      td.style.fontSize = '15px';
+      td.style.fontWeight = '800';
+      td.style.width = '40px';
+    });
+    // Cột phần trăm — to nhất, màu nổi
+    tbl.querySelectorAll('td.col-percent').forEach(function(td) {
+      td.style.fontSize = '28px';
+      td.style.fontWeight = '900';
+    });
+    // Total row — dùng setProperty('important') vì CSS có !important trên .total-row td
+    tbl.querySelectorAll('tr.total-row td').forEach(function(td) {
+      td.style.setProperty('font-size', '28px', 'important');
+      td.style.setProperty('font-weight', '900', 'important');
+      td.style.setProperty('padding', '13px 10px', 'important');
+      td.style.setProperty('color', 'white', 'important');
     });
     tableHost.appendChild(tbl);
   }
 
   setTimeout(function() {
     html2canvas(wrap, {
-      scale: 1,
+      scale: 1.5,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#f1f3f8',
       logging: false,
-      width: W,
+
       scrollX: 0,
       scrollY: 0,
       onclone: function(doc) {
