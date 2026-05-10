@@ -292,19 +292,15 @@ function updateStats(rowsForTab, groups) {
   document.getElementById('stat-quahan').textContent      = quaHan;
   document.getElementById('stat-cod').textContent         = formatMoney(codTT500) + 'đ';
 
-  // DO stats — giữ chi tiết do9/do8/do7 cho thống kê
+  // DO stats — gộp chung DO_7/DO_8/DO_9
+  const doTotal    = modeCounts.do9 + modeCounts.do8 + modeCounts.do7;
   const doCodTotal = rowsForTab.do.reduce((s, { row }) => s + (parseFloat(row['TIEN_COD']) || 0), 0);
-  document.getElementById('stat-do9').textContent    = modeCounts.do9;
-  document.getElementById('stat-do8').textContent    = modeCounts.do8;
-  document.getElementById('stat-do7').textContent    = modeCounts.do7;
-  document.getElementById('stat-cod-do').textContent = formatMoney(doCodTotal) + 'đ';
+  document.getElementById('stat-do-total').textContent = doTotal;
+  document.getElementById('stat-cod-do').textContent   = formatMoney(doCodTotal) + 'đ';
 
-  const hasAnyDO = selectedModes.do && (modeCounts.do9 > 0 || modeCounts.do8 > 0 || modeCounts.do7 > 0);
-  document.getElementById('do-stats-row').style.display  = hasAnyDO ? 'grid' : 'none';
-  document.getElementById('stat-card-do9').style.display = modeCounts.do9 > 0 ? 'flex' : 'none';
-  document.getElementById('stat-card-do8').style.display = modeCounts.do8 > 0 ? 'flex' : 'none';
-  document.getElementById('stat-card-do7').style.display = modeCounts.do7 > 0 ? 'flex' : 'none';
+  const hasAnyDO = selectedModes.do && doTotal > 0;
+  document.getElementById('do-stats-row').style.display       = hasAnyDO ? 'grid' : 'none';
+  document.getElementById('stat-card-do-total').style.display = hasAnyDO ? 'flex' : 'none';
 
-  const doTotal = modeCounts.do9 + modeCounts.do8 + modeCounts.do7;
   updateHeaderBadges(modeCounts.tt500, doTotal, quaHan);
 }

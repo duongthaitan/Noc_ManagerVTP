@@ -15,8 +15,9 @@
 <!-- ===== SHARED STYLESHEET ===== -->
 <link rel="stylesheet" href="assets/css/style.css">
 
-<!-- ===== QR CODE ===== -->
+<!-- ===== QR CODE & ZIP ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
 /* ================================================================
@@ -35,63 +36,111 @@
 /* ── Layout grid ── */
 .qr-main-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 20px;
   align-items: start;
 }
-@media (max-width: 860px) {
+@media (max-width: 980px) {
   .qr-main-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Premium surface polish ── */
+.tips-grid .tip-card,
+.qr-main-grid .section-card,
+.qr-panel {
+  border: 1px solid rgba(15, 23, 42, .08);
+  box-shadow: 0 14px 42px rgba(15, 23, 42, .08);
+}
+
+.tip-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(238, 0, 51, .08), transparent 42%),
+    linear-gradient(180deg, #FFFFFF 0%, #FFF8FA 100%);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.tip-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(238, 0, 51, .22);
+  box-shadow: 0 18px 45px rgba(238, 0, 51, .10);
+}
+.tip-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  margin: 0 auto 10px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #EE0033 0%, #FF6B86 100%);
+  color: white;
+  box-shadow: 0 10px 24px rgba(238, 0, 51, .22);
 }
 
 /* ── Big Drop Zone ── */
 .big-drop-zone {
-  border: 3px dashed var(--gray-300);
-  border-radius: var(--radius);
-  padding: 60px 24px;
+  border: 2.5px dashed rgba(238, 0, 51, .28);
+  border-radius: 22px;
+  padding: 64px 24px;
   text-align: center;
   cursor: pointer;
-  transition: var(--transition);
-  background: var(--gray-50);
+  transition: all .25s cubic-bezier(.2,.8,.2,1);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(238, 0, 51, .10), transparent 34%),
+    linear-gradient(180deg, #FFFFFF 0%, #FFF7F9 100%);
   position: relative;
+  overflow: hidden;
+}
+.big-drop-zone::before {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(238, 0, 51, .08);
+  pointer-events: none;
 }
 .big-drop-zone:hover,
 .big-drop-zone.dragover {
   border-color: var(--vtp-red);
-  background: var(--vtp-red-light);
-  box-shadow: 0 0 0 6px rgba(238,0,51,.06);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(238, 0, 51, .18), transparent 38%),
+    linear-gradient(180deg, #FFFFFF 0%, #FFF0F4 100%);
+  box-shadow: 0 18px 50px rgba(238, 0, 51, .14), 0 0 0 7px rgba(238,0,51,.06);
 }
-.big-drop-zone.dragover { transform: scale(1.01); }
+.big-drop-zone.dragover { transform: scale(1.012); }
 
 .dz-icon-wrap {
-  width: 88px; height: 88px;
-  background: linear-gradient(135deg, #7C3AED22, #A78BFA22);
-  border-radius: 50%;
+  width: 92px; height: 92px;
+  background: linear-gradient(135deg, #EE0033 0%, #FF6B86 100%);
+  border-radius: 28px;
   display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 20px;
+  margin: 0 auto 22px;
   font-size: 38px;
-  box-shadow: 0 4px 20px rgba(124,58,237,.15);
+  box-shadow: 0 18px 36px rgba(238,0,51,.24);
   transition: var(--transition);
-  color: #7C3AED;
+  color: white;
 }
 .big-drop-zone:hover .dz-icon-wrap,
 .big-drop-zone.dragover .dz-icon-wrap {
-  transform: scale(1.1) rotate(-8deg);
-  background: linear-gradient(135deg, #7C3AED33, #A78BFA33);
+  transform: translateY(-4px) scale(1.06) rotate(-5deg);
 }
 .dz-title {
-  font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 8px;
+  font-size: 20px; font-weight: 900; color: var(--text); margin-bottom: 8px;
 }
 .dz-sub {
-  font-size: 13.5px; color: var(--gray-500); margin-bottom: 28px; line-height: 1.65;
+  font-size: 13.5px; color: var(--gray-500); margin-bottom: 26px; line-height: 1.7;
 }
+.dz-sub strong { color: var(--vtp-red) !important; }
 .dz-types {
-  display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; margin-top: 18px;
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px;
 }
 .dz-type-chip {
-  padding: 4px 12px; border-radius: 99px;
-  border: 1.5px solid var(--border);
-  font-size: 11px; font-weight: 700;
-  background: white; color: var(--gray-500);
+  padding: 6px 12px; border-radius: 99px;
+  border: 1px solid rgba(238, 0, 51, .14);
+  font-size: 11px; font-weight: 800;
+  background: #fff; color: #7F1D1D;
+  box-shadow: 0 6px 14px rgba(15,23,42,.05);
 }
 
 /* ── Upload Progress ── */
@@ -99,44 +148,144 @@
   display: none;
   flex-direction: column;
   align-items: center;
-  padding: 60px 24px;
+  padding: 58px 24px;
   gap: 18px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(238,0,51,.10), transparent 34%),
+    linear-gradient(180deg, #FFFFFF 0%, #FFF7F9 100%);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
 }
-.upload-progress-wrap .spinner-ring { width: 58px; height: 58px; }
-.upload-progress-wrap .spinner-ring::before { border-top-color: #7C3AED; border-right-color: #7C3AED; }
-.upload-progress-wrap .spinner-ring::after { border-bottom-color: #EDE9FE; border-left-color: #EDE9FE; }
+.upload-progress-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,.55) 45%, transparent 72%);
+  transform: translateX(-120%);
+  animation: progressSheen 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.progress-ring {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--vtp-red) calc(var(--p, 0) * 1%), #FFE4EA 0);
+  box-shadow: 0 16px 36px rgba(238,0,51,.18);
+  transition: background .35s ease;
+  position: relative;
+}
+.progress-ring::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(238,0,51,.08);
+}
+.progress-percent {
+  position: relative;
+  z-index: 1;
+  font-size: 18px;
+  font-weight: 950;
+  color: var(--vtp-red);
+}
 .progress-filename {
-  font-size: 14px; font-weight: 700; color: var(--text); text-align: center;
-  max-width: 280px; word-break: break-all;
+  font-size: 14px; font-weight: 850; color: var(--text); text-align: center;
+  max-width: 360px; word-break: break-all;
 }
-.progress-sub { font-size: 12.5px; color: var(--gray-500); }
+.progress-sub { font-size: 12.5px; color: var(--gray-500); font-weight: 700; text-align:center; }
+.progress-bar-track {
+  width: min(360px, 92%);
+  height: 10px;
+  border-radius: 999px;
+  background: #FFE4EA;
+  overflow: hidden;
+  box-shadow: inset 0 1px 4px rgba(238,0,51,.12);
+}
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #C9002B 0%, #EE0033 45%, #FF6B86 100%);
+  box-shadow: 0 0 18px rgba(238,0,51,.35);
+  transition: width .35s cubic-bezier(.22, 1, .36, 1);
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+  transform: translateX(-100%);
+  animation: progressBarShine 1.4s ease-in-out infinite;
+}
+@keyframes progressSheen { 0%, 35% { transform: translateX(-120%); } 75%, 100% { transform: translateX(120%); } }
+@keyframes progressBarShine { to { transform: translateX(100%); } }
 
 /* ── QR Result Panel (right side) ── */
 .qr-panel {
-  background: white; border: 1.5px solid rgba(124,58,237,.2);
-  border-radius: var(--radius); overflow: hidden;
-  box-shadow: var(--shadow);
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(238,0,51,.15);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(15,23,42,.10);
   position: sticky; top: 20px;
+  backdrop-filter: blur(12px);
 }
 .qr-panel-header {
-  background: linear-gradient(135deg, #7C3AED, #A78BFA);
-  padding: 16px 20px;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255,255,255,.26), transparent 28%),
+    linear-gradient(135deg, #C9002B 0%, #EE0033 52%, #FF6B86 100%);
+  padding: 18px 20px;
   color: white;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
 }
 .qr-panel-title {
-  font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 9px;
-  margin-bottom: 4px;
+  font-size: 14px; font-weight: 900; display: flex; align-items: center; gap: 9px;
+  margin-bottom: 5px;
+  letter-spacing: .2px;
 }
-.qr-panel-sub { font-size: 11px; opacity: .85; font-weight: 500; }
+.qr-panel-sub { font-size: 11px; opacity: .9; font-weight: 600; }
+.qr-help-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.42);
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0,0,0,.12);
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.qr-help-btn:hover {
+  transform: translateY(-1px) scale(1.04);
+  background: rgba(255,255,255,.28);
+  box-shadow: 0 12px 26px rgba(0,0,0,.16);
+}
 
-.qr-panel-body { padding: 22px 20px; }
+.qr-panel-body { padding: 24px 20px; }
 
 /* Empty state */
 .qr-empty-state {
-  text-align: center; padding: 32px 16px; color: var(--gray-400);
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--gray-400);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF7F9 100%);
 }
-.qr-empty-state i { font-size: 48px; margin-bottom: 12px; display: block; opacity: .35; }
-.qr-empty-state p { font-size: 12.5px; font-weight: 600; line-height: 1.6; }
+.qr-empty-state i { font-size: 52px; margin-bottom: 14px; display: block; opacity: .85; color: var(--vtp-red) !important; }
+.qr-empty-state p { font-size: 12.5px; font-weight: 700; line-height: 1.65; }
 
 /* QR box */
 .qr-box-wrap {
@@ -145,30 +294,32 @@
 .qr-box-wrap.show { display: block; }
 .qr-code-box {
   display: inline-block; padding: 16px; background: white;
-  border-radius: 14px; border: 2px solid #EDE9FE;
-  box-shadow: 0 4px 20px rgba(124,58,237,.12);
-  margin-bottom: 14px;
+  border-radius: 18px; border: 2px solid #FFE4EA;
+  box-shadow: 0 14px 34px rgba(238,0,51,.14);
+  margin-bottom: 16px;
 }
 .qr-result-file-info {
-  background: var(--gray-50); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 14px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF8FA 100%);
+  border: 1px solid rgba(238,0,51,.14);
+  border-radius: 14px; padding: 12px 14px;
   margin-bottom: 14px; text-align: left;
 }
 .qr-file-name {
-  font-size: 12.5px; font-weight: 800; color: var(--text);
+  font-size: 12.5px; font-weight: 900; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   display: flex; align-items: center; gap: 7px;
 }
+.qr-file-name i { color: var(--vtp-red) !important; }
 .qr-file-size {
-  font-size: 11px; color: var(--gray-400); font-weight: 500; margin-top: 3px;
+  font-size: 11px; color: var(--gray-500); font-weight: 600; margin-top: 4px;
 }
 
 /* Countdown */
 .qr-countdown {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 14px; border-radius: 99px;
-  background: #FFF7ED; border: 1px solid rgba(249,115,22,.3);
-  font-size: 11.5px; font-weight: 700; color: #EA580C;
+  padding: 7px 14px; border-radius: 99px;
+  background: #FFF7ED; border: 1px solid rgba(249,115,22,.28);
+  font-size: 11.5px; font-weight: 800; color: #EA580C;
   margin-bottom: 14px;
 }
 .qr-countdown.expired {
@@ -176,23 +327,23 @@
 }
 
 /* Action buttons */
-.qr-actions { display: flex; flex-direction: column; gap: 8px; }
+.qr-actions { display: flex; flex-direction: column; gap: 9px; }
 .qr-btn {
-  width: 100%; padding: 10px 16px; border-radius: var(--radius-sm);
-  font-family: inherit; font-size: 13px; font-weight: 700;
-  cursor: pointer; border: none; transition: var(--transition);
+  width: 100%; padding: 11px 16px; border-radius: 13px;
+  font-family: inherit; font-size: 13px; font-weight: 800;
+  cursor: pointer; border: none; transition: all .22s ease;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 .qr-btn.purple {
-  background: linear-gradient(135deg, #7C3AED, #A78BFA);
-  color: white; box-shadow: 0 3px 12px rgba(124,58,237,.3);
+  background: linear-gradient(135deg, #EE0033 0%, #FF6B86 100%);
+  color: white; box-shadow: 0 10px 22px rgba(238,0,51,.24);
 }
-.qr-btn.purple:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,.4); }
+.qr-btn.purple:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(238,0,51,.32); }
 .qr-btn.outline-gray {
-  background: white; color: var(--gray-600);
-  border: 1.5px solid var(--gray-200);
+  background: white; color: var(--gray-700);
+  border: 1px solid rgba(15,23,42,.10);
 }
-.qr-btn.outline-gray:hover { background: var(--gray-50); border-color: var(--gray-300); }
+.qr-btn.outline-gray:hover { background: #FFF7F9; border-color: rgba(238,0,51,.22); color: var(--vtp-red); }
 .qr-btn.outline-red {
   background: white; color: var(--vtp-red);
   border: 1.5px solid rgba(238,0,51,.3);
@@ -202,44 +353,74 @@
 /* ── History section ── */
 .history-list { display: flex; flex-direction: column; gap: 10px; }
 .history-item {
-  background: white; border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 12px 14px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFFDFD 100%);
+  border: 1px solid rgba(15,23,42,.08);
+  border-radius: 15px; padding: 13px 14px;
   display: flex; align-items: center; gap: 12px;
-  transition: var(--transition); cursor: pointer;
+  transition: all .22s ease; cursor: pointer;
 }
-.history-item:hover { box-shadow: var(--shadow); border-color: rgba(124,58,237,.3); background: #FAFAFA; }
+.history-item:hover { box-shadow: 0 12px 26px rgba(238,0,51,.10); border-color: rgba(238,0,51,.24); background: #FFF8FA; transform: translateY(-1px); }
 .history-item.expired { opacity: .55; cursor: default; }
-.history-item.expired:hover { box-shadow: none; border-color: var(--border); }
+.history-item.expired:hover { box-shadow: none; border-color: var(--border); transform: none; }
 .history-icon {
-  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; font-size: 18px;
 }
 .history-info { flex: 1; min-width: 0; }
 .history-name {
-  font-size: 12.5px; font-weight: 700; color: var(--text);
+  font-size: 12.5px; font-weight: 800; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.history-meta { font-size: 10.5px; color: var(--gray-400); margin-top: 2px; }
+.history-meta { font-size: 10.5px; color: var(--gray-500); margin-top: 3px; font-weight: 600; }
+.history-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.history-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,.10);
+  background: #fff;
+  color: var(--gray-500);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .18s ease;
+  box-shadow: 0 4px 12px rgba(15,23,42,.06);
+}
+.history-action-btn:hover {
+  color: var(--vtp-red);
+  border-color: rgba(238,0,51,.22);
+  background: #FFF7F9;
+  transform: translateY(-1px);
+}
+.history-action-btn.danger:hover {
+  color: #DC2626;
+  border-color: rgba(220,38,38,.24);
+  background: #FEF2F2;
+}
 .history-badge {
-  padding: 2px 9px; border-radius: 99px; font-size: 9.5px; font-weight: 800;
+  padding: 3px 10px; border-radius: 99px; font-size: 9.5px; font-weight: 900;
   white-space: nowrap; flex-shrink: 0;
 }
-.history-badge.ok { background: #D1FAE5; color: #059669; border: 1px solid rgba(5,150,105,.2); }
+.history-badge.ok { background: #DCFCE7; color: #047857; border: 1px solid rgba(5,150,105,.18); }
 .history-badge.expired { background: var(--gray-100); color: var(--gray-400); border: 1px solid var(--border); }
 
 /* ── Tips section ── */
 .tips-grid {
-  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
 }
 @media (max-width: 640px) { .tips-grid { grid-template-columns: 1fr; } }
 .tip-card {
-  background: white; border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 16px 14px; text-align: center;
-  box-shadow: var(--shadow-xs);
+  border-radius: 18px;
+  padding: 18px 16px; text-align: center;
 }
-.tip-icon { font-size: 26px; margin-bottom: 9px; display: block; }
-.tip-title { font-size: 12.5px; font-weight: 800; color: var(--text); margin-bottom: 5px; }
-.tip-desc { font-size: 11.5px; color: var(--gray-500); line-height: 1.6; }
+.tip-title { font-size: 12.5px; font-weight: 900; color: var(--text); margin-bottom: 6px; }
+.tip-desc { font-size: 11.5px; color: var(--gray-500); line-height: 1.65; font-weight: 600; }
 
 /* ── Toast ── */
 #toast-container {
@@ -265,6 +446,255 @@
 .toast-error   .toast-icon { color: var(--vtp-red); }
 .toast-warning .toast-icon { color: #D97706; }
 .toast-info    .toast-icon { color: #2563EB; }
+
+/* ── Help popup ── */
+.help-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, .42);
+  backdrop-filter: blur(6px);
+}
+.help-popup-backdrop.show { display: flex; }
+.help-popup-card {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 26px 80px rgba(15,23,42,.28);
+  border: 1px solid rgba(238,0,51,.16);
+  animation: helpPop .22s ease both;
+}
+.help-popup-head {
+  padding: 16px 18px;
+  color: white;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255,255,255,.28), transparent 30%),
+    linear-gradient(135deg, #C9002B 0%, #EE0033 55%, #FF6B86 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.help-popup-title {
+  font-size: 14px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.help-popup-close {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,.2);
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.help-popup-body {
+  padding: 16px 18px 18px;
+  color: var(--gray-600);
+  font-size: 12px;
+  line-height: 1.75;
+  font-weight: 650;
+}
+.help-note-list {
+  display: grid;
+  gap: 9px;
+}
+.help-note-item {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 10px 11px;
+  border-radius: 13px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF8FA 100%);
+  border: 1px solid rgba(238,0,51,.10);
+}
+.help-warning {
+  margin-top: 11px;
+  padding: 10px 11px;
+  border-radius: 13px;
+  color: var(--vtp-red-dark);
+  background: var(--vtp-red-light);
+  border-left: 4px solid var(--vtp-red);
+  font-weight: 800;
+}
+.file-manager-card {
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(82vh, 720px);
+  display: flex;
+  flex-direction: column;
+}
+.file-manager-card .help-popup-body {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.file-manager-list {
+  display: grid;
+  gap: 10px;
+  max-height: min(52vh, 460px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 4px 2px 0;
+}
+.file-manager-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF8FA 100%);
+  border: 1px solid rgba(238,0,51,.10);
+  min-width: 0;
+}
+.file-manager-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFE4EA;
+  color: var(--vtp-red);
+  flex-shrink: 0;
+}
+.file-manager-info { min-width: 0; flex: 1; }
+.file-manager-name {
+  font-size: 12.5px;
+  font-weight: 850;
+  color: var(--text);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+.file-manager-size {
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--gray-500);
+}
+.file-manager-delete {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: #FEF2F2;
+  color: #DC2626;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.file-manager-delete:hover { background: #FEE2E2; }
+.file-manager-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+.file-manager-hint {
+  flex: 1;
+  padding: 10px 11px;
+  border-radius: 13px;
+  color: var(--vtp-red-dark);
+  background: var(--vtp-red-light);
+  border-left: 4px solid var(--vtp-red);
+  font-weight: 800;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.file-manager-confirm {
+  border: 0;
+  border-radius: 13px;
+  padding: 12px 18px;
+  color: #fff;
+  background: linear-gradient(135deg, #EE0033 0%, #FF6B86 100%);
+  box-shadow: 0 12px 26px rgba(238,0,51,.24);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.file-manager-confirm:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.file-manager-confirm:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(238,0,51,.3);
+}
+.modal-field-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 900;
+}
+.modal-text-input {
+  width: 100%;
+  border: 1.5px solid rgba(238,0,51,.18);
+  border-radius: 13px;
+  padding: 12px 13px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--text);
+  outline: none;
+  background: #FFFDFD;
+}
+.modal-text-input:focus {
+  border-color: var(--vtp-red);
+  box-shadow: 0 0 0 4px rgba(238,0,51,.09);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+.modal-btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-btn.cancel {
+  color: var(--gray-600);
+  background: #F3F4F6;
+}
+.modal-btn.danger,
+.modal-btn.primary {
+  color: #fff;
+  background: linear-gradient(135deg, #EE0033 0%, #FF6B86 100%);
+  box-shadow: 0 10px 24px rgba(238,0,51,.22);
+}
+@keyframes helpPop {
+  from { opacity: 0; transform: translateY(12px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 /* Utility */
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
@@ -347,7 +777,7 @@
       <div class="section-card" style="margin-bottom:18px;">
         <div class="section-header no-click">
           <span class="section-title"><i class="fa-solid fa-cloud-arrow-up"></i> UPLOAD FILE</span>
-          <span style="font-size:11px;color:var(--gray-400);font-weight:600;">Tối đa 100MB · Mọi định dạng</span>
+          <span style="font-size:11px;color:var(--gray-400);font-weight:600;">1 file hoặc nhiều file → tự nén ZIP · Tối đa 100MB</span>
         </div>
         <div class="section-body" style="padding:20px;">
 
@@ -363,11 +793,10 @@
             </div>
             <div class="dz-title">Kéo thả file vào đây</div>
             <div class="dz-sub">
-              hoặc <strong style="color:#7C3AED;">nhấn để chọn file</strong> từ máy tính của bạn<br>
-              Mỗi lần có thể chọn nhiều file cùng lúc
+              hoặc <strong>nhấn để chọn file</strong> từ máy tính của bạn<br>
+              Chọn nhiều file sẽ tự động nén thành 1 file ZIP trong một thư mục
             </div>
-            <button class="btn btn-sm" onclick="event.stopPropagation(); document.getElementById('file-input').click()"
-              style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:white;box-shadow:0 3px 12px rgba(124,58,237,.3);">
+            <button class="btn btn-red btn-sm" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
               <i class="fa-solid fa-folder-open"></i> Chọn file
             </button>
             <div class="dz-types">
@@ -382,11 +811,14 @@
 
           <!-- Upload Progress (hidden) -->
           <div class="upload-progress-wrap" id="upload-progress">
-            <div class="spinner-ring"></div>
-            <div>
-              <div class="progress-filename" id="progress-filename">đang upload...</div>
-              <div class="progress-sub" style="margin-top:6px;">⬆️ Đang tải lên máy chủ...</div>
+            <div class="progress-ring" id="progress-ring" style="--p:0;">
+              <span class="progress-percent" id="progress-percent">0%</span>
             </div>
+            <div class="progress-filename" id="progress-filename">đang upload...</div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="progress-bar-fill"></div>
+            </div>
+            <div class="progress-sub" id="progress-sub">⬆️ Đang tải lên máy chủ...</div>
           </div>
 
         </div>
@@ -414,14 +846,19 @@
     <div>
       <div class="qr-panel">
         <div class="qr-panel-header">
-          <div class="qr-panel-title"><i class="fa-solid fa-qrcode"></i> MÃ QR TẢI FILE</div>
-          <div class="qr-panel-sub">Quét để tải về điện thoại ngay lập tức</div>
+          <div>
+            <div class="qr-panel-title"><i class="fa-solid fa-qrcode"></i> MÃ QR TẢI FILE</div>
+            <div class="qr-panel-sub">Quét để tải về điện thoại ngay lập tức</div>
+          </div>
+          <button type="button" class="qr-help-btn" onclick="openHelpPopup()" title="Lưu ý sử dụng" aria-label="Lưu ý sử dụng">
+            <i class="fa-solid fa-question"></i>
+          </button>
         </div>
         <div class="qr-panel-body">
 
           <!-- Empty state -->
           <div class="qr-empty-state" id="qr-empty">
-            <i class="fa-solid fa-qrcode" style="color:#A78BFA;"></i>
+            <i class="fa-solid fa-qrcode" style="color:var(--vtp-red);"></i>
             <p>Upload một file để tạo mã QR tương ứng.<br>Mã QR sẽ xuất hiện tại đây.</p>
           </div>
 
@@ -433,7 +870,7 @@
             <!-- File info -->
             <div class="qr-result-file-info">
               <div class="qr-file-name" id="qr-file-name">
-                <i class="fa-solid fa-file" style="color:#7C3AED;flex-shrink:0;"></i>
+                <i class="fa-solid fa-file" style="color:var(--vtp-red);flex-shrink:0;"></i>
                 <span id="qr-name-text">—</span>
               </div>
               <div class="qr-file-size" id="qr-file-size">—</div>
@@ -459,23 +896,7 @@
         </div>
       </div>
 
-      <!-- Info box -->
-      <div class="section-card" style="margin-top:14px;">
-        <div class="section-body" style="padding:16px;">
-          <div style="font-size:11.5px;color:var(--gray-500);line-height:1.75;">
-            <div style="font-weight:800;color:var(--text);margin-bottom:8px;font-size:12px;">
-              <i class="fa-solid fa-circle-info" style="color:#7C3AED;"></i> Lưu ý sử dụng
-            </div>
-            <div>⏱ Link tự động hủy sau <strong>60 phút</strong></div>
-            <div>📦 Kích thước tối đa <strong>100MB / file</strong></div>
-            <div>🔒 Không lưu dữ liệu trên server của bạn</div>
-            <div>📱 Mở bằng bất kỳ trình duyệt nào trên điện thoại</div>
-            <div style="margin-top:8px;padding:8px 10px;background:var(--vtp-red-light);border-radius:6px;color:var(--vtp-red-dark);font-weight:600;border-left:3px solid var(--vtp-red);">
-              ⚠️ Không chia sẻ link chứa thông tin bảo mật
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
 
   </div><!-- /.qr-main-grid -->
@@ -485,13 +906,112 @@
 <!-- ===== TOAST ===== -->
 <div id="toast-container"></div>
 
+<!-- ===== HELP POPUP ===== -->
+<div class="help-popup-backdrop" id="help-popup" onclick="closeHelpPopup(event)">
+  <div class="help-popup-card" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="help-popup-title">
+    <div class="help-popup-head">
+      <div class="help-popup-title" id="help-popup-title">
+        <i class="fa-solid fa-circle-info"></i> Lưu ý sử dụng
+      </div>
+      <button type="button" class="help-popup-close" onclick="closeHelpPopup()" aria-label="Đóng popup">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="help-popup-body">
+      <div class="help-note-list">
+        <div class="help-note-item">⏱ <span>Link tự động hủy sau <strong>60 phút</strong>.</span></div>
+        <div class="help-note-item">📦 <span>Kích thước upload tối đa <strong>100MB</strong>.</span></div>
+        <div class="help-note-item">🗜️ <span>Chọn nhiều file sẽ tự nén thành <strong>1 file ZIP</strong>.</span></div>
+        <div class="help-note-item">📱 <span>Mở được bằng bất kỳ trình duyệt nào trên điện thoại.</span></div>
+      </div>
+      <div class="help-warning">⚠️ Không chia sẻ link chứa thông tin bảo mật.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FILE MANAGER POPUP ===== -->
+<div class="help-popup-backdrop" id="file-manager-popup" onclick="closeFileManager(event)">
+  <div class="help-popup-card file-manager-card" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="file-manager-title">
+    <div class="help-popup-head">
+      <div class="help-popup-title" id="file-manager-title">
+        <i class="fa-solid fa-folder-open"></i> File trong gói ZIP
+      </div>
+      <button type="button" class="help-popup-close" onclick="closeFileManager()" aria-label="Đóng popup">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="help-popup-body">
+      <div id="file-manager-summary" style="margin-bottom:10px;font-weight:800;color:var(--gray-600);"></div>
+      <div class="file-manager-list" id="file-manager-list"></div>
+      <div class="file-manager-footer">
+        <div class="file-manager-hint" id="file-manager-hint">Xoá file chỉ là chỉnh tạm. Bấm X để huỷ, bấm Xác nhận để cập nhật QR.</div>
+        <button type="button" class="file-manager-confirm" id="file-manager-confirm" onclick="confirmFileManagerChanges()" disabled>
+          <i class="fa-solid fa-check"></i> Xác nhận
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ZIP NAME POPUP ===== -->
+<div class="help-popup-backdrop" id="zip-name-popup" onclick="cancelZipName(event)">
+  <div class="help-popup-card" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="zip-name-title">
+    <div class="help-popup-head">
+      <div class="help-popup-title" id="zip-name-title">
+        <i class="fa-solid fa-file-zipper"></i> Đặt tên file ZIP
+      </div>
+      <button type="button" class="help-popup-close" onclick="cancelZipName()" aria-label="Đóng popup">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="help-popup-body">
+      <label class="modal-field-label" for="zip-name-input">Tên file ZIP trước khi upload</label>
+      <input class="modal-text-input" id="zip-name-input" type="text" maxlength="80" placeholder="VD: Bao_cao_ngay_10_05_2026">
+      <div style="margin-top:9px;color:var(--gray-500);font-size:11.5px;font-weight:700;">Không cần nhập đuôi .zip, hệ thống sẽ tự thêm.</div>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn cancel" onclick="cancelZipName()"><i class="fa-solid fa-xmark"></i> Huỷ</button>
+        <button type="button" class="modal-btn primary" onclick="confirmZipName()"><i class="fa-solid fa-check"></i> Tiếp tục</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DELETE CONFIRM POPUP ===== -->
+<div class="help-popup-backdrop" id="delete-confirm-popup" onclick="cancelDeleteConfirm(event)">
+  <div class="help-popup-card" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+    <div class="help-popup-head">
+      <div class="help-popup-title" id="delete-confirm-title">
+        <i class="fa-solid fa-triangle-exclamation"></i> Xác nhận xoá
+      </div>
+      <button type="button" class="help-popup-close" onclick="cancelDeleteConfirm()" aria-label="Đóng popup">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="help-popup-body">
+      <div id="delete-confirm-text" style="font-size:13px;font-weight:750;color:var(--gray-600);line-height:1.65;"></div>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn cancel" onclick="cancelDeleteConfirm()"><i class="fa-solid fa-arrow-left"></i> Huỷ</button>
+        <button type="button" class="modal-btn danger" onclick="confirmDeleteUpload()"><i class="fa-solid fa-trash"></i> Xoá</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ================================================================
    STATE
 ================================================================ */
-var uploadHistory = []; // [{name, size, url, ts, expired}]
+var uploadHistory = []; // [{id, name, size, url, ts, expiry, ...}]
 var currentLink = '';
+var currentEntry = null;
+var fileManagerDraftFiles = null;
+var fileManagerOriginalCount = 0;
+var pendingZipFiles = null;
+var pendingZipOptions = null;
+var pendingDeleteEntryId = null;
 var countdownInterval = null;
+var entryIdSeq = 1;
+var HISTORY_STORAGE_KEY = 'vtp_qr_upload_history_v1';
 
 /* ================================================================
    DRAG & DROP
@@ -517,59 +1037,169 @@ function triggerUploadNew() {
   document.getElementById('file-input').click();
 }
 
+function openZipNamePopup(files, options) {
+  pendingZipFiles = files ? files.slice() : [];
+  pendingZipOptions = options || {};
+  var input = document.getElementById('zip-name-input');
+  if (input) {
+    input.value = pendingZipOptions.zipBaseName || buildZipFolderName();
+    setTimeout(function() { input.focus(); input.select(); }, 60);
+  }
+  var popup = document.getElementById('zip-name-popup');
+  if (popup) popup.classList.add('show');
+}
+
+function cancelZipName(event) {
+  if (event && event.target && event.target.id !== 'zip-name-popup') return;
+  pendingZipFiles = null;
+  pendingZipOptions = null;
+  document.getElementById('file-input').value = '';
+  var popup = document.getElementById('zip-name-popup');
+  if (popup) popup.classList.remove('show');
+}
+
+function confirmZipName() {
+  if (!pendingZipFiles || pendingZipFiles.length === 0) return;
+  var input = document.getElementById('zip-name-input');
+  var customName = sanitizeZipBaseName(input ? input.value : '');
+  if (!customName) {
+    showToast('⚠️ Vui lòng nhập tên ZIP hợp lệ.', 'warning');
+    if (input) input.focus();
+    return;
+  }
+  var files = pendingZipFiles.slice();
+  var options = pendingZipOptions || {};
+  options.zipBaseName = customName;
+  pendingZipFiles = null;
+  pendingZipOptions = null;
+  var popup = document.getElementById('zip-name-popup');
+  if (popup) popup.classList.remove('show');
+  zipAndUploadFiles(files, options);
+}
+
 /* ================================================================
    FILE PROCESSING
 ================================================================ */
 function processFiles(files) {
-  // Upload one by one, starting with first; subsequent ones queue
-  var first = files[0];
-  if (files.length > 1) {
-    showToast('📂 Đang upload ' + files.length + ' file (lần lượt từng file)', 'info');
-  }
-  uploadFile(first, 0, files);
-}
+  if (!files || files.length === 0) return;
 
-function uploadFile(file, idx, allFiles) {
   var maxBytes = 100 * 1024 * 1024;
-  if (file.size > maxBytes) {
-    showToast('⚠️ File "' + file.name + '" vượt quá 100MB, bỏ qua.', 'warning');
-    if (idx + 1 < allFiles.length) uploadFile(allFiles[idx + 1], idx + 1, allFiles);
+  var totalBytes = files.reduce(function(sum, file) { return sum + file.size; }, 0);
+
+  if (files.length === 1) {
+    if (files[0].size > maxBytes) {
+      showToast('⚠️ File "' + files[0].name + '" vượt quá 100MB.', 'warning');
+      document.getElementById('file-input').value = '';
+      return;
+    }
+    uploadFile(files[0], {
+      displayName: files[0].name,
+      originalCount: 1,
+      originalSize: files[0].size,
+      originalFiles: files.slice(),
+      isZipBundle: false
+    });
     return;
   }
 
-  // Show progress
-  showProgress(true, file.name);
+  if (totalBytes > maxBytes) {
+    showToast('⚠️ Tổng dung lượng ' + formatSize(totalBytes) + ' vượt quá giới hạn 100MB.', 'warning');
+    document.getElementById('file-input').value = '';
+    return;
+  }
+
+  if (typeof JSZip === 'undefined') {
+    showToast('❌ Không tải được thư viện nén ZIP. Vui lòng kiểm tra mạng và thử lại.', 'error');
+    document.getElementById('file-input').value = '';
+    return;
+  }
+
+  openZipNamePopup(files, {});
+}
+
+function zipAndUploadFiles(files, options) {
+  options = options || {};
+  var folderName = options.zipBaseName || buildZipFolderName();
+  var zipFileName = folderName + '.zip';
+  var zip = new JSZip();
+  var folder = zip.folder(folderName);
+
+  files.forEach(function(file) {
+    folder.file(safeZipFileName(file.name), file);
+  });
+
+  showProgress(true, 'Đang nén ' + files.length + ' file...', '🗜️ Đang tạo folder ZIP: ' + zipFileName, 0);
+  showToast('🗜️ Đang nén ' + files.length + ' file thành 1 folder ZIP', 'info');
+
+  zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } }, function(meta) {
+    showProgress(true, 'Đang nén ' + files.length + ' file...', '🗜️ Tiến trình nén ZIP: ' + Math.round(meta.percent || 0) + '%', Math.round(meta.percent || 0));
+  }).then(function(blob) {
+    var zipFile = new File([blob], zipFileName, { type: 'application/zip' });
+    if (zipFile.size > 100 * 1024 * 1024) {
+      showProgress(false, '', '');
+      showToast('⚠️ File ZIP sau khi nén vẫn vượt quá 100MB (' + formatSize(zipFile.size) + ').', 'warning');
+      document.getElementById('file-input').value = '';
+      return;
+    }
+
+    uploadFile(zipFile, {
+      displayName: zipFileName,
+      originalCount: files.length,
+      originalSize: files.reduce(function(sum, file) { return sum + file.size; }, 0),
+      originalFiles: files.slice(),
+      isZipBundle: true,
+      replaceEntryId: options.replaceEntryId || null
+    });
+  }).catch(function(err) {
+    console.error('zip failed:', err);
+    showProgress(false, '', '');
+    showToast('❌ Lỗi khi nén ZIP: ' + (err && err.message ? err.message : 'Không xác định'), 'error');
+    document.getElementById('file-input').value = '';
+  });
+}
+
+function uploadFile(file, meta) {
+  var maxBytes = 100 * 1024 * 1024;
+  meta = meta || {};
+
+  if (file.size > maxBytes) {
+    showToast('⚠️ File "' + file.name + '" vượt quá 100MB.', 'warning');
+    document.getElementById('file-input').value = '';
+    return;
+  }
+
+  showProgress(true, file.name, '⬆️ Chuẩn bị tải lên máy chủ...', 0);
 
   var fd = new FormData();
   fd.append('file', file, file.name);
 
-  // Try fetch first, fallback to XHR
   function handleSuccess(dlUrl) {
-    showProgress(false, '');
+    showProgress(false, '', '');
     var entry = {
-      name: file.name,
+      id: meta.replaceEntryId || ('up_' + (entryIdSeq++)),
+      name: meta.displayName || file.name,
       size: file.size,
       url: dlUrl,
       ts: Date.now(),
-      expiry: Date.now() + 60 * 60 * 1000
+      expiry: Date.now() + 60 * 60 * 1000,
+      isZipBundle: !!meta.isZipBundle,
+      originalCount: meta.originalCount || 1,
+      originalSize: meta.originalSize || file.size,
+      originalFiles: meta.originalFiles || []
     };
-    uploadHistory.unshift(entry);
+    var existingIdx = meta.replaceEntryId ? uploadHistory.findIndex(function(e) { return e.id === meta.replaceEntryId; }) : -1;
+    if (existingIdx >= 0) uploadHistory.splice(existingIdx, 1, entry);
+    else uploadHistory.unshift(entry);
+    persistHistory();
     updateHeaderBadges();
     renderHistory();
     showQrResult(entry);
-    showToast('✅ Upload thành công: ' + file.name, 'success');
-    // Reset file input so same file can be re-uploaded
+    showToast('✅ Đã tạo QR tải ' + (entry.isZipBundle ? 'folder ZIP: ' : 'file: ') + entry.name, 'success');
     document.getElementById('file-input').value = '';
-    // Upload next if any
-    if (idx + 1 < allFiles.length) {
-      setTimeout(function() {
-        uploadFile(allFiles[idx + 1], idx + 1, allFiles);
-      }, 600);
-    }
   }
 
   function handleError(errMsg) {
-    showProgress(false, '');
+    showProgress(false, '', '');
     showToast('❌ Lỗi upload "' + file.name + '": ' + (errMsg || 'Không xác định'), 'error');
     document.getElementById('file-input').value = '';
   }
@@ -587,36 +1217,26 @@ function uploadFile(file, idx, allFiles) {
     } catch(e) { return null; }
   }
 
-  // Method 1: fetch
-  if (typeof fetch !== 'undefined') {
-    fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd })
-      .then(function(r) { return r.text(); })
-      .then(function(text) {
-        var dlUrl = parseResponse(text);
-        if (dlUrl) {
-          handleSuccess(dlUrl);
-        } else {
-          handleError('Server trả về lỗi');
-        }
-      })
-      .catch(function(err) {
-        // Fallback to XHR
-        console.warn('fetch failed, trying XHR:', err);
-        uploadViaXHR(fd, handleSuccess, handleError, parseResponse);
-      });
-  } else {
-    uploadViaXHR(fd, handleSuccess, handleError, parseResponse);
-  }
+  uploadViaXHR(fd, handleSuccess, handleError, parseResponse);
 }
 
 function uploadViaXHR(fd, onSuccess, onError, parseResponse) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', 'https://tmpfiles.org/api/v1/upload', true);
+  xhr.upload.onprogress = function(e) {
+    if (e.lengthComputable) {
+      var pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+      showProgress(true, '', '⬆️ Đang upload: ' + pct + '% · ' + formatSize(e.loaded) + '/' + formatSize(e.total), pct);
+    } else {
+      showProgress(true, '', '⬆️ Đang upload dữ liệu...', 12);
+    }
+  };
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
       if (xhr.status >= 200 && xhr.status < 300) {
+        showProgress(true, '', '✅ Upload xong, đang tạo QR...', 100);
         var dlUrl = parseResponse(xhr.responseText);
-        if (dlUrl) { onSuccess(dlUrl); }
+        if (dlUrl) { setTimeout(function() { onSuccess(dlUrl); }, 250); }
         else { onError('Phản hồi không hợp lệ'); }
       } else {
         onError('HTTP ' + xhr.status);
@@ -625,11 +1245,11 @@ function uploadViaXHR(fd, onSuccess, onError, parseResponse) {
   };
   xhr.onerror = function() { onError('Lỗi mạng'); };
   xhr.ontimeout = function() { onError('Hết thời gian chờ'); };
-  xhr.timeout = 120000; // 2 min timeout
+  xhr.timeout = 120000;
   xhr.send(fd);
 }
 
-function showProgress(show, filename) {
+function showProgress(show, filename, subtitle, percent) {
   var dz = document.getElementById('drop-zone');
   if (dz) dz.style.display = show ? 'none' : 'block';
   var pw = document.getElementById('upload-progress');
@@ -638,12 +1258,28 @@ function showProgress(show, filename) {
     var fn = document.getElementById('progress-filename');
     if (fn) fn.textContent = filename;
   }
+  var sub = document.getElementById('progress-sub');
+  if (sub) sub.textContent = subtitle || '⬆️ Đang tải lên máy chủ...';
+  updateProgressPercent(show ? percent : 0);
+}
+
+function updateProgressPercent(percent) {
+  var p = Number(percent);
+  if (!isFinite(p)) p = 0;
+  p = Math.max(0, Math.min(100, Math.round(p)));
+  var ring = document.getElementById('progress-ring');
+  var text = document.getElementById('progress-percent');
+  var fill = document.getElementById('progress-bar-fill');
+  if (ring) ring.style.setProperty('--p', p);
+  if (text) text.textContent = p + '%';
+  if (fill) fill.style.width = p + '%';
 }
 
 /* ================================================================
    QR RESULT
 ================================================================ */
 function showQrResult(entry) {
+  currentEntry = entry;
   document.getElementById('qr-empty').style.display = 'none';
   var wrap = document.getElementById('qr-result-wrap');
   wrap.classList.add('show');
@@ -654,14 +1290,14 @@ function showQrResult(entry) {
   new QRCode(qrEl, {
     text: entry.url,
     width: 200, height: 200,
-    colorDark: '#4C1D95',
+    colorDark: '#C9002B',
     colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.M
   });
 
   // File info
   document.getElementById('qr-name-text').textContent = entry.name;
-  document.getElementById('qr-file-size').textContent = formatSize(entry.size) + ' · Tải về điện thoại bằng cách quét QR';
+  document.getElementById('qr-file-size').textContent = getEntryMetaText(entry) + ' · Tải về điện thoại bằng cách quét QR';
   currentLink = entry.url;
 
   // Countdown
@@ -711,7 +1347,13 @@ function renderHistory() {
       '</div>' +
       '<div class="history-info">' +
         '<div class="history-name">' + escHtml(e.name) + '</div>' +
-        '<div class="history-meta">' + formatSize(e.size) + ' · ' + timeAgo + '</div>' +
+        '<div class="history-meta">' + getEntryMetaText(e) + ' · ' + timeAgo + '</div>' +
+      '</div>' +
+      '<div class="history-actions" onclick="event.stopPropagation()">' +
+        (e.isZipBundle && e.originalFiles && e.originalFiles.length > 1
+          ? '<button type="button" class="history-action-btn" onclick="openFileManagerById(\'' + e.id + '\')" title="Xem file trong ZIP"><i class="fa-solid fa-eye"></i></button>'
+          : '') +
+        '<button type="button" class="history-action-btn danger" onclick="requestDeleteUpload(\'' + e.id + '\')" title="Xoá file tải nhầm"><i class="fa-solid fa-trash"></i></button>' +
       '</div>' +
       '<span class="history-badge ' + (expired ? 'expired' : 'ok') + '">' +
         (expired ? '⏰ Hết hạn' : '● Còn ' + remMin + ' phút') +
@@ -732,12 +1374,160 @@ function selectHistory(idx) {
 function clearHistory() {
   uploadHistory = [];
   currentLink = '';
+  currentEntry = null;
   clearInterval(countdownInterval);
   document.getElementById('qr-empty').style.display = 'block';
   document.getElementById('qr-result-wrap').classList.remove('show');
+  closeFileManager();
+  persistHistory();
   renderHistory();
   updateHeaderBadges();
   showToast('🗑️ Đã xoá lịch sử upload', 'info');
+}
+
+function deleteCurrentUpload() {
+  if (!currentEntry) return;
+  requestDeleteUpload(currentEntry.id);
+}
+
+function requestDeleteUpload(entryId) {
+  var entry = uploadHistory.find(function(e) { return e.id === entryId; });
+  if (!entry) return;
+  pendingDeleteEntryId = entryId;
+  var text = document.getElementById('delete-confirm-text');
+  if (text) {
+    text.innerHTML = 'Bạn có chắc muốn xoá <strong>' + escHtml(entry.name) + '</strong> khỏi lịch sử upload không?<br><span style="color:var(--gray-500);font-size:11.5px;">Thao tác này chỉ xoá khỏi giao diện/lịch sử, file trên tmpfiles.org vẫn tự hết hạn theo thời gian.</span>';
+  }
+  var popup = document.getElementById('delete-confirm-popup');
+  if (popup) popup.classList.add('show');
+}
+
+function cancelDeleteConfirm(event) {
+  if (event && event.target && event.target.id !== 'delete-confirm-popup') return;
+  pendingDeleteEntryId = null;
+  var popup = document.getElementById('delete-confirm-popup');
+  if (popup) popup.classList.remove('show');
+}
+
+function confirmDeleteUpload() {
+  if (!pendingDeleteEntryId) return;
+  var id = pendingDeleteEntryId;
+  pendingDeleteEntryId = null;
+  var popup = document.getElementById('delete-confirm-popup');
+  if (popup) popup.classList.remove('show');
+  deleteUploadById(id);
+}
+
+function deleteUploadById(entryId) {
+  var entry = uploadHistory.find(function(e) { return e.id === entryId; });
+  if (!entry) return;
+  var name = entry.name;
+  uploadHistory = uploadHistory.filter(function(e) { return e.id !== entryId; });
+  if (currentEntry && currentEntry.id === entryId) {
+    currentLink = '';
+    currentEntry = null;
+    clearInterval(countdownInterval);
+    document.getElementById('qr-code-el').innerHTML = '';
+    document.getElementById('qr-empty').style.display = 'block';
+    document.getElementById('qr-result-wrap').classList.remove('show');
+  }
+  closeFileManager();
+  persistHistory();
+  renderHistory();
+  updateHeaderBadges();
+  showToast('🗑️ Đã xoá file tải nhầm: ' + name, 'info');
+}
+
+function openFileManager() {
+  if (!currentEntry || !currentEntry.isZipBundle || !currentEntry.originalFiles || currentEntry.originalFiles.length < 2) return;
+  fileManagerDraftFiles = currentEntry.originalFiles.slice();
+  fileManagerOriginalCount = fileManagerDraftFiles.length;
+  renderFileManager();
+  var popup = document.getElementById('file-manager-popup');
+  if (popup) popup.classList.add('show');
+}
+
+function openFileManagerById(entryId) {
+  var entry = uploadHistory.find(function(e) { return e.id === entryId; });
+  if (!entry || !entry.isZipBundle || !entry.originalFiles || entry.originalFiles.length < 2) return;
+  showQrResult(entry);
+  fileManagerDraftFiles = entry.originalFiles.slice();
+  fileManagerOriginalCount = fileManagerDraftFiles.length;
+  renderFileManager();
+  var popup = document.getElementById('file-manager-popup');
+  if (popup) popup.classList.add('show');
+}
+
+function closeFileManager(event) {
+  if (event && event.target && event.target.id !== 'file-manager-popup') return;
+  fileManagerDraftFiles = null;
+  fileManagerOriginalCount = 0;
+  var popup = document.getElementById('file-manager-popup');
+  if (popup) popup.classList.remove('show');
+}
+
+function renderFileManager() {
+  var list = document.getElementById('file-manager-list');
+  var summary = document.getElementById('file-manager-summary');
+  var confirmBtn = document.getElementById('file-manager-confirm');
+  var hint = document.getElementById('file-manager-hint');
+  if (!list || !summary || !currentEntry) return;
+  var files = fileManagerDraftFiles || [];
+  var totalSize = files.reduce(function(sum, file) { return sum + file.size; }, 0);
+  var removedCount = Math.max(0, fileManagerOriginalCount - files.length);
+  summary.textContent = files.length + ' file · Tổng ' + formatSize(totalSize) + (removedCount ? ' · Đã bỏ ' + removedCount + ' file' : '');
+  if (confirmBtn) confirmBtn.disabled = removedCount === 0;
+  if (hint) hint.textContent = removedCount ? 'Đã bỏ ' + removedCount + ' file. Bấm X để huỷ, bấm Xác nhận để cập nhật QR.' : 'Xoá file chỉ là chỉnh tạm. Bấm X để huỷ, bấm Xác nhận để cập nhật QR.';
+  list.innerHTML = files.map(function(file, idx) {
+    var ext = file.name.split('.').pop().toLowerCase();
+    return '<div class="file-manager-item">' +
+      '<div class="file-manager-icon"><i class="' + getFileIcon(ext) + '"></i></div>' +
+      '<div class="file-manager-info">' +
+        '<div class="file-manager-name">' + escHtml(file.name) + '</div>' +
+        '<div class="file-manager-size">' + formatSize(file.size) + '</div>' +
+      '</div>' +
+      '<button type="button" class="file-manager-delete" onclick="removeFileFromBundle(' + idx + ')" title="Bỏ file này khỏi danh sách"><i class="fa-solid fa-trash"></i></button>' +
+    '</div>';
+  }).join('');
+}
+
+function removeFileFromBundle(idx) {
+  if (!fileManagerDraftFiles) return;
+  if (fileManagerDraftFiles.length <= 1) {
+    showToast('⚠️ Cần giữ lại ít nhất 1 file trong danh sách.', 'warning');
+    return;
+  }
+  var removed = fileManagerDraftFiles.splice(idx, 1)[0];
+  if (!removed) return;
+  renderFileManager();
+  showToast('🗑️ Đã bỏ "' + removed.name + '" khỏi danh sách tạm', 'info');
+}
+
+function confirmFileManagerChanges() {
+  if (!currentEntry || !fileManagerDraftFiles) return;
+  var nextFiles = fileManagerDraftFiles.slice();
+  var removedCount = Math.max(0, fileManagerOriginalCount - nextFiles.length);
+  if (removedCount === 0) {
+    closeFileManager();
+    return;
+  }
+  var entryId = currentEntry.id;
+  closeFileManager();
+  showToast('✅ Đang cập nhật QR sau khi bỏ ' + removedCount + ' file...', 'info');
+
+  if (nextFiles.length === 1) {
+    uploadFile(nextFiles[0], {
+      displayName: nextFiles[0].name,
+      originalCount: 1,
+      originalSize: nextFiles[0].size,
+      originalFiles: nextFiles.slice(),
+      isZipBundle: false,
+      replaceEntryId: entryId
+    });
+    return;
+  }
+
+  openZipNamePopup(nextFiles, { replaceEntryId: entryId });
 }
 
 /* ================================================================
@@ -768,6 +1558,79 @@ function updateHeaderBadges() {
 }
 
 /* ================================================================
+   HELP POPUP
+================================================================ */
+function openHelpPopup() {
+  var popup = document.getElementById('help-popup');
+  if (popup) popup.classList.add('show');
+}
+
+function closeHelpPopup(event) {
+  if (event && event.target && event.target.id !== 'help-popup') return;
+  var popup = document.getElementById('help-popup');
+  if (popup) popup.classList.remove('show');
+}
+
+/* ================================================================
+   HISTORY STORAGE
+================================================================ */
+function persistHistory() {
+  try {
+    var serializable = uploadHistory.map(function(e) {
+      return {
+        id: e.id,
+        name: e.name,
+        size: e.size,
+        url: e.url,
+        ts: e.ts,
+        expiry: e.expiry,
+        isZipBundle: !!e.isZipBundle,
+        originalCount: e.originalCount || 1,
+        originalSize: e.originalSize || e.size,
+        originalFiles: []
+      };
+    });
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(serializable));
+  } catch (err) {
+    console.warn('persist history failed:', err);
+  }
+}
+
+function loadPersistedHistory() {
+  try {
+    var raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+    if (!raw) return;
+    var now = Date.now();
+    var parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return;
+    uploadHistory = parsed.filter(function(e) {
+      return e && e.url && e.expiry && e.expiry > now;
+    }).map(function(e) {
+      return {
+        id: e.id || ('up_' + (entryIdSeq++)),
+        name: e.name || 'file',
+        size: e.size || 0,
+        url: e.url,
+        ts: e.ts || now,
+        expiry: e.expiry,
+        isZipBundle: !!e.isZipBundle,
+        originalCount: e.originalCount || 1,
+        originalSize: e.originalSize || e.size || 0,
+        originalFiles: []
+      };
+    });
+    uploadHistory.forEach(function(e) {
+      var m = String(e.id || '').match(/^up_(\d+)$/);
+      if (m) entryIdSeq = Math.max(entryIdSeq, Number(m[1]) + 1);
+    });
+    persistHistory();
+  } catch (err) {
+    console.warn('load history failed:', err);
+    uploadHistory = [];
+  }
+}
+
+/* ================================================================
    HELPERS
 ================================================================ */
 function formatSize(bytes) {
@@ -786,6 +1649,32 @@ function formatTimeAgo(ts) {
 
 function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function buildZipFolderName() {
+  var d = new Date();
+  var pad = function(n) { return String(n).padStart(2, '0'); };
+  return 'VTP_Files_' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+}
+
+function safeZipFileName(name) {
+  return String(name || 'file')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/^\.+/, '_')
+    .trim() || 'file';
+}
+
+function sanitizeZipBaseName(name) {
+  return safeZipFileName(String(name || '').replace(/\.zip$/i, ''))
+    .replace(/\s+/g, '_')
+    .slice(0, 80);
+}
+
+function getEntryMetaText(entry) {
+  if (entry && entry.isZipBundle) {
+    return 'ZIP ' + (entry.originalCount || 0) + ' file · Gốc ' + formatSize(entry.originalSize || 0) + ' · Nén ' + formatSize(entry.size || 0);
+  }
+  return formatSize(entry && entry.size ? entry.size : 0);
 }
 
 function getFileIcon(ext) {
@@ -836,6 +1725,9 @@ function showToast(msg, type) {
 /* ================================================================
    INIT — Update history render every minute for time-ago labels
 ================================================================ */
+loadPersistedHistory();
+renderHistory();
+updateHeaderBadges();
 setInterval(function() { renderHistory(); updateHeaderBadges(); }, 60000);
 </script>
 </body>
