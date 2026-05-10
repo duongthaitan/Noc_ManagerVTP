@@ -50,15 +50,20 @@ function updateModeBadges() {
 
 /**
  * Phân loại một hàng dữ liệu Excel thuộc nhóm nào
+ * - TT500: TRANG_THAI = 500
+ * - DO_9:  LOAI_CANH_BAO = 'DO_9' VÀ TRANG_THAI thuộc {507, 508, 509}
+ * - DO_8:  LOAI_CANH_BAO = 'DO_8' VÀ TRANG_THAI thuộc {507, 508, 509}
+ * - DO_7:  LOAI_CANH_BAO = 'DO_7' VÀ TRANG_THAI thuộc {507, 508, 509}
  * @returns {{ isTT500, isDO9, isDO8, isDO7 }}
  */
 function classifyRow(r) {
   const tt = Number(r['TRANG_THAI']);
   const cb = String(r['LOAI_CANH_BAO'] || '').trim();
+  const isDOStatus = (tt === 507 || tt === 508 || tt === 509);
   return {
     isTT500: tt === 500,
-    isDO9:   cb === 'DO_9',
-    isDO8:   cb === 'DO_8',
-    isDO7:   cb === 'DO_7',
+    isDO9:   cb === 'DO_9' && isDOStatus,
+    isDO8:   cb === 'DO_8' && isDOStatus,
+    isDO7:   cb === 'DO_7' && isDOStatus,
   };
 }

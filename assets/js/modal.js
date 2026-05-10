@@ -119,18 +119,42 @@ function buildMessage(groupName, rows) {
 }
 
 // ================================================================
+// LỌC DỮ LIỆU THEO TAB ĐANG XEM
+// ================================================================
+
+/**
+ * Chỉ lấy các phiếu hợp lệ theo tab hiện tại để tránh hiển thị bưu tá
+ * không nằm trong điều kiện đang lọc (TT500 / DO / Tất cả).
+ */
+function getRowsForActiveTab(rows) {
+  return rows.filter(r => {
+    const c = classifyRow(r);
+    if (activeTab === 'tt500') return selectedModes.tt500 && c.isTT500;
+    if (activeTab === 'do')    return selectedModes.do && (c.isDO9 || c.isDO8 || c.isDO7);
+    return (selectedModes.tt500 && c.isTT500) ||
+           (selectedModes.do && (c.isDO9 || c.isDO8 || c.isDO7));
+  });
+}
+
+// ================================================================
 // MỞ MODAL
 // ================================================================
 
-/** Mở modal cho 1 bưu tá cụ thể */
 function openSingleModal(groupIdx) {
   const group = groupedData[groupIdx];
   if (!group) return;
+
+  const rows = getRowsForActiveTab(group.rows);
+  if (rows.length === 0) {
+    showToast('⚠️ Bưu tá này không có phiếu thuộc điều kiện đang lọc.', 'warning');
+    return;
+  }
+
   const matched = matchBuuta(group.parsedName, group.parsedPhone);
   const phone   = matched ? matched.phone : '';
   const name    = group.parsedName || group.rawName;
   if (!phone) showToast('⚠️ Chưa có số điện thoại, vui lòng thêm ở phần ⚙️ Cấu hình', 'warning');
-  currentModalGroups = [{ name, phone, rows: group.rows }];
+  currentModalGroups = [{ name, phone, rows }];
   currentModalIdx = 0;
   renderModal(false);
   openModal();
@@ -138,13 +162,18 @@ function openSingleModal(groupIdx) {
 
 /** Mở modal cho tất cả bưu tá */
 function openAllModal() {
-  currentModalGroups = groupedData.map(g => {
-    const matched = matchBuuta(g.parsedName, g.parsedPhone);
-    return { name: g.parsedName || g.rawName, phone: matched ? matched.phone : '', rows: g.rows };
-  });
+  currentModalGroups = groupedData
+    .map(g => {
+      const rows = getRowsForActiveTab(g.rows);
+      if (rows.length === 0) return null;
+
+      const matched = matchBuuta(g.parsedName, g.parsedPhone);
+      return { name: g.parsedName || g.rawName, phone: matched ? matched.phone : '', rows };
+    })
+    .filter(Boolean);
 
   if (currentModalGroups.length === 0) {
-    showToast('⚠️ Không có bưu tá nào.', 'warning');
+    showToast('⚠️ Không có bưu tá nào thuộc điều kiện đang lọc.', 'warning');
     return;
   }
   const noPhone = currentModalGroups.filter(g => !g.phone).length;
