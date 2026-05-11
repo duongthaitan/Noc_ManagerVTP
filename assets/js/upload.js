@@ -56,12 +56,11 @@ function processFile(file) {
         // Lưu vào global state
         allRawRows = raw;
 
-        // Đếm theo mode (DO yêu cầu đúng cả LOAI_CANH_BAO và TRANG_THAI thuộc {507,508,509})
-        modeCounts.tt500 = raw.filter(r => Number(r['TRANG_THAI']) === 500).length;
-        const isDOStatus = r => { const tt = Number(r['TRANG_THAI']); return tt === 507 || tt === 508 || tt === 509; };
-        modeCounts.do9   = raw.filter(r => String(r['LOAI_CANH_BAO'] || '').trim() === 'DO_9' && isDOStatus(r)).length;
-        modeCounts.do8   = raw.filter(r => String(r['LOAI_CANH_BAO'] || '').trim() === 'DO_8' && isDOStatus(r)).length;
-        modeCounts.do7   = raw.filter(r => String(r['LOAI_CANH_BAO'] || '').trim() === 'DO_7' && isDOStatus(r)).length;
+        // Đếm theo mode (DO dựa trên DG_MOC_LM thuộc DO7/DO8/DO9 và TRANG_THAI thuộc {500,506,507,508})
+        modeCounts.tt500 = raw.filter(r => classifyRow(r).isTT500).length;
+        modeCounts.do9   = raw.filter(r => classifyRow(r).isDO9).length;
+        modeCounts.do8   = raw.filter(r => classifyRow(r).isDO8).length;
+        modeCounts.do7   = raw.filter(r => classifyRow(r).isDO7).length;
 
         document.getElementById('spinner-wrap').style.display = 'none';
 

@@ -51,19 +51,19 @@ function updateModeBadges() {
 /**
  * Phân loại một hàng dữ liệu Excel thuộc nhóm nào
  * - TT500: TRANG_THAI = 500
- * - DO_9:  LOAI_CANH_BAO = 'DO_9' VÀ TRANG_THAI thuộc {507, 508, 509}
- * - DO_8:  LOAI_CANH_BAO = 'DO_8' VÀ TRANG_THAI thuộc {507, 508, 509}
- * - DO_7:  LOAI_CANH_BAO = 'DO_7' VÀ TRANG_THAI thuộc {507, 508, 509}
+ * - DO_9:  DG_MOC_LM thuộc nhóm DO9 VÀ TRANG_THAI thuộc {500, 506, 507, 508}
+ * - DO_8:  DG_MOC_LM thuộc nhóm DO8 VÀ TRANG_THAI thuộc {500, 506, 507, 508}
+ * - DO_7:  DG_MOC_LM thuộc nhóm DO7 VÀ TRANG_THAI thuộc {500, 506, 507, 508}
  * @returns {{ isTT500, isDO9, isDO8, isDO7 }}
  */
 function classifyRow(r) {
   const tt = Number(r['TRANG_THAI']);
-  const cb = String(r['LOAI_CANH_BAO'] || '').trim();
-  const isDOStatus = (tt === 507 || tt === 508 || tt === 509);
+  const dg = String(r['DG_MOC_LM'] || '').trim().toUpperCase().replace(/[\s_\-]+/g, '');
+  const isDOStatus = (tt === 500 || tt === 506 || tt === 507 || tt === 508);
   return {
     isTT500: tt === 500,
-    isDO9:   cb === 'DO_9' && isDOStatus,
-    isDO8:   cb === 'DO_8' && isDOStatus,
-    isDO7:   cb === 'DO_7' && isDOStatus,
+    isDO9:   dg === 'DO9' && isDOStatus,
+    isDO8:   dg === 'DO8' && isDOStatus,
+    isDO7:   dg === 'DO7' && isDOStatus,
   };
 }
