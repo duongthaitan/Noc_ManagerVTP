@@ -48,22 +48,46 @@ function updateModeBadges() {
 // PHÂN LOẠI ROW
 // ================================================================
 
+/** Ngưỡng (ngày) để coi TT505 là "tồn quá lâu" và đưa vào cảnh báo DO */
+var TT505_EXPIRED_DAYS = 3;
+
+/**
+ * Kiểm tra phiếu TT505 đã quá N ngày không tác động
+ * So sánh TIME_TAC_DONG với thời điểm hiện tại
+ * @returns {boolean}
+ */
+function is505Expired(r) {
+  const tt = Number(r['TRANG_THAI']);
+  if (tt !== 505) return false;
+  const raw = r['TIME_TAC_DONG'];
+  if (!raw) return true; // Không có TIME_TAC_DONG → coi như quá hạn
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return true; // Không parse được → coi như quá hạn
+  const diffMs = Date.now() - d.getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  return diffDays > TT505_EXPIRED_DAYS;
+}
+
 /**
  * Phân loại một hàng dữ liệu Excel thuộc nhóm nào
  * - TT500: TRANG_THAI = 500
  * - DO_9:  DG_MOC_LM thuộc nhóm DO9 VÀ TRANG_THAI thuộc {500, 506, 507, 508}
- * - DO_8:  DG_MOC_LM thuộc nhóm DO8 VÀ TRANG_THAI thuộc {500, 506, 507, 508}
- * - DO_7:  DG_MOC_LM thuộc nhóm DO7 VÀ TRANG_THAI thuộc {500, 506, 507, 508}
- * @returns {{ isTT500, isDO9, isDO8, isDO7 }}
+ *          HOẶC TRANG_THAI = 505 quá 3 ngày không tác động
+ * - DO_8:  DG_MOC_LM thuộc nhóm DO8 VÀ (tương tự)
+ * - DO_7:  DG_MOC_LM thuộc nhóm DO7 VÀ (tương tự)
+ * @returns {{ isTT500, isDO9, isDO8, isDO7, is505Expired }}
  */
 function classifyRow(r) {
   const tt = Number(r['TRANG_THAI']);
   const dg = String(r['DG_MOC_LM'] || '').trim().toUpperCase().replace(/[\s_\-]+/g, '');
   const isDOStatus = (tt === 500 || tt === 506 || tt === 507 || tt === 508);
+  const expired505 = is505Expired(r);
+  const isDOEligible = isDOStatus || expired505;
   return {
-    isTT500: tt === 500,
-    isDO9:   dg === 'DO9' && isDOStatus,
-    isDO8:   dg === 'DO8' && isDOStatus,
-    isDO7:   dg === 'DO7' && isDOStatus,
+    isTT500:      tt === 500,
+    isDO9:        dg === 'DO9' && isDOEligible,
+    isDO8:        dg === 'DO8' && isDOEligible,
+    isDO7:        dg === 'DO7' && isDOEligible,
+    is505Expired: expired505,
   };
 }

@@ -32,7 +32,8 @@ function buildMessage(groupName, rows) {
       const tqd = parseFloat(r['TG_QUYDINH'])  || 0;
       const ttt = parseFloat(r['TG_TT_LUYKE'])  || 0;
       const tt  = r['TRANG_THAI'];
-      return `${icon} ${ma} | TT: ${tt} | COD: ${cod > 0 ? formatMoney(cod) + 'đ' : '0đ'} | ${ttt}h/${tqd}h`;
+      const expired = is505Expired(r) ? ' ⏳505' : '';
+      return `${icon} ${ma} | TT: ${tt}${expired} | COD: ${cod > 0 ? formatMoney(cod) + 'đ' : '0đ'} | ${ttt}h/${tqd}h`;
     }
     function tt500RowLine(r) {
       const ma     = r['MA_PHIEUGUI'] || '';

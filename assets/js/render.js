@@ -240,6 +240,10 @@ function renderRow(r, tab, showLevelCol, showStatusCol) {
   const shopeeBadge = isShopee
     ? '<span class="badge-shopee"><i class="fa-solid fa-cart-shopping"></i> Shopee</span>' : '';
 
+  // Badge TT505 quá 3 ngày không tác động
+  const tt505Badge = cls.is505Expired
+    ? '<span class="badge-tt505-expired"><i class="fa-solid fa-hourglass-half"></i> TT505</span>' : '';
+
   // Level badge & row highlight class
   let levelBadgesHtml = '';
   let rowClass = isNoiTinh ? 'row-noi-tinh' : '';
@@ -251,6 +255,7 @@ function renderRow(r, tab, showLevelCol, showStatusCol) {
     if (cls.isDO9   && selectedModes.do)    levelBadgesHtml += '<span class="badge-level badge-do9">🔴 DO_9</span> ';
     if (cls.isDO8   && selectedModes.do)    levelBadgesHtml += '<span class="badge-level badge-do8">🟠 DO_8</span> ';
     if (cls.isDO7   && selectedModes.do)    levelBadgesHtml += '<span class="badge-level badge-do7">🟡 DO_7</span> ';
+    if (cls.is505Expired && selectedModes.do) levelBadgesHtml += '<span class="badge-level badge-505exp">⏳ 505</span> ';
     if      (cls.isDO9 && selectedModes.do) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do9';
     else if (cls.isDO8 && selectedModes.do) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do8';
     else if (cls.isDO7 && selectedModes.do) rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do7';
@@ -258,10 +263,16 @@ function renderRow(r, tab, showLevelCol, showStatusCol) {
     if      (cls.isDO9) { levelBadgesHtml = '<span class="badge-level badge-do9">🔴 DO_9</span>'; rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do9'; }
     else if (cls.isDO8) { levelBadgesHtml = '<span class="badge-level badge-do8">🟠 DO_8</span>'; rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do8'; }
     else if (cls.isDO7) { levelBadgesHtml = '<span class="badge-level badge-do7">🟡 DO_7</span>'; rowClass = (rowClass ? rowClass + ' ' : '') + 'row-do7'; }
+    if (cls.is505Expired) levelBadgesHtml += ' <span class="badge-level badge-505exp">⏳ 505</span>';
   }
 
+  // Hiển thị trạng thái — TT505 quá hạn sẽ có indicator riêng
+  const trangThaiHtml = cls.is505Expired
+    ? `<span style="font-weight:800;color:#B45309;">505 <i class="fa-solid fa-hourglass-half" style="font-size:10px;"></i></span>`
+    : `<span style="font-weight:800;color:var(--text);">${escHtml(String(trangThai))}</span>`;
+
   return `<tr class="${rowClass}">
-    <td><span class="ma-phieu">${escHtml(ma)}</span>${noiTinhBadge}${tikTokBadge}${shopeeBadge}</td>
+    <td><span class="ma-phieu">${escHtml(ma)}</span>${tt505Badge}${noiTinhBadge}${tikTokBadge}${shopeeBadge}</td>
     <td><span class="hanh-trinh">${escHtml(huyen_nhan)} → ${escHtml(huyen_phat)}</span></td>
     <td>${escHtml(ngay_gui)}</td>
     <td>${lanPhatHtml}</td>
@@ -269,7 +280,7 @@ function renderRow(r, tab, showLevelCol, showStatusCol) {
     <td>${tqd > 0 ? tqd + ' giờ' : '—'}</td>
     <td>${ttt > 0 ? ttt + ' giờ' : '—'}</td>
     ${showLevelCol  ? `<td>${levelBadgesHtml || '<span class="badge-level badge-none">—</span>'}</td>` : ''}
-    ${showStatusCol ? `<td><span style="font-weight:800;color:var(--text);">${escHtml(String(trangThai))}</span></td>` : ''}
+    ${showStatusCol ? `<td>${trangThaiHtml}</td>` : ''}
     <td>${statusBadge}</td>
   </tr>`;
 }
