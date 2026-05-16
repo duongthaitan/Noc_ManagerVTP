@@ -53,8 +53,9 @@ function processFile(file) {
         const ws   = wb.Sheets[wb.SheetNames[0]];
         const raw  = XLSX.utils.sheet_to_json(ws, { range: 1, defval: '' });
 
-        // Lưu vào global state
+        // Lưu vào global state (xóa cache phân loại cũ)
         allRawRows = raw;
+        clearClassifyCache();
 
         // Đếm theo mode (DO dựa trên DG_MOC_LM thuộc DO7/DO8/DO9 và TRANG_THAI thuộc {500,506,507,508})
         modeCounts.tt500 = raw.filter(r => classifyRow(r).isTT500).length;
@@ -108,5 +109,6 @@ function resetUpload() {
   allRawRows  = [];
   groupedData = [];
   modeCounts  = { tt500: 0, do9: 0, do8: 0, do7: 0 };
+  clearClassifyCache();
   updateHeaderBadges(0, 0, 0, 0, 0, 0);
 }

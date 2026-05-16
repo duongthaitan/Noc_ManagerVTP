@@ -960,8 +960,10 @@ function qrShowResult(url, fileName) {
     width: 148, height: 148,
     colorDark: '#4C1D95',
     colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M
+    correctLevel: QRCode.CorrectLevel.H
   });
+  qrEl.style.position = 'relative';
+  qrEl.insertAdjacentHTML('beforeend', '<img src="assets/icons/icon128.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;background:#fff;padding:2px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">');
   document.getElementById('qr-result-name').textContent = '📎 ' + fileName;
   document.getElementById('qr-result-box').classList.add('show');
 

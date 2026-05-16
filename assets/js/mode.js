@@ -45,11 +45,22 @@ function updateModeBadges() {
 }
 
 // ================================================================
-// PHÂN LOẠI ROW
+// PHÂN LOẠI ROW (có cache để tối ưu performance)
 // ================================================================
 
 /** Ngưỡng (ngày) để coi TT505 là "tồn quá lâu" và đưa vào cảnh báo DO */
 var TT505_EXPIRED_DAYS = 3;
+
+/**
+ * Cache kết quả classifyRow() — dùng WeakMap để tự GC khi row bị xóa.
+ * Tránh gọi classifyRow() 5-10 lần/row trên cùng dữ liệu (render, modal, upload).
+ */
+var _classifyCache = new WeakMap();
+
+/** Xóa cache phân loại (gọi khi upload file mới hoặc reset) */
+function clearClassifyCache() {
+  _classifyCache = new WeakMap();
+}
 
 /**
  * Kiểm tra phiếu TT505 đã quá N ngày không tác động
@@ -69,7 +80,7 @@ function is505Expired(r) {
 }
 
 /**
- * Phân loại một hàng dữ liệu Excel thuộc nhóm nào
+ * Phân loại một hàng dữ liệu Excel thuộc nhóm nào (có cache)
  * - TT500: TRANG_THAI = 500
  * - DO_9:  DG_MOC_LM thuộc nhóm DO9 VÀ TRANG_THAI thuộc {500, 506, 507, 508}
  *          HOẶC TRANG_THAI = 505 quá 3 ngày không tác động
@@ -78,16 +89,23 @@ function is505Expired(r) {
  * @returns {{ isTT500, isDO9, isDO8, isDO7, is505Expired }}
  */
 function classifyRow(r) {
+  // Kiểm tra cache trước — tránh tính lại nhiều lần cho cùng row object
+  if (_classifyCache.has(r)) return _classifyCache.get(r);
+
   const tt = Number(r['TRANG_THAI']);
   const dg = String(r['DG_MOC_LM'] || '').trim().toUpperCase().replace(/[\s_\-]+/g, '');
   const isDOStatus = (tt === 500 || tt === 506 || tt === 507 || tt === 508);
   const expired505 = is505Expired(r);
   const isDOEligible = isDOStatus || expired505;
-  return {
+  const result = {
     isTT500:      tt === 500,
     isDO9:        dg === 'DO9' && isDOEligible,
     isDO8:        dg === 'DO8' && isDOEligible,
     isDO7:        dg === 'DO7' && isDOEligible,
     is505Expired: expired505,
   };
+
+  // Lưu vào cache
+  _classifyCache.set(r, result);
+  return result;
 }
