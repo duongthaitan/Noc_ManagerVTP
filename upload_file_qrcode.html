@@ -1171,7 +1171,7 @@ function uploadFile(file, meta) {
   showProgress(true, file.name, '⬆️ Chuẩn bị tải lên máy chủ...', 0);
 
   var fd = new FormData();
-  fd.append('file', file, file.name);
+  fd.append('fileToUpload', file, file.name);
 
   function handleSuccess(dlUrl) {
     showProgress(false, '', '');
@@ -1205,24 +1205,20 @@ function uploadFile(file, meta) {
   }
 
   function parseResponse(text) {
-    try {
-      var res = JSON.parse(text);
-      if (res && res.status === 'success' && res.data && res.data.url) {
-        var dlUrl = res.data.url
-          .replace('tmpfiles.org/', 'tmpfiles.org/dl/')
-          .replace('http://', 'https://');
-        return dlUrl;
-      }
-      return null;
-    } catch(e) { return null; }
+    var url = (text || '').trim();
+    if (/^https?:\/\/\S+/i.test(url)) return url.replace(/^http:\/\//i, 'https://');
+    return null;
   }
+
+  fd.append('reqtype', 'fileupload');
+  fd.append('time', '1h');
 
   uploadViaXHR(fd, handleSuccess, handleError, parseResponse);
 }
 
 function uploadViaXHR(fd, onSuccess, onError, parseResponse) {
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', 'https://tmpfiles.org/api/v1/upload', true);
+  xhr.open('POST', 'https://litterbox.catbox.moe/resources/internals/api.php', true);
   xhr.upload.onprogress = function(e) {
     if (e.lengthComputable) {
       var pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
@@ -1398,7 +1394,7 @@ function requestDeleteUpload(entryId) {
   pendingDeleteEntryId = entryId;
   var text = document.getElementById('delete-confirm-text');
   if (text) {
-    text.innerHTML = 'Bạn có chắc muốn xoá <strong>' + escHtml(entry.name) + '</strong> khỏi lịch sử upload không?<br><span style="color:var(--gray-500);font-size:11.5px;">Thao tác này chỉ xoá khỏi giao diện/lịch sử, file trên tmpfiles.org vẫn tự hết hạn theo thời gian.</span>';
+    text.innerHTML = 'Bạn có chắc muốn xoá <strong>' + escHtml(entry.name) + '</strong> khỏi lịch sử upload không?<br><span style="color:var(--gray-500);font-size:11.5px;">Thao tác này chỉ xoá khỏi giao diện/lịch sử, file trên Litterbox vẫn tự hết hạn theo thời gian.</span>';
   }
   var popup = document.getElementById('delete-confirm-popup');
   if (popup) popup.classList.add('show');

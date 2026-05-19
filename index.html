@@ -925,18 +925,19 @@ function qrUploadFile(file) {
   dz.style.pointerEvents = 'none';
 
   var fd = new FormData();
-  fd.append('file', file, file.name);
+  fd.append('reqtype', 'fileupload');
+  fd.append('time', '1h');
+  fd.append('fileToUpload', file, file.name);
 
-  fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd })
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
+  fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
       document.getElementById('qr-pbar').classList.remove('show');
       dz.style.opacity = '';
       dz.style.pointerEvents = '';
-      if (res && res.status === 'success') {
-        var dlUrl = res.data.url
-          .replace('tmpfiles.org/', 'tmpfiles.org/dl/')
-          .replace('http://', 'https://');
+      var dlUrl = (text || '').trim();
+      if (/^https?:\/\/\S+/i.test(dlUrl)) {
+        dlUrl = dlUrl.replace(/^http:\/\//i, 'https://');
         qrCurrentLink = dlUrl;
         qrSetStatus('✅ Upload thành công!', '#059669');
         qrShowResult(dlUrl, file.name);

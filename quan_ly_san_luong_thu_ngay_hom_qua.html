@@ -306,6 +306,22 @@
         <button class="btn btn-ghost btn-sm" onclick="resetUpload()"><i class="fa-solid fa-rotate-left"></i> Tải file khác</button>
         <span class="file-chip" id="file-name-display"><i class="fa-solid fa-circle-check"></i></span>
       </div>
+
+      <!-- Source Guide Banner -->
+      <div class="source-guide-banner" id="source-guide-banner">
+        <div class="sg-banner-icon"><i class="fa-solid fa-lightbulb"></i></div>
+        <div class="sg-banner-body">
+          <div class="sg-banner-title">💡 Lấy file từ: Khẩu nhận — Tổng hợp chi tiết</div>
+          <div class="sg-banner-sub">NOC ViettelPost → Xuất Excel</div>
+        </div>
+        <a href="https://noc.viettelpost.vn/dash-postal/Khaunhan-tonghop-chitiet" target="_blank" class="sg-banner-open">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở NOC
+        </a>
+        <button class="sg-banner-dismiss" onclick="this.parentElement.style.display='none'" title="Ẩn gợi ý">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -1127,13 +1143,16 @@ function showQrModal() {
 
   canvas.toBlob(function(blob) {
     var fd = new FormData();
-    fd.append('file', blob, 'BieuDo.png');
-    fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd })
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
+    fd.append('reqtype', 'fileupload');
+    fd.append('time', '1h');
+    fd.append('fileToUpload', blob, 'BieuDo.png');
+    fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
       container.innerHTML = '';
-      if (res && res.status === 'success') {
-        var dlUrl = res.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/').replace('http://', 'https://');
+      var dlUrl = (text || '').trim();
+      if (/^https?:\/\/\S+/i.test(dlUrl)) {
+        dlUrl = dlUrl.replace(/^http:\/\//i, 'https://');
         qrInstance = new QRCode(container, { text: dlUrl, width: 220, height: 220, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
         container.style.position = 'relative';
         container.insertAdjacentHTML('beforeend', '<img src="assets/icons/icon128.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:#fff;padding:3px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);">');
@@ -1302,13 +1321,16 @@ function captureScreenshot() {
 
       canvas.toBlob(function(blob) {
         var fd = new FormData();
-        fd.append('file', blob, 'BaoCao.png');
-        fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd })
-        .then(function(r) { return r.json(); })
-        .then(function(res) {
+        fd.append('reqtype', 'fileupload');
+        fd.append('time', '1h');
+        fd.append('fileToUpload', blob, 'BaoCao.png');
+        fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.text(); })
+        .then(function(text) {
           qrContainer.innerHTML = '';
-          if (res && res.status === 'success') {
-            var dlUrl = res.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/').replace('http://', 'https://');
+          var dlUrl = (text || '').trim();
+          if (/^https?:\/\/\S+/i.test(dlUrl)) {
+            dlUrl = dlUrl.replace(/^http:\/\//i, 'https://');
             new QRCode(qrContainer, { text: dlUrl, width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
             qrContainer.style.position = 'relative';
             qrContainer.insertAdjacentHTML('beforeend', '<img src="assets/icons/icon128.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:#fff;padding:3px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);">');
