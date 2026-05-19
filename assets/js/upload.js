@@ -110,5 +110,5 @@ function resetUpload() {
   groupedData = [];
   modeCounts  = { tt500: 0, do9: 0, do8: 0, do7: 0 };
   clearClassifyCache();
-  updateHeaderBadges(0, 0, 0, 0, 0, 0);
+  updateHeaderBadges(0, 0, 0);
 }

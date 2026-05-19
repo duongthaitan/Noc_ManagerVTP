@@ -63,6 +63,30 @@ function clearClassifyCache() {
 }
 
 /**
+ * Parse giá trị thời gian từ Excel sang Date.
+ * Hỗ trợ: serial number (Excel date), chuỗi dd/mm/yyyy[ HH:MM[:SS]], ISO.
+ * @returns {Date|null}
+ */
+function parseExcelDateTime(raw) {
+  if (raw == null || raw === '') return null;
+  // Excel serial date (number)
+  if (typeof raw === 'number' && typeof XLSX !== 'undefined' && XLSX.SSF) {
+    const o = XLSX.SSF.parse_date_code(raw);
+    if (o) return new Date(o.y, o.m - 1, o.d, o.H || 0, o.M || 0, o.S || 0);
+  }
+  const s = String(raw).trim();
+  // dd/mm/yyyy hoặc dd/mm/yyyy HH:MM[:SS]
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
+  if (m) {
+    const dt = new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+  // Fallback: thử parse mặc định (ISO, yyyy-mm-dd...)
+  const dt = new Date(s);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+/**
  * Kiểm tra phiếu TT505 đã quá N ngày không tác động
  * So sánh TIME_TAC_DONG với thời điểm hiện tại
  * @returns {boolean}
@@ -72,8 +96,8 @@ function is505Expired(r) {
   if (tt !== 505) return false;
   const raw = r['TIME_TAC_DONG'];
   if (!raw) return true; // Không có TIME_TAC_DONG → coi như quá hạn
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return true; // Không parse được → coi như quá hạn
+  const d = parseExcelDateTime(raw);
+  if (!d) return true; // Không parse được → coi như quá hạn
   const diffMs = Date.now() - d.getTime();
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
   return diffDays > TT505_EXPIRED_DAYS;

@@ -345,7 +345,7 @@ html.in-iframe .excel-table-wrap { overflow: visible !important; }
       <div class="hbadge danger">
         <i class="fa-solid fa-clock-rotate-left"></i>
         <span>Tổng sai giờ:</span>
-        <span class="num" id="h-total-saigió">0</span>
+        <span class="num" id="h-total-saigio">0</span>
       </div>
       <div class="hbadge">
         <i class="fa-solid fa-users"></i>
@@ -1196,7 +1196,7 @@ function updateSummary() {
    HEADER BADGES
 ================================================================ */
 function updateHeaderBadges(total, buuta) {
-  document.getElementById('h-total-saigió').textContent = total;
+  document.getElementById('h-total-saigio').textContent = total;
   document.getElementById('h-total-buuta').textContent  = buuta;
 
   // Tính kỳ báo cáo từ ngày thu đầu/cuối
