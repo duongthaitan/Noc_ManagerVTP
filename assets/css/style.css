@@ -1204,3 +1204,12 @@ hr { border: none; border-top: 1px solid var(--gray-100); margin: 16px 0; }
   .sg-steps { gap: 4px; }
   .sg-step { font-size: 10px; padding: 3px 7px; }
 }
+
+/* ================================================================
+   IFRAME MODE — khi nhúng trong hub (index.html)
+   Hub đã có topbar + breadcrumb riêng → ẩn chrome trùng lặp
+================================================================ */
+html.in-iframe .site-header,
+html.in-iframe .page-nav { display: none !important; }
+html.in-iframe .container { padding-top: 12px; }
+html.in-iframe body { padding-top: 0; }

@@ -701,6 +701,9 @@
 .fu1 { animation: fadeUp .35s ease both .04s; }
 .fu2 { animation: fadeUp .35s ease both .10s; }
 .fu3 { animation: fadeUp .35s ease both .16s; }
+
+/* ── Iframe mode — co padding khi nhúng trong hub ── */
+html.in-iframe .container { padding-top: 12px; }
 </style>
 <link rel="icon" type="image/png" href="assets/icons/icon128.png">
 </head>
@@ -998,6 +1001,11 @@
 </div>
 
 <script>
+/* ================================================================
+   IFRAME DETECTION — ẩn chrome trùng lặp khi nhúng trong hub
+================================================================ */
+try { if (window.self !== window.top) document.documentElement.classList.add('in-iframe'); } catch(e) { document.documentElement.classList.add('in-iframe'); }
+
 /* ================================================================
    STATE
 ================================================================ */

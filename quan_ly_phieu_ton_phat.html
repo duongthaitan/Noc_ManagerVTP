@@ -269,6 +269,10 @@
 <div id="toast-container"></div>
 
 <!-- ===== APP SCRIPTS (thứ tự quan trọng) ===== -->
+<script>
+/* IFRAME DETECTION — ẩn site-header & page-nav khi nhúng trong hub */
+try { if (window.self !== window.top) document.documentElement.classList.add('in-iframe'); } catch(e) { document.documentElement.classList.add('in-iframe'); }
+</script>
 <script src="assets/js/state.js"></script>
 <script src="assets/js/utils.js"></script>
 <script src="assets/js/buuta.js"></script>
