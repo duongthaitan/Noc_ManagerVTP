@@ -295,12 +295,23 @@
       <div class="source-guide-banner" id="source-guide-banner">
         <div class="sg-banner-icon"><i class="fa-solid fa-lightbulb"></i></div>
         <div class="sg-banner-body">
-          <div class="sg-banner-title">💡 Lấy file từ: First & Last Mile Detail — LastMile</div>
-          <div class="sg-banner-sub">NOC ViettelPost → Thu thành công → Xuất Excel</div>
+          <div class="sg-banner-title">💡 Lấy file từ NOC ViettelPost — First &amp; Last Mile / LastMile</div>
+          <div class="sg-steps">
+            <span class="sg-step"><span class="sg-step-num">1</span>Mở NOC</span>
+            <i class="fa-solid fa-chevron-right sg-arrow"></i>
+            <span class="sg-step"><span class="sg-step-num">2</span>First &amp; Last Mile</span>
+            <i class="fa-solid fa-chevron-right sg-arrow"></i>
+            <span class="sg-step"><span class="sg-step-num">3</span>Tab LastMile · Thu thành công</span>
+            <i class="fa-solid fa-chevron-right sg-arrow"></i>
+            <span class="sg-step"><span class="sg-step-num">4</span>Xuất Excel</span>
+          </div>
         </div>
         <a href="https://noc.viettelpost.vn/dash-postal/first-last-mile-detail?page=LastMile" target="_blank" class="sg-banner-open">
           <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở NOC
         </a>
+        <button class="sg-banner-copy" onclick="sgCopyUrl(this, 'https://noc.viettelpost.vn/dash-postal/first-last-mile-detail?page=LastMile')" title="Sao chép URL">
+          <i class="fa-solid fa-copy"></i> Copy URL
+        </button>
         <button class="sg-banner-dismiss" onclick="this.parentElement.style.display='none'" title="Ẩn gợi ý">
           <i class="fa-solid fa-xmark"></i>
         </button>
@@ -537,6 +548,31 @@
 <div id="toast-container"></div>
 
 <script>
+/* ================================================================
+   SOURCE GUIDE — Copy URL helper
+================================================================ */
+function sgCopyUrl(btn, url) {
+  function done() {
+    var origHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã copy';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.innerHTML = origHtml; btn.classList.remove('copied'); }, 1500);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(function() {
+      var ta = document.createElement('textarea');
+      ta.value = url; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e) {}
+      document.body.removeChild(ta); done();
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta); done();
+  }
+}
+
 /* ================================================================
    STATE
 ================================================================ */

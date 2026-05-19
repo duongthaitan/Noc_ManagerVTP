@@ -1124,8 +1124,83 @@ hr { border: none; border-top: 1px solid var(--gray-100); margin: 16px 0; }
 }
 .sg-banner-dismiss:hover { background: rgba(0,0,0,0.06); color: var(--gray-700); }
 
+/* ── Steps row ── */
+.sg-steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.sg-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  background: white;
+  border: 1px solid rgba(5,150,105,0.22);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-700);
+  white-space: nowrap;
+  transition: all 0.18s;
+}
+.sg-step:hover {
+  background: #ECFDF5;
+  border-color: rgba(5,150,105,0.45);
+  transform: translateY(-1px);
+}
+.sg-step-num {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #059669, #10B981);
+  color: white;
+  font-size: 9.5px;
+  font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sg-arrow {
+  color: rgba(5,150,105,0.5);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* ── Copy URL button ── */
+.sg-banner-copy {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 12px; border-radius: 8px;
+  background: white; color: #059669;
+  border: 1.5px solid rgba(5,150,105,0.3);
+  font-family: inherit;
+  font-size: 11.5px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.sg-banner-copy:hover {
+  background: #ECFDF5;
+  border-color: #059669;
+  transform: translateY(-1px);
+}
+.sg-banner-copy.copied {
+  background: #059669;
+  color: white;
+  border-color: #059669;
+}
+
+/* ── Layout: 2-line banner with steps below title ── */
+.source-guide-banner {
+  align-items: flex-start;
+}
+.sg-banner-body { padding-top: 2px; }
+
 /* Responsive: stack on mobile */
 @media (max-width: 580px) {
   .source-guide-banner { flex-wrap: wrap; gap: 8px; }
   .sg-banner-open { width: 100%; justify-content: center; }
+  .sg-banner-copy { width: 100%; justify-content: center; }
+  .sg-steps { gap: 4px; }
+  .sg-step { font-size: 10px; padding: 3px 7px; }
 }
