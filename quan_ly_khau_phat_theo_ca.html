@@ -366,8 +366,17 @@ html.in-iframe #section-results .stat-card-mini { padding: 8px 12px; }
 html.in-iframe #section-results .stat-info .stat-value { font-size: 18px; }
 html.in-iframe .toolbar { padding: 8px 12px; margin-bottom: 8px; }
 
-/* Bảng hiển thị toàn bộ dòng, không inner-scroll (cuộn ở cấp trang/iframe) */
-.excel-scroll-wrap { max-height: none !important; overflow-y: visible !important; }
+/* Co table cho vừa width khi nhúng iframe (hub có sidebar 300px) */
+html.in-iframe .excel-table { min-width: 0; font-size: 13px; }
+html.in-iframe .excel-table thead tr th { padding: 7px 8px; font-size: 11.5px; }
+html.in-iframe .excel-table thead th.col-tuyen { min-width: 200px; }
+html.in-iframe .excel-table tbody td { padding: 6px 8px; font-size: 13px; }
+html.in-iframe .excel-table tbody td.col-tuyen { font-size: 12.5px; }
+html.in-iframe .excel-table tbody td.col-percent { font-size: 13px; }
+
+/* Bảng hiển thị toàn bộ dòng, không inner-scroll dọc; cho phép cuộn ngang khi cần */
+.excel-table-wrap { overflow: visible !important; }
+.excel-scroll-wrap { max-height: none !important; overflow-x: auto; overflow-y: visible !important; }
 </style>
 <link rel="icon" type="image/png" href="assets/icons/icon128.png">
 </head>
