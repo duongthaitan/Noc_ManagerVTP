@@ -361,11 +361,13 @@ html.in-iframe .site-header,
 html.in-iframe .page-nav { display: none !important; }
 html.in-iframe .container { padding-top: 12px; }
 html.in-iframe .steps-bar { margin-bottom: 10px; }
-html.in-iframe .excel-scroll-wrap { max-height: calc(100vh - 360px); }
 html.in-iframe #section-results .stat-row { gap: 8px; margin-bottom: 8px; }
 html.in-iframe #section-results .stat-card-mini { padding: 8px 12px; }
 html.in-iframe #section-results .stat-info .stat-value { font-size: 18px; }
 html.in-iframe .toolbar { padding: 8px 12px; margin-bottom: 8px; }
+
+/* Bảng hiển thị toàn bộ dòng, không inner-scroll (cuộn ở cấp trang/iframe) */
+.excel-scroll-wrap { max-height: none !important; overflow-y: visible !important; }
 </style>
 <link rel="icon" type="image/png" href="assets/icons/icon128.png">
 </head>
