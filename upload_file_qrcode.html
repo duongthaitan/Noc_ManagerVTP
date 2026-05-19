@@ -1213,36 +1213,24 @@ function uploadFile(file, meta) {
   fd.append('reqtype', 'fileupload');
   fd.append('time', '1h');
 
-  uploadViaXHR(fd, handleSuccess, handleError, parseResponse);
+  uploadViaFetch(fd, handleSuccess, handleError, parseResponse, file);
 }
 
-function uploadViaXHR(fd, onSuccess, onError, parseResponse) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', 'https://litterbox.catbox.moe/resources/internals/api.php', true);
-  xhr.upload.onprogress = function(e) {
-    if (e.lengthComputable) {
-      var pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
-      showProgress(true, '', '⬆️ Đang upload: ' + pct + '% · ' + formatSize(e.loaded) + '/' + formatSize(e.total), pct);
-    } else {
-      showProgress(true, '', '⬆️ Đang upload dữ liệu...', 12);
-    }
-  };
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4) {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        showProgress(true, '', '✅ Upload xong, đang tạo QR...', 100);
-        var dlUrl = parseResponse(xhr.responseText);
-        if (dlUrl) { setTimeout(function() { onSuccess(dlUrl); }, 250); }
-        else { onError('Phản hồi không hợp lệ'); }
-      } else {
-        onError('HTTP ' + xhr.status);
-      }
-    }
-  };
-  xhr.onerror = function() { onError('Lỗi mạng'); };
-  xhr.ontimeout = function() { onError('Hết thời gian chờ'); };
-  xhr.timeout = 120000;
-  xhr.send(fd);
+function uploadViaFetch(fd, onSuccess, onError, parseResponse, file) {
+  showProgress(true, file.name, '⬆️ Đang upload lên máy chủ (' + formatSize(file.size) + ')...', 50);
+
+  fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(function(text) {
+      showProgress(true, '', '✅ Upload xong, đang tạo QR...', 100);
+      var dlUrl = parseResponse(text);
+      if (dlUrl) { setTimeout(function() { onSuccess(dlUrl); }, 250); }
+      else { onError('Phản hồi không hợp lệ: ' + (text || '').substring(0, 100)); }
+    })
+    .catch(function(err) { onError(err && err.message ? err.message : 'Lỗi mạng'); });
 }
 
 function showProgress(show, filename, subtitle, percent) {
