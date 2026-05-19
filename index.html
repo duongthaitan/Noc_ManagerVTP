@@ -544,8 +544,27 @@ body {
 }
 @media (max-width: 640px) {
   :root { --sidebar-w: 0px; }
-  .sidebar { display: none; }
+  /* Mobile drawer: sidebar mặc định ẩn (slide ra ngoài), bấm hamburger để mở */
+  .sidebar {
+    width: 280px;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 20px rgba(0,0,0,.15);
+    z-index: 200;
+  }
+  body.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+  /* Backdrop khi sidebar mở */
+  body.sidebar-open::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 150;
+    animation: fadeUp .25s ease;
+  }
   .main { margin-left: 0; }
+  /* Ẩn nút toggle nổi (chevron) trên mobile - dùng hamburger trong topbar */
+  .sidebar-toggle { display: none; }
 }
 
 /* ================================================================
@@ -833,8 +852,32 @@ body {
 <script>
 /* ─── Sidebar Toggle ─── */
 function toggleSidebar() {
-  document.body.classList.toggle('sidebar-collapsed');
+  // Mobile (≤640px): toggle drawer (sidebar-open)
+  // Desktop: toggle collapse (sidebar-collapsed)
+  if (window.matchMedia('(max-width: 640px)').matches) {
+    document.body.classList.toggle('sidebar-open');
+  } else {
+    document.body.classList.toggle('sidebar-collapsed');
+  }
 }
+
+/* Đóng drawer khi click vào backdrop hoặc khi chọn 1 menu item trên mobile */
+document.addEventListener('click', function(e) {
+  if (!document.body.classList.contains('sidebar-open')) return;
+  // Click vào backdrop (ngoài sidebar và toggle button)
+  var sidebar = document.querySelector('.sidebar');
+  var toggleBtn = document.getElementById('topbar-menu-btn');
+  if (sidebar && !sidebar.contains(e.target) && toggleBtn && !toggleBtn.contains(e.target)) {
+    document.body.classList.remove('sidebar-open');
+  }
+});
+
+/* Tự động đóng drawer khi resize lên desktop */
+window.addEventListener('resize', function() {
+  if (window.innerWidth > 640) {
+    document.body.classList.remove('sidebar-open');
+  }
+});
 
 /* ─── Clock ─── */
 (function tick() {
@@ -867,6 +910,7 @@ function showHome() {
   document.getElementById('content-frame').style.display = 'none';
   document.getElementById('content-frame').src = 'about:blank';
   document.getElementById('topbar-current').textContent = 'Dashboard';
+  document.body.classList.remove('sidebar-open');
 }
 
 function loadPage(url, navId, title) {
@@ -876,6 +920,7 @@ function loadPage(url, navId, title) {
   frame.style.display = 'block';
   frame.src = url;
   document.getElementById('topbar-current').textContent = title;
+  document.body.classList.remove('sidebar-open');
 }
 
 /* ─── QR Transfer Widget ─── */
