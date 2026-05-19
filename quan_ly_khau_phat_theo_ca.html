@@ -355,6 +355,17 @@
   .print-only { display: block !important; }
 }
 .print-only { display: none; }
+
+/* ── Iframe mode (loaded inside hub) — ẩn chrome trùng lặp, dồn không gian cho bảng ── */
+html.in-iframe .site-header,
+html.in-iframe .page-nav { display: none !important; }
+html.in-iframe .container { padding-top: 12px; }
+html.in-iframe .steps-bar { margin-bottom: 10px; }
+html.in-iframe .excel-scroll-wrap { max-height: calc(100vh - 360px); }
+html.in-iframe #section-results .stat-row { gap: 8px; margin-bottom: 8px; }
+html.in-iframe #section-results .stat-card-mini { padding: 8px 12px; }
+html.in-iframe #section-results .stat-info .stat-value { font-size: 18px; }
+html.in-iframe .toolbar { padding: 8px 12px; margin-bottom: 8px; }
 </style>
 <link rel="icon" type="image/png" href="assets/icons/icon128.png">
 </head>
@@ -742,6 +753,11 @@
 <div id="toast-container"></div>
 
 <script>
+/* ================================================================
+   IFRAME DETECTION — ẩn chrome trùng lặp khi nhúng trong hub
+================================================================ */
+try { if (window.self !== window.top) document.documentElement.classList.add('in-iframe'); } catch(e) { document.documentElement.classList.add('in-iframe'); }
+
 /* ================================================================
    STATE
 ================================================================ */
