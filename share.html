@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chia sẻ file — ViettelPost HBCTVT</title>
+<meta name="description" content="Tải về và chia sẻ file ViettelPost — quét QR để mở">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
+
+<style>
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #FFEAEF 0%, #F1F3F8 280px);
+  min-height: 100vh;
+  font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+.app {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 18px 14px 60px;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; padding: 6px 4px;
+}
+.brand-logo {
+  width: 36px; height: 36px;
+  background: var(--vtp-red); border-radius: 10px;
+  display: grid; place-items: center;
+  color: #fff; font-weight: 800; font-size: 15px;
+  box-shadow: var(--shadow-red);
+}
+.brand-text { line-height: 1.15; }
+.brand-text .name { font-weight: 800; font-size: 14px; color: var(--vtp-red-dark); }
+.brand-text .sub { font-size: 11px; color: var(--gray-500); }
+
+.card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.card-header {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #fff, var(--gray-50));
+}
+.file-icon-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.file-icon {
+  width: 52px; height: 52px;
+  background: var(--vtp-red-light);
+  color: var(--vtp-red-dark);
+  border-radius: 12px;
+  display: grid; place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.file-icon.zip { background: #FFF7ED; color: var(--orange-dark); }
+.file-name {
+  font-weight: 700; font-size: 15.5px; line-height: 1.35;
+  word-break: break-word;
+}
+.file-meta {
+  font-size: 12px; color: var(--gray-500); margin-top: 3px;
+}
+.expiry-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 600;
+  background: var(--green-light); color: var(--green-dark);
+}
+.expiry-badge.warn { background: var(--yellow-light); color: var(--yellow-dark); }
+.expiry-badge.expired { background: var(--vtp-red-light); color: var(--vtp-red-dark); }
+.expiry-badge.perm { background: var(--blue-light); color: #1D4ED8; }
+
+.actions {
+  padding: 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.btn {
+  appearance: none; border: 0; outline: 0; cursor: pointer;
+  padding: 14px 12px;
+  font-family: inherit; font-weight: 700; font-size: 14px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: var(--transition);
+}
+.btn-primary {
+  background: var(--vtp-red); color: #fff;
+  box-shadow: var(--shadow-red);
+}
+.btn-primary:hover { background: var(--vtp-red-dark); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-secondary {
+  background: var(--zalo); color: #fff;
+  box-shadow: var(--shadow-zalo);
+}
+.btn-secondary:hover { background: var(--zalo-dark); }
+.btn-secondary:active { transform: translateY(1px); }
+.btn-ghost {
+  background: var(--gray-100); color: var(--gray-700);
+}
+.btn-ghost:hover { background: var(--gray-200); }
+.btn-row {
+  padding: 0 14px 14px;
+  display: grid; grid-template-columns: 1fr; gap: 10px;
+}
+
+.section {
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+}
+.section-title {
+  font-size: 12px; font-weight: 700; color: var(--gray-500);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title .count {
+  font-size: 11px; color: var(--vtp-red-dark);
+  background: var(--vtp-red-light);
+  padding: 2px 8px; border-radius: 999px;
+  letter-spacing: 0;
+}
+
+.file-list {
+  max-height: 320px; overflow-y: auto;
+  margin: 0 -4px;
+}
+.file-list::-webkit-scrollbar { width: 6px; }
+.file-list::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+.file-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 13px;
+}
+.file-row:last-child { border-bottom: 0; }
+.file-row .ico {
+  width: 32px; height: 32px;
+  background: var(--gray-100); color: var(--gray-500);
+  border-radius: 8px;
+  display: grid; place-items: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.file-row .info { flex: 1; min-width: 0; }
+.file-row .info .nm {
+  font-weight: 600; color: var(--gray-900);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.file-row .info .sz {
+  font-size: 11.5px; color: var(--gray-500); margin-top: 2px;
+}
+
+.help {
+  padding: 14px 18px;
+  background: var(--vtp-red-light);
+  font-size: 12.5px; color: var(--vtp-red-darker);
+  line-height: 1.55;
+  border-top: 1px solid var(--vtp-red-bg);
+}
+.help b { color: var(--vtp-red-dark); }
+
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-500);
+}
+.empty .ico {
+  font-size: 48px; color: var(--gray-300);
+  margin-bottom: 14px;
+}
+.empty .title { font-weight: 700; font-size: 16px; color: var(--gray-700); margin-bottom: 6px; }
+
+.toast-container {
+  position: fixed; left: 50%; bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+  pointer-events: none;
+}
+.toast-item {
+  background: var(--gray-900); color: #fff;
+  padding: 11px 18px; border-radius: 999px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  opacity: 0; transform: translateY(8px);
+  transition: var(--transition);
+  max-width: 90vw;
+}
+.toast-item.show { opacity: 1; transform: translateY(0); }
+.toast-item.success { background: var(--green-dark); }
+.toast-item.warn { background: var(--yellow-dark); }
+.toast-item.error { background: var(--vtp-red-dark); }
+
+.foot {
+  text-align: center; padding: 24px 12px 0;
+  font-size: 11.5px; color: var(--gray-400);
+}
+.foot a { color: var(--vtp-red-dark); text-decoration: none; font-weight: 600; }
+
+@media (min-width: 600px) {
+  .actions { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="brand">
+    <div class="brand-logo">VTP</div>
+    <div class="brand-text">
+      <div class="name">ViettelPost HBCTVT</div>
+      <div class="sub">Chia sẻ file qua QR</div>
+    </div>
+  </div>
+
+  <div id="loading" class="card" style="display:none;">
+    <div class="empty">
+      <div class="ico"><i class="fa-solid fa-spinner fa-spin"></i></div>
+      <div class="title">Đang tải thông tin file…</div>
+    </div>
+  </div>
+
+  <div id="error-card" class="card" style="display:none;">
+    <div class="empty">
+      <div class="ico"><i class="fa-solid fa-circle-exclamation" style="color:var(--vtp-red);"></i></div>
+      <div class="title">Liên kết không hợp lệ</div>
+      <div id="error-msg" style="font-size:13px;margin-top:6px;">Mã QR không chứa dữ liệu hoặc đã bị hỏng. Vui lòng yêu cầu người gửi tạo lại QR.</div>
+    </div>
+  </div>
+
+  <div id="content" style="display:none;">
+    <div class="card">
+      <div class="card-header">
+        <div class="file-icon-row">
+          <div id="file-icon" class="file-icon"><i class="fa-solid fa-file"></i></div>
+          <div style="flex:1;min-width:0;">
+            <div id="file-name" class="file-name">—</div>
+            <div id="file-meta" class="file-meta">—</div>
+          </div>
+        </div>
+        <div id="expiry-badge" class="expiry-badge">
+          <i class="fa-solid fa-clock"></i>
+          <span id="expiry-text">—</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" onclick="downloadFile()">
+          <i class="fa-solid fa-download"></i>
+          Tải về
+        </button>
+        <button class="btn btn-secondary" onclick="shareFile()">
+          <i class="fa-solid fa-share-nodes"></i>
+          Chia sẻ
+        </button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="copyShareLink()">
+          <i class="fa-solid fa-link"></i>
+          Sao chép link chia sẻ
+        </button>
+      </div>
+
+      <div id="files-section" class="section" style="display:none;">
+        <div class="section-title">
+          <i class="fa-solid fa-folder-open"></i>
+          Nội dung folder
+          <span id="files-count" class="count">0 file</span>
+        </div>
+        <div id="files-list" class="file-list"></div>
+        <div id="files-truncated" style="display:none;font-size:11.5px;color:var(--gray-500);margin-top:8px;font-style:italic;">
+          ⚠️ Danh sách file con không hiển thị vì quá nhiều — nội dung đầy đủ có trong file ZIP sau khi tải về.
+        </div>
+      </div>
+
+      <div class="help">
+        <i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>
+        <b>Mẹo:</b> Bấm <b>Tải về</b> để mở trang tải trực tiếp. Bấm <b>Chia sẻ</b> để gửi link qua Zalo, Messenger, Email… Lưu ý: link sẽ tự hết hạn theo thời gian hiển thị bên trên.
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Powered by ViettelPost HBCTVT · <a href="upload_file_qrcode.html">Tạo QR mới</a>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script>
+'use strict';
+
+var payload = null;
+
+function showToast(msg, type) {
+  type = type || 'success';
+  var c = document.getElementById('toast-container');
+  var el = document.createElement('div');
+  el.className = 'toast-item ' + type;
+  el.textContent = msg;
+  c.appendChild(el);
+  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('show'); }); });
+  setTimeout(function() {
+    el.classList.remove('show');
+    setTimeout(function() { el.remove(); }, 400);
+  }, 2800);
+}
+
+function formatSize(bytes) {
+  if (typeof bytes !== 'number' || !isFinite(bytes) || bytes < 0) return '—';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+}
+
+function fileExt(name) {
+  var m = /\.([a-z0-9]+)$/i.exec(name || '');
+  return m ? m[1].toLowerCase() : '';
+}
+
+function iconForExt(ext) {
+  if (['zip','rar','7z','tar','gz'].indexOf(ext) >= 0) return 'fa-file-zipper';
+  if (['xlsx','xls','csv','ods'].indexOf(ext) >= 0) return 'fa-file-excel';
+  if (['docx','doc','rtf','odt'].indexOf(ext) >= 0) return 'fa-file-word';
+  if (['pptx','ppt','odp'].indexOf(ext) >= 0) return 'fa-file-powerpoint';
+  if (ext === 'pdf') return 'fa-file-pdf';
+  if (['jpg','jpeg','png','gif','bmp','webp','svg','heic'].indexOf(ext) >= 0) return 'fa-file-image';
+  if (['mp4','mov','avi','mkv','webm'].indexOf(ext) >= 0) return 'fa-file-video';
+  if (['mp3','wav','flac','m4a','ogg'].indexOf(ext) >= 0) return 'fa-file-audio';
+  if (['txt','md','log'].indexOf(ext) >= 0) return 'fa-file-lines';
+  return 'fa-file';
+}
+
+function decodePayload() {
+  var hash = (location.hash || '').replace(/^#/, '');
+  if (!hash) return null;
+  // base64url → base64
+  var b64 = hash.replace(/-/g, '+').replace(/_/g, '/');
+  // re-pad
+  while (b64.length % 4) b64 += '=';
+  try {
+    var json = decodeURIComponent(escape(atob(b64)));
+    var obj = JSON.parse(json);
+    if (!obj || typeof obj !== 'object' || !obj.u || !obj.n) return null;
+    return obj;
+  } catch (e) {
+    return null;
+  }
+}
+
+function showError(msg) {
+  document.getElementById('content').style.display = 'none';
+  document.getElementById('loading').style.display = 'none';
+  var card = document.getElementById('error-card');
+  card.style.display = '';
+  if (msg) document.getElementById('error-msg').textContent = msg;
+}
+
+function renderExpiry(expiryTs, expiryMs) {
+  var badge = document.getElementById('expiry-badge');
+  var text = document.getElementById('expiry-text');
+  // expiryMs === 0 → vĩnh viễn
+  if (expiryMs === 0) {
+    badge.className = 'expiry-badge perm';
+    text.textContent = '♾ Lưu vĩnh viễn — không chia sẻ thông tin nhạy cảm';
+    return;
+  }
+  if (!expiryTs) {
+    badge.style.display = 'none';
+    return;
+  }
+  function tick() {
+    var rem = expiryTs - Date.now();
+    if (rem <= 0) {
+      badge.className = 'expiry-badge expired';
+      text.textContent = '⚠️ Link đã hết hạn';
+      return false;
+    }
+    var totalSec = Math.floor(rem / 1000);
+    var d = Math.floor(totalSec / 86400);
+    var h = Math.floor((totalSec % 86400) / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    var label;
+    if (d > 0) label = 'Còn ' + d + ' ngày ' + h + 'h';
+    else if (h > 0) label = 'Còn ' + h + 'h ' + m + 'm';
+    else label = 'Còn ' + m + ':' + String(s).padStart(2, '0');
+    text.textContent = label;
+    if (rem < 30 * 60 * 1000) badge.className = 'expiry-badge warn';
+    else badge.className = 'expiry-badge';
+    return true;
+  }
+  if (!tick()) return;
+  setInterval(function() { if (!tick()) return; }, 1000);
+}
+
+function renderFiles(files) {
+  if (!files || !Array.isArray(files) || files.length === 0) return;
+  var section = document.getElementById('files-section');
+  section.style.display = '';
+  document.getElementById('files-count').textContent = files.length + ' file';
+  var list = document.getElementById('files-list');
+  list.innerHTML = '';
+  files.forEach(function(f) {
+    var ext = fileExt(f.n);
+    var row = document.createElement('div');
+    row.className = 'file-row';
+    var ico = document.createElement('div');
+    ico.className = 'ico';
+    ico.innerHTML = '<i class="fa-solid ' + iconForExt(ext) + '"></i>';
+    var info = document.createElement('div');
+    info.className = 'info';
+    var nm = document.createElement('div');
+    nm.className = 'nm';
+    nm.textContent = f.n || '—';
+    var sz = document.createElement('div');
+    sz.className = 'sz';
+    sz.textContent = formatSize(f.s);
+    info.appendChild(nm); info.appendChild(sz);
+    row.appendChild(ico); row.appendChild(info);
+    list.appendChild(row);
+  });
+}
+
+function render(p) {
+  payload = p;
+  document.getElementById('content').style.display = '';
+  document.getElementById('loading').style.display = 'none';
+
+  var ext = fileExt(p.n);
+  var iconEl = document.getElementById('file-icon');
+  iconEl.innerHTML = '<i class="fa-solid ' + iconForExt(ext) + '"></i>';
+  if (p.z) iconEl.classList.add('zip');
+
+  document.getElementById('file-name').textContent = p.n;
+  var metaParts = [];
+  if (typeof p.s === 'number') metaParts.push(formatSize(p.s));
+  if (p.z && p.f && p.f.length) metaParts.push(p.f.length + ' file con');
+  if (p.p) metaParts.push('qua ' + p.p);
+  document.getElementById('file-meta').textContent = metaParts.join(' · ') || '—';
+
+  renderExpiry(p.e, p.em);
+  if (p.z) renderFiles(p.f);
+  if (p.z && p.t) {
+    document.getElementById('files-truncated').style.display = '';
+  }
+
+  document.title = p.n + ' — ViettelPost';
+}
+
+function downloadFile() {
+  if (!payload || !payload.u) { showToast('Không có liên kết tải', 'error'); return; }
+  // Mở tab mới — provider landing page (Gofile/Litterbox/...) sẽ đẩy file về
+  window.open(payload.u, '_blank', 'noopener');
+  showToast('Đang mở trang tải về…');
+}
+
+async function shareFile() {
+  if (!payload) return;
+  var data = {
+    title: 'ViettelPost: ' + payload.n,
+    text: 'File từ ViettelPost HBCTVT — ' + payload.n,
+    url: location.href
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share(data);
+      return;
+    } catch (e) {
+      // user huỷ share → không cần thông báo
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  // Fallback: copy
+  try {
+    await navigator.clipboard.writeText(location.href);
+    showToast('Đã sao chép link chia sẻ', 'success');
+  } catch (e) {
+    showToast('Trình duyệt không hỗ trợ chia sẻ — vui lòng copy link thủ công', 'warn');
+  }
+}
+
+async function copyShareLink() {
+  try {
+    await navigator.clipboard.writeText(location.href);
+    showToast('Đã sao chép link', 'success');
+  } catch (e) {
+    // legacy fallback
+    var ta = document.createElement('textarea');
+    ta.value = location.href;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast('Đã sao chép link', 'success'); }
+    catch (_) { showToast('Không sao chép được — copy thủ công thanh địa chỉ', 'error'); }
+    document.body.removeChild(ta);
+  }
+}
+
+(function init() {
+  var p = decodePayload();
+  if (!p) { showError(); return; }
+  render(p);
+})();
+</script>
+</body>
+</html>

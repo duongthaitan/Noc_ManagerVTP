@@ -1479,6 +1479,45 @@ function updateProgressPercent(percent) {
 }
 
 /* ================================================================
+   SHARE URL — encode payload vào URL hash để share.html render
+================================================================ */
+function buildShareUrl(entry) {
+  // Schema gọn: keys 1 ký tự để giảm size URL & QR
+  var p = {
+    v: 1,
+    n: entry.name,
+    s: entry.size,
+    u: entry.url,
+    p: entry.providerName || '',
+    e: entry.expiry,            // timestamp ms hoặc 0
+    em: entry.expiryMs,         // 0 = vĩnh viễn (để share.html biết)
+    z: !!entry.isZipBundle
+  };
+  // Thêm danh sách file con nếu là ZIP bundle, bỏ size 0/undefined để gọn hơn
+  if (entry.isZipBundle && entry.originalFiles && entry.originalFiles.length) {
+    p.f = entry.originalFiles.map(function(f) { return { n: f.name, s: f.size }; });
+  }
+  var json = JSON.stringify(p);
+
+  // Nếu payload quá lớn (QR level H ~ 2KB max), bỏ danh sách file con và đánh dấu truncated
+  function encode(obj) {
+    var s = JSON.stringify(obj);
+    var b64 = btoa(unescape(encodeURIComponent(s)));
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  var encoded = encode(p);
+  if (encoded.length > 1500 && p.f) {
+    delete p.f;
+    p.t = 1; // truncated marker
+    encoded = encode(p);
+  }
+
+  var origin = location.protocol + '//' + location.host;
+  var basePath = location.pathname.replace(/\/[^\/]*$/, '/');
+  return origin + basePath + 'share.html#' + encoded;
+}
+
+/* ================================================================
    QR RESULT
 ================================================================ */
 function showQrResult(entry) {
@@ -1487,11 +1526,13 @@ function showQrResult(entry) {
   var wrap = document.getElementById('qr-result-wrap');
   wrap.classList.add('show');
 
+  var shareUrl = buildShareUrl(entry);
+
   // Generate QR
   var qrEl = document.getElementById('qr-code-el');
   qrEl.innerHTML = '';
   new QRCode(qrEl, {
-    text: entry.url,
+    text: shareUrl,
     width: 200, height: 200,
     colorDark: '#C9002B',
     colorLight: '#ffffff',
@@ -1503,8 +1544,8 @@ function showQrResult(entry) {
   // File info
   document.getElementById('qr-name-text').textContent = entry.name;
   var providerSuffix = entry.providerName ? ' · ' + entry.providerName : '';
-  document.getElementById('qr-file-size').textContent = getEntryMetaText(entry) + providerSuffix + ' · Tải về điện thoại bằng cách quét QR';
-  currentLink = entry.url;
+  document.getElementById('qr-file-size').textContent = getEntryMetaText(entry) + providerSuffix + ' · Quét QR để xem & tải về điện thoại';
+  currentLink = shareUrl;
 
   // Provider badge ở header
   var pBadge = document.getElementById('h-provider-badge');
