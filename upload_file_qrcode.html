@@ -1037,16 +1037,22 @@ var UPLOAD_PROVIDERS = [
     url: '/api/upload',
     build: function(fd, file) {
       fd.append('fileToUpload', file, file.name);
-      fd.append('time', '1h');
     },
-    maxBytes: 4 * 1024 * 1024, // Vercel serverless body limit 4.5MB; file lớn hơn sẽ fallback sang direct upload
-    expiryMs: 60 * 60 * 1000,
-    expiryLabel: '1 giờ',
+    maxBytes: 4.5 * 1024 * 1024, // Vercel serverless body limit; file lớn hơn fallback sang direct
+    expiryMs: 10 * 24 * 60 * 60 * 1000, // proxy ưu tiên Gofile (~10 ngày); UI chỉ để sort/badge
+    expiryLabel: 'tuỳ provider proxy',
     parser: function(text) {
-      // proxy trả về JSON { url: "..." } hoặc plain text
+      // proxy luôn trả JSON { url, provider, expiryMs, expiryLabel }
       try {
         var obj = JSON.parse(text);
-        if (obj && typeof obj.url === 'string') return obj.url;
+        if (obj && typeof obj.url === 'string') {
+          return {
+            url: obj.url,
+            providerName: obj.provider ? 'Proxy → ' + obj.provider : 'VTP Proxy',
+            expiryMs: typeof obj.expiryMs === 'number' ? obj.expiryMs : undefined,
+            expiryLabel: obj.expiryLabel
+          };
+        }
       } catch (_) {}
       return null;
     }
@@ -1078,28 +1084,6 @@ var UPLOAD_PROVIDERS = [
         if (obj && obj.files && obj.files[0] && obj.files[0].url) return obj.files[0].url;
       } catch (_) {}
       return null;
-    }
-  },
-  {
-    name: '0x0.st',
-    url: 'https://0x0.st',
-    build: function(fd, file) {
-      fd.append('file', file, file.name);
-    },
-    maxBytes: 512 * 1024 * 1024,
-    expiryMs: 30 * 24 * 60 * 60 * 1000,
-    expiryLabel: '~30 ngày'
-  },
-  {
-    name: 'transfer.sh',
-    url: 'https://transfer.sh/' /* sẽ append filename runtime */,
-    method: 'PUT',
-    rawBody: true,
-    maxBytes: 10 * 1024 * 1024 * 1024,
-    expiryMs: 14 * 24 * 60 * 60 * 1000,
-    expiryLabel: '~14 ngày',
-    buildUrl: function(file) {
-      return 'https://transfer.sh/' + encodeURIComponent(file.name);
     }
   },
   {
@@ -1360,14 +1344,29 @@ function uploadWithFallback(file, onSuccess, onError) {
 
     uploadViaXhr(provider, body, file,
       function(text) {
-        var dlUrl = provider.parser ? provider.parser(text) : null;
+        var parsed = provider.parser ? provider.parser(text) : null;
+        var dlUrl, providerOverride = null;
+        if (parsed && typeof parsed === 'object') {
+          dlUrl = parsed.url;
+          providerOverride = parsed; // {url, providerName?, expiryMs?, expiryLabel?}
+        } else if (typeof parsed === 'string') {
+          dlUrl = parsed;
+        }
         if (!dlUrl) dlUrl = parseUploadResponse(text);
         if (!dlUrl) {
           failedProviders.push(provider.name + ' (response lạ)');
           tryNext();
           return;
         }
-        onSuccess(dlUrl, provider);
+        var effectiveProvider = provider;
+        if (providerOverride) {
+          effectiveProvider = {
+            name: providerOverride.providerName || provider.name,
+            expiryMs: providerOverride.expiryMs != null ? providerOverride.expiryMs : provider.expiryMs,
+            expiryLabel: providerOverride.expiryLabel || provider.expiryLabel
+          };
+        }
+        onSuccess(dlUrl, effectiveProvider);
       },
       function(errMsg) {
         failedProviders.push(provider.name + ' (' + errMsg + ')');
