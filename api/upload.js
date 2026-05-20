@@ -209,6 +209,15 @@ export default async function handler(req, res) {
   for (const upstream of UPSTREAMS) {
     try {
       const result = await upstream.fn(file);
+      // Filebin có landing page "Heads up" — wrap qua /api/d để bypass
+      if (result.provider === 'Filebin') {
+        const proto = (req.headers['x-forwarded-proto'] || 'https').toString().split(',')[0];
+        const host = req.headers['x-forwarded-host'] || req.headers.host;
+        if (host) {
+          result.directUrl = result.url; // giữ link gốc cho debug
+          result.url = `${proto}://${host}/api/d?u=${encodeURIComponent(result.url)}`;
+        }
+      }
       // ?format=text → trả plain URL (tương thích client cũ dùng Litterbox);
       // mặc định trả JSON đầy đủ {url, provider, expiryMs, expiryLabel}
       const url = new URL(req.url, 'http://x');
