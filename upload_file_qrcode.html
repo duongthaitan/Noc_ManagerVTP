@@ -738,6 +738,11 @@ html.in-iframe .container { padding-top: 12px; }
         <span>Tối đa:</span>
         <span class="num">100MB/file</span>
       </div>
+      <div class="hbadge" id="h-provider-badge" style="display:none;">
+        <i class="fa-solid fa-cloud"></i>
+        <span>Qua:</span>
+        <span class="num" id="h-provider">—</span>
+      </div>
     </div>
   </div>
   <div class="header-accent-bar"></div>
@@ -922,12 +927,13 @@ html.in-iframe .container { padding-top: 12px; }
     </div>
     <div class="help-popup-body">
       <div class="help-note-list">
-        <div class="help-note-item">⏱ <span>Link tự động hủy sau <strong>60 phút</strong>.</span></div>
+        <div class="help-note-item">⏱ <span>Thời hạn link tuỳ provider — xem badge "<strong>Qua: …</strong>" sau khi upload (Litterbox 1h, 0x0.st ~30 ngày, Catbox vĩnh viễn).</span></div>
+        <div class="help-note-item">🔁 <span>Hệ thống tự fallback qua provider khác nếu 1 endpoint bị mạng chặn.</span></div>
         <div class="help-note-item">📦 <span>Kích thước upload tối đa <strong>100MB</strong>.</span></div>
         <div class="help-note-item">🗜️ <span>Chọn nhiều file sẽ tự nén thành <strong>1 file ZIP</strong>.</span></div>
         <div class="help-note-item">📱 <span>Mở được bằng bất kỳ trình duyệt nào trên điện thoại.</span></div>
       </div>
-      <div class="help-warning">⚠️ Không chia sẻ link chứa thông tin bảo mật.</div>
+      <div class="help-warning">⚠️ Không chia sẻ link chứa thông tin bảo mật, đặc biệt khi rơi vào provider lưu vĩnh viễn.</div>
     </div>
   </div>
 </div>
@@ -1020,6 +1026,94 @@ var pendingDeleteEntryId = null;
 var countdownInterval = null;
 var entryIdSeq = 1;
 var HISTORY_STORAGE_KEY = 'vtp_qr_upload_history_v1';
+
+/* ================================================================
+   UPLOAD PROVIDERS — fallback chain
+   Provider nào fail (timeout/network/CORS) thì tự động thử cái kế tiếp.
+================================================================ */
+var UPLOAD_PROVIDERS = [
+  {
+    name: 'VTP Proxy',
+    url: '/api/upload',
+    build: function(fd, file) {
+      fd.append('fileToUpload', file, file.name);
+      fd.append('time', '1h');
+    },
+    maxBytes: 4 * 1024 * 1024, // Vercel serverless body limit 4.5MB; file lớn hơn sẽ fallback sang direct upload
+    expiryMs: 60 * 60 * 1000,
+    expiryLabel: '1 giờ',
+    parser: function(text) {
+      // proxy trả về JSON { url: "..." } hoặc plain text
+      try {
+        var obj = JSON.parse(text);
+        if (obj && typeof obj.url === 'string') return obj.url;
+      } catch (_) {}
+      return null;
+    }
+  },
+  {
+    name: 'Litterbox',
+    url: 'https://litterbox.catbox.moe/resources/internals/api.php',
+    build: function(fd, file) {
+      fd.append('reqtype', 'fileupload');
+      fd.append('time', '1h');
+      fd.append('fileToUpload', file, file.name);
+    },
+    maxBytes: 1024 * 1024 * 1024,
+    expiryMs: 60 * 60 * 1000,
+    expiryLabel: '1 giờ'
+  },
+  {
+    name: 'uguu.se',
+    url: 'https://uguu.se/upload.php',
+    build: function(fd, file) {
+      fd.append('files[]', file, file.name);
+    },
+    maxBytes: 128 * 1024 * 1024,
+    expiryMs: 3 * 60 * 60 * 1000,
+    expiryLabel: '3 giờ',
+    parser: function(text) {
+      try {
+        var obj = JSON.parse(text);
+        if (obj && obj.files && obj.files[0] && obj.files[0].url) return obj.files[0].url;
+      } catch (_) {}
+      return null;
+    }
+  },
+  {
+    name: '0x0.st',
+    url: 'https://0x0.st',
+    build: function(fd, file) {
+      fd.append('file', file, file.name);
+    },
+    maxBytes: 512 * 1024 * 1024,
+    expiryMs: 30 * 24 * 60 * 60 * 1000,
+    expiryLabel: '~30 ngày'
+  },
+  {
+    name: 'transfer.sh',
+    url: 'https://transfer.sh/' /* sẽ append filename runtime */,
+    method: 'PUT',
+    rawBody: true,
+    maxBytes: 10 * 1024 * 1024 * 1024,
+    expiryMs: 14 * 24 * 60 * 60 * 1000,
+    expiryLabel: '~14 ngày',
+    buildUrl: function(file) {
+      return 'https://transfer.sh/' + encodeURIComponent(file.name);
+    }
+  },
+  {
+    name: 'Catbox',
+    url: 'https://catbox.moe/user/api.php',
+    build: function(fd, file) {
+      fd.append('reqtype', 'fileupload');
+      fd.append('fileToUpload', file, file.name);
+    },
+    maxBytes: 200 * 1024 * 1024,
+    expiryMs: 0, // 0 = vĩnh viễn
+    expiryLabel: 'vĩnh viễn ⚠️'
+  }
+];
 
 /* ================================================================
    DRAG & DROP
@@ -1129,6 +1223,8 @@ function zipAndUploadFiles(files, options) {
   options = options || {};
   var folderName = options.zipBaseName || buildZipFolderName();
   var zipFileName = folderName + '.zip';
+  var totalBytes = files.reduce(function(sum, f) { return sum + f.size; }, 0);
+  var useStore = totalBytes > 20 * 1024 * 1024;
   var zip = new JSZip();
   var folder = zip.folder(folderName);
 
@@ -1136,16 +1232,23 @@ function zipAndUploadFiles(files, options) {
     folder.file(safeZipFileName(file.name), file);
   });
 
-  showProgress(true, 'Đang nén ' + files.length + ' file...', '🗜️ Đang tạo folder ZIP: ' + zipFileName, 0);
-  showToast('🗜️ Đang nén ' + files.length + ' file thành 1 folder ZIP', 'info');
+  var modeTxt = useStore ? '(không nén để upload nhanh hơn)' : '(nén DEFLATE)';
+  showProgress(true, 'Đang đóng gói ' + files.length + ' file...', '🗜️ Đóng gói ZIP ' + modeTxt + '...', 0);
+  showToast('🗜️ Đóng gói ' + files.length + ' file → ' + zipFileName, 'info');
 
-  zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } }, function(meta) {
-    showProgress(true, 'Đang nén ' + files.length + ' file...', '🗜️ Tiến trình nén ZIP: ' + Math.round(meta.percent || 0) + '%', Math.round(meta.percent || 0));
-  }).then(function(blob) {
+  zip.generateAsync(
+    useStore
+      ? { type: 'blob', compression: 'STORE' }
+      : { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } },
+    function(meta) {
+      var pct = Math.round(meta.percent || 0);
+      showProgress(true, 'Đang đóng gói ' + files.length + ' file...', '🗜️ Tiến trình đóng gói: ' + pct + '%', pct);
+    }
+  ).then(function(blob) {
     var zipFile = new File([blob], zipFileName, { type: 'application/zip' });
     if (zipFile.size > 100 * 1024 * 1024) {
       showProgress(false, '', '');
-      showToast('⚠️ File ZIP sau khi nén vẫn vượt quá 100MB (' + formatSize(zipFile.size) + ').', 'warning');
+      showToast('⚠️ File ZIP sau khi đóng gói vẫn vượt quá 100MB (' + formatSize(zipFile.size) + ').', 'warning');
       document.getElementById('file-input').value = '';
       return;
     }
@@ -1161,7 +1264,7 @@ function zipAndUploadFiles(files, options) {
   }).catch(function(err) {
     console.error('zip failed:', err);
     showProgress(false, '', '');
-    showToast('❌ Lỗi khi nén ZIP: ' + (err && err.message ? err.message : 'Không xác định'), 'error');
+    showToast('❌ Lỗi khi đóng gói ZIP: ' + (err && err.message ? err.message : 'Không xác định'), 'error');
     document.getElementById('file-input').value = '';
   });
 }
@@ -1178,18 +1281,22 @@ function uploadFile(file, meta) {
 
   showProgress(true, file.name, '⬆️ Chuẩn bị tải lên máy chủ...', 0);
 
-  var fd = new FormData();
-  fd.append('fileToUpload', file, file.name);
-
-  function handleSuccess(dlUrl) {
+  function handleSuccess(dlUrl, provider) {
     showProgress(false, '', '');
+    var perm = !provider.expiryMs;
+    var expiryTs = perm
+      ? Date.now() + 365 * 24 * 60 * 60 * 1000 // chỉ để sort/badge UI; thực tế là vĩnh viễn
+      : Date.now() + provider.expiryMs;
     var entry = {
       id: meta.replaceEntryId || ('up_' + (entryIdSeq++)),
       name: meta.displayName || file.name,
       size: file.size,
       url: dlUrl,
       ts: Date.now(),
-      expiry: Date.now() + 60 * 60 * 1000,
+      expiry: expiryTs,
+      expiryMs: provider.expiryMs,
+      expiryLabel: provider.expiryLabel,
+      providerName: provider.name,
       isZipBundle: !!meta.isZipBundle,
       originalCount: meta.originalCount || 1,
       originalSize: meta.originalSize || file.size,
@@ -1202,7 +1309,8 @@ function uploadFile(file, meta) {
     updateHeaderBadges();
     renderHistory();
     showQrResult(entry);
-    showToast('✅ Đã tạo QR tải ' + (entry.isZipBundle ? 'folder ZIP: ' : 'file: ') + entry.name, 'success');
+    showToast('✅ Đã tạo QR ' + (entry.isZipBundle ? 'folder ZIP: ' : 'file: ') + entry.name + ' · qua ' + provider.name + ' · ' + provider.expiryLabel, 'success');
+    if (perm) showToast('⚠️ File lưu vĩnh viễn trên ' + provider.name + ' — không chia sẻ link nhạy cảm.', 'warning');
     document.getElementById('file-input').value = '';
   }
 
@@ -1212,33 +1320,137 @@ function uploadFile(file, meta) {
     document.getElementById('file-input').value = '';
   }
 
-  function parseResponse(text) {
-    var url = (text || '').trim();
-    if (/^https?:\/\/\S+/i.test(url)) return url.replace(/^http:\/\//i, 'https://');
-    return null;
-  }
-
-  fd.append('reqtype', 'fileupload');
-  fd.append('time', '1h');
-
-  uploadViaFetch(fd, handleSuccess, handleError, parseResponse, file);
+  uploadWithFallback(file, handleSuccess, handleError);
 }
 
-function uploadViaFetch(fd, onSuccess, onError, parseResponse, file) {
-  showProgress(true, file.name, '⬆️ Đang upload lên máy chủ (' + formatSize(file.size) + ')...', 50);
+/* ================================================================
+   UPLOAD WITH FALLBACK — thử lần lượt từng provider
+================================================================ */
+function uploadWithFallback(file, onSuccess, onError) {
+  var candidates = UPLOAD_PROVIDERS.filter(function(p) { return file.size <= p.maxBytes; });
+  if (candidates.length === 0) {
+    onError('File ' + formatSize(file.size) + ' vượt quá max của mọi provider');
+    return;
+  }
 
-  fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd })
-    .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.text();
-    })
-    .then(function(text) {
-      showProgress(true, '', '✅ Upload xong, đang tạo QR...', 100);
-      var dlUrl = parseResponse(text);
-      if (dlUrl) { setTimeout(function() { onSuccess(dlUrl); }, 250); }
-      else { onError('Phản hồi không hợp lệ: ' + (text || '').substring(0, 100)); }
-    })
-    .catch(function(err) { onError(err && err.message ? err.message : 'Lỗi mạng'); });
+  var idx = 0;
+  var failedProviders = [];
+
+  function tryNext() {
+    if (idx >= candidates.length) {
+      var detail = failedProviders.join(', ');
+      var hint = '\n\n💡 Khả năng cao mạng/firewall đang chặn các dịch vụ upload nước ngoài.'
+               + '\n• Thử kết nối qua mạng khác (4G điện thoại, Wi-Fi nhà)'
+               + '\n• Hoặc dùng VPN'
+               + '\n• Liên hệ IT nếu đang dùng mạng nội bộ ViettelPost';
+      onError('Tất cả endpoint upload đều fail (' + detail + ').' + hint);
+      return;
+    }
+    var provider = candidates[idx++];
+    showProgress(true, file.name, '🔄 Thử upload qua ' + provider.name + '...', 0);
+    showToast('🔄 Thử upload qua ' + provider.name, 'info');
+
+    var body;
+    if (provider.rawBody) {
+      body = file; // PUT raw file (transfer.sh)
+    } else {
+      body = new FormData();
+      provider.build(body, file);
+    }
+
+    uploadViaXhr(provider, body, file,
+      function(text) {
+        var dlUrl = provider.parser ? provider.parser(text) : null;
+        if (!dlUrl) dlUrl = parseUploadResponse(text);
+        if (!dlUrl) {
+          failedProviders.push(provider.name + ' (response lạ)');
+          tryNext();
+          return;
+        }
+        onSuccess(dlUrl, provider);
+      },
+      function(errMsg) {
+        failedProviders.push(provider.name + ' (' + errMsg + ')');
+        tryNext();
+      }
+    );
+  }
+
+  tryNext();
+}
+
+function parseUploadResponse(text) {
+  var url = (text || '').trim();
+  // Một số provider có trailing newline / whitespace, chỉ lấy dòng đầu
+  url = url.split(/\r?\n/)[0].trim();
+  if (/^https?:\/\/\S+/i.test(url)) return url.replace(/^http:\/\//i, 'https://');
+  return null;
+}
+
+function uploadViaXhr(provider, body, file, onSuccess, onError) {
+  var xhr = new XMLHttpRequest();
+  var url = provider.buildUrl ? provider.buildUrl(file) : provider.url;
+  var method = provider.method || 'POST';
+  xhr.open(method, url);
+  xhr.timeout = 180000;
+  if (provider.rawBody) {
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+  }
+
+  var lastTick = Date.now();
+  var lastLoaded = 0;
+  var sawProgress = false;
+
+  // Stall detection: nếu 15s không có progress event nào → coi như mạng chặn endpoint, fallback ngay
+  var stallTimer = setTimeout(function() {
+    if (!sawProgress) {
+      try { xhr.abort(); } catch (_) {}
+      onError('không kết nối được');
+    }
+  }, 15000);
+
+  xhr.upload.onprogress = function(ev) {
+    if (!ev.lengthComputable) return;
+    sawProgress = true;
+    var pct = Math.round((ev.loaded / ev.total) * 100);
+    var now = Date.now();
+    var dt = (now - lastTick) / 1000;
+    var speedTxt = '';
+    if (dt >= 0.4) {
+      var bps = (ev.loaded - lastLoaded) / dt;
+      lastTick = now;
+      lastLoaded = ev.loaded;
+      if (bps > 0) {
+        var remBytes = Math.max(0, ev.total - ev.loaded);
+        var etaSec = Math.round(remBytes / bps);
+        speedTxt = ' · ' + formatSpeed(bps) + (etaSec > 1 ? ' · còn ~' + formatEta(etaSec) : '');
+      }
+    }
+    var subEl = document.getElementById('progress-sub');
+    var prefix = '⬆️ ' + provider.name + ': ';
+    if (subEl) subEl.textContent = prefix + formatSize(ev.loaded) + ' / ' + formatSize(ev.total) + speedTxt;
+    updateProgressPercent(Math.min(99, pct));
+  };
+
+  xhr.onload = function() {
+    clearTimeout(stallTimer);
+    if (xhr.status >= 200 && xhr.status < 300) {
+      showProgress(true, '', '✅ ' + provider.name + ' upload xong, đang tạo QR...', 100);
+      setTimeout(function() { onSuccess(xhr.responseText); }, 200);
+    } else {
+      onError('HTTP ' + xhr.status);
+    }
+  };
+  xhr.onerror = function() {
+    clearTimeout(stallTimer);
+    onError('lỗi mạng');
+  };
+  xhr.ontimeout = function() {
+    clearTimeout(stallTimer);
+    onError('timeout');
+  };
+  xhr.onabort = function() { clearTimeout(stallTimer); };
+  xhr.send(body);
 }
 
 function showProgress(show, filename, subtitle, percent) {
@@ -1291,25 +1503,51 @@ function showQrResult(entry) {
 
   // File info
   document.getElementById('qr-name-text').textContent = entry.name;
-  document.getElementById('qr-file-size').textContent = getEntryMetaText(entry) + ' · Tải về điện thoại bằng cách quét QR';
+  var providerSuffix = entry.providerName ? ' · ' + entry.providerName : '';
+  document.getElementById('qr-file-size').textContent = getEntryMetaText(entry) + providerSuffix + ' · Tải về điện thoại bằng cách quét QR';
   currentLink = entry.url;
 
-  // Countdown
+  // Provider badge ở header
+  var pBadge = document.getElementById('h-provider-badge');
+  var pText = document.getElementById('h-provider');
+  if (pBadge && pText) {
+    if (entry.providerName) {
+      pText.textContent = entry.providerName + ' · ' + (entry.expiryLabel || '—');
+      pBadge.style.display = 'inline-flex';
+    } else {
+      pBadge.style.display = 'none';
+    }
+  }
+
+  // Countdown — file vĩnh viễn (expiryMs = 0) hiển thị "♾ Lưu vĩnh viễn"
   clearInterval(countdownInterval);
+  var cdEl = document.getElementById('qr-countdown');
+  var timerEl = document.getElementById('qr-timer-text');
+  if (entry.expiryMs === 0) {
+    cdEl.classList.add('expired'); // dùng style đỏ để cảnh báo
+    timerEl.textContent = '♾ Link lưu vĩnh viễn — không chia sẻ thông tin nhạy cảm';
+    return;
+  }
+  cdEl.classList.remove('expired');
   countdownInterval = setInterval(function() {
     var rem = Math.max(0, entry.expiry - Date.now());
-    var m = Math.floor(rem / 60000);
-    var s = Math.floor((rem % 60000) / 1000);
-    var cdEl = document.getElementById('qr-countdown');
-    var timerEl = document.getElementById('qr-timer-text');
     if (rem === 0) {
       clearInterval(countdownInterval);
       cdEl.classList.add('expired');
       timerEl.textContent = '⚠️ Link đã hết hạn';
-    } else {
-      cdEl.classList.remove('expired');
-      timerEl.textContent = '⏱ Link còn ' + m + ':' + String(s).padStart(2,'0');
+      return;
     }
+    cdEl.classList.remove('expired');
+    var totalSec = Math.floor(rem / 1000);
+    var d = Math.floor(totalSec / 86400);
+    var h = Math.floor((totalSec % 86400) / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    var label;
+    if (d > 0) label = '⏱ Còn ' + d + ' ngày ' + h + 'h';
+    else if (h > 0) label = '⏱ Còn ' + h + 'h ' + m + 'm';
+    else label = '⏱ Link còn ' + m + ':' + String(s).padStart(2, '0');
+    timerEl.textContent = label;
   }, 1000);
 }
 
@@ -1328,20 +1566,28 @@ function renderHistory() {
 
   var now = Date.now();
   body.innerHTML = '<div class="history-list">' + uploadHistory.map(function(e, i) {
-    var expired = now > e.expiry;
+    var perm = e.expiryMs === 0;
+    var expired = !perm && now > e.expiry;
     var remMs = Math.max(0, e.expiry - now);
     var remMin = Math.floor(remMs / 60000);
     var ext = e.name.split('.').pop().toLowerCase();
     var iconColor = getFileColor(ext);
     var icon = getFileIcon(ext);
     var timeAgo = formatTimeAgo(e.ts);
+    var badgeText;
+    if (perm) badgeText = '♾ Vĩnh viễn';
+    else if (expired) badgeText = '⏰ Hết hạn';
+    else if (remMin >= 1440) badgeText = '● Còn ' + Math.floor(remMin / 1440) + ' ngày';
+    else if (remMin >= 60) badgeText = '● Còn ' + Math.floor(remMin / 60) + ' giờ';
+    else badgeText = '● Còn ' + remMin + ' phút';
+    var providerTag = e.providerName ? ' · ' + escHtml(e.providerName) : '';
     return '<div class="history-item' + (expired ? ' expired' : '') + '" onclick="' + (expired ? '' : 'selectHistory(' + i + ')') + '">' +
       '<div class="history-icon" style="background:' + iconColor.bg + ';color:' + iconColor.color + ';">' +
         '<i class="' + icon + '"></i>' +
       '</div>' +
       '<div class="history-info">' +
         '<div class="history-name">' + escHtml(e.name) + '</div>' +
-        '<div class="history-meta">' + getEntryMetaText(e) + ' · ' + timeAgo + '</div>' +
+        '<div class="history-meta">' + getEntryMetaText(e) + providerTag + ' · ' + timeAgo + '</div>' +
       '</div>' +
       '<div class="history-actions" onclick="event.stopPropagation()">' +
         (e.isZipBundle && e.originalFiles && e.originalFiles.length > 1
@@ -1349,9 +1595,7 @@ function renderHistory() {
           : '') +
         '<button type="button" class="history-action-btn danger" onclick="requestDeleteUpload(\'' + e.id + '\')" title="Xoá file tải nhầm"><i class="fa-solid fa-trash"></i></button>' +
       '</div>' +
-      '<span class="history-badge ' + (expired ? 'expired' : 'ok') + '">' +
-        (expired ? '⏰ Hết hạn' : '● Còn ' + remMin + ' phút') +
-      '</span>' +
+      '<span class="history-badge ' + (expired ? 'expired' : 'ok') + '">' + badgeText + '</span>' +
     '</div>';
   }).join('') + '</div>';
 }
@@ -1359,7 +1603,7 @@ function renderHistory() {
 function selectHistory(idx) {
   var entry = uploadHistory[idx];
   if (!entry) return;
-  if (Date.now() > entry.expiry) { showToast('⚠️ Link đã hết hạn!', 'warning'); return; }
+  if (entry.expiryMs !== 0 && Date.now() > entry.expiry) { showToast('⚠️ Link đã hết hạn!', 'warning'); return; }
   showQrResult(entry);
   showToast('📲 Đã tải QR của "' + entry.name + '"', 'info');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1432,6 +1676,11 @@ function deleteUploadById(entryId) {
   showToast('🗑️ Đã xoá file tải nhầm: ' + name, 'info');
 }
 
+function isRestoredBundle(entry) {
+  if (!entry || !entry.originalFiles || entry.originalFiles.length === 0) return false;
+  return entry.originalFiles.some(function(f) { return f && f._restored; });
+}
+
 function openFileManager() {
   if (!currentEntry || !currentEntry.isZipBundle || !currentEntry.originalFiles || currentEntry.originalFiles.length < 2) return;
   fileManagerDraftFiles = currentEntry.originalFiles.slice();
@@ -1467,11 +1716,15 @@ function renderFileManager() {
   var hint = document.getElementById('file-manager-hint');
   if (!list || !summary || !currentEntry) return;
   var files = fileManagerDraftFiles || [];
+  var readOnly = isRestoredBundle(currentEntry);
   var totalSize = files.reduce(function(sum, file) { return sum + file.size; }, 0);
   var removedCount = Math.max(0, fileManagerOriginalCount - files.length);
   summary.textContent = files.length + ' file · Tổng ' + formatSize(totalSize) + (removedCount ? ' · Đã bỏ ' + removedCount + ' file' : '');
-  if (confirmBtn) confirmBtn.disabled = removedCount === 0;
-  if (hint) hint.textContent = removedCount ? 'Đã bỏ ' + removedCount + ' file. Bấm X để huỷ, bấm Xác nhận để cập nhật QR.' : 'Xoá file chỉ là chỉnh tạm. Bấm X để huỷ, bấm Xác nhận để cập nhật QR.';
+  if (confirmBtn) confirmBtn.disabled = readOnly || removedCount === 0;
+  if (hint) {
+    if (readOnly) hint.textContent = 'Phiên này chỉ xem được. Tải lại trang đã mất file gốc, không thể tạo lại ZIP — hãy upload lại nếu muốn chỉnh.';
+    else hint.textContent = removedCount ? 'Đã bỏ ' + removedCount + ' file. Bấm X để huỷ, bấm Xác nhận để cập nhật QR.' : 'Xoá file chỉ là chỉnh tạm. Bấm X để huỷ, bấm Xác nhận để cập nhật QR.';
+  }
   list.innerHTML = files.map(function(file, idx) {
     var ext = file.name.split('.').pop().toLowerCase();
     return '<div class="file-manager-item">' +
@@ -1480,7 +1733,7 @@ function renderFileManager() {
         '<div class="file-manager-name">' + escHtml(file.name) + '</div>' +
         '<div class="file-manager-size">' + formatSize(file.size) + '</div>' +
       '</div>' +
-      '<button type="button" class="file-manager-delete" onclick="removeFileFromBundle(' + idx + ')" title="Bỏ file này khỏi danh sách"><i class="fa-solid fa-trash"></i></button>' +
+      (readOnly ? '' : '<button type="button" class="file-manager-delete" onclick="removeFileFromBundle(' + idx + ')" title="Bỏ file này khỏi danh sách"><i class="fa-solid fa-trash"></i></button>') +
     '</div>';
   }).join('');
 }
@@ -1529,15 +1782,30 @@ function confirmFileManagerChanges() {
 ================================================================ */
 function copyCurrentLink() {
   if (!currentLink) return;
-  navigator.clipboard.writeText(currentLink).then(function() {
-    showToast('✅ Đã copy link!', 'success');
-  }).catch(function() {
-    var ta = document.createElement('textarea');
-    ta.value = currentLink;
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    showToast('✅ Đã copy link!', 'success');
-  });
+  var link = currentLink;
+  var fallback = function() {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = link;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) showToast('✅ Đã copy link!', 'success');
+      else showToast('⚠️ Không thể copy. Hãy nhấn giữ link để copy thủ công.', 'warning');
+    } catch (_) {
+      showToast('⚠️ Trình duyệt chặn copy. Hãy copy link thủ công.', 'warning');
+    }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function() {
+      showToast('✅ Đã copy link!', 'success');
+    }).catch(fallback);
+  } else {
+    fallback();
+  }
 }
 
 /* ================================================================
@@ -1546,7 +1814,7 @@ function copyCurrentLink() {
 function updateHeaderBadges() {
   var now = Date.now();
   var total = uploadHistory.length;
-  var active = uploadHistory.filter(function(e) { return now < e.expiry; }).length;
+  var active = uploadHistory.filter(function(e) { return e.expiryMs === 0 || now < e.expiry; }).length;
   document.getElementById('h-count').textContent = total;
   document.getElementById('h-active').textContent = active;
 }
@@ -1578,10 +1846,15 @@ function persistHistory() {
         url: e.url,
         ts: e.ts,
         expiry: e.expiry,
+        expiryMs: typeof e.expiryMs === 'number' ? e.expiryMs : 60 * 60 * 1000,
+        expiryLabel: e.expiryLabel || '',
+        providerName: e.providerName || '',
         isZipBundle: !!e.isZipBundle,
         originalCount: e.originalCount || 1,
         originalSize: e.originalSize || e.size,
-        originalFiles: []
+        originalFileMeta: (e.originalFiles || []).map(function(f) {
+          return { name: f && f.name ? f.name : 'file', size: f && typeof f.size === 'number' ? f.size : 0 };
+        })
       };
     });
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(serializable));
@@ -1598,8 +1871,12 @@ function loadPersistedHistory() {
     var parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return;
     uploadHistory = parsed.filter(function(e) {
-      return e && e.url && e.expiry && e.expiry > now;
+      // Giữ entry vĩnh viễn (expiryMs === 0) hoặc còn hạn
+      if (!e || !e.url || !e.expiry) return false;
+      if (e.expiryMs === 0) return true;
+      return e.expiry > now;
     }).map(function(e) {
+      var meta = Array.isArray(e.originalFileMeta) ? e.originalFileMeta : [];
       return {
         id: e.id || ('up_' + (entryIdSeq++)),
         name: e.name || 'file',
@@ -1607,10 +1884,15 @@ function loadPersistedHistory() {
         url: e.url,
         ts: e.ts || now,
         expiry: e.expiry,
+        expiryMs: typeof e.expiryMs === 'number' ? e.expiryMs : 60 * 60 * 1000,
+        expiryLabel: e.expiryLabel || '',
+        providerName: e.providerName || '',
         isZipBundle: !!e.isZipBundle,
-        originalCount: e.originalCount || 1,
+        originalCount: e.originalCount || meta.length || 1,
         originalSize: e.originalSize || e.size || 0,
-        originalFiles: []
+        originalFiles: meta.map(function(m) {
+          return { name: m && m.name ? m.name : 'file', size: m && typeof m.size === 'number' ? m.size : 0, _restored: true };
+        })
       };
     });
     uploadHistory.forEach(function(e) {
@@ -1631,6 +1913,22 @@ function formatSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function formatSpeed(bps) {
+  if (!isFinite(bps) || bps <= 0) return '';
+  if (bps < 1024) return bps.toFixed(0) + ' B/s';
+  if (bps < 1024 * 1024) return (bps / 1024).toFixed(1) + ' KB/s';
+  return (bps / (1024 * 1024)).toFixed(2) + ' MB/s';
+}
+
+function formatEta(sec) {
+  if (sec < 60) return sec + 's';
+  var m = Math.floor(sec / 60);
+  var s = sec % 60;
+  if (m < 60) return m + 'm' + (s ? ' ' + s + 's' : '');
+  var h = Math.floor(m / 60);
+  return h + 'h ' + (m % 60) + 'm';
 }
 
 function formatTimeAgo(ts) {
@@ -1710,10 +2008,15 @@ function showToast(msg, type) {
   var el = document.createElement('div');
   var icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', warning: 'fa-triangle-exclamation', info: 'fa-circle-info' };
   el.className = 'toast-item toast-' + type;
-  el.innerHTML = '<i class="fa-solid ' + (icons[type] || icons.info) + ' toast-icon"></i><span>' + msg + '</span>';
+  var safe = String(msg)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+  el.innerHTML = '<i class="fa-solid ' + (icons[type] || icons.info) + ' toast-icon"></i><span style="white-space:normal;">' + safe + '</span>';
   c.appendChild(el);
   requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('show'); }); });
-  setTimeout(function() { el.classList.remove('show'); setTimeout(function() { el.remove(); }, 400); }, 3500);
+  // Toast lỗi nhiều dòng giữ lâu hơn để user kịp đọc
+  var dur = (type === 'error' && msg.indexOf('\n') !== -1) ? 9000 : 3500;
+  setTimeout(function() { el.classList.remove('show'); setTimeout(function() { el.remove(); }, 400); }, dur);
 }
 
 /* ================================================================
