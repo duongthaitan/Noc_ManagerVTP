@@ -1034,7 +1034,51 @@ var HISTORY_STORAGE_KEY = 'vtp_qr_upload_history_v1';
    UPLOAD PROVIDERS — fallback chain
    Provider nào fail (timeout/network/CORS) thì tự động thử cái kế tiếp.
 ================================================================ */
+
+// Sinh binId duy nhất cho Filebin Direct (lưu trên file object để eager-QR đoán URL).
+function getOrCreateFilebinId(file) {
+  if (!file._vtpBinId) {
+    file._vtpBinId = 'vtp-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+  return file._vtpBinId;
+}
+function safeFilebinName(name) {
+  return (name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120) || 'file';
+}
+function buildShareUrlFromFilebin(directUrl) {
+  return location.origin + '/api/d?u=' + encodeURIComponent(directUrl);
+}
+
 var UPLOAD_PROVIDERS = [
+  {
+    // Browser PUT trực tiếp Filebin (CORS *) — bỏ qua Vercel proxy, nhanh nhất.
+    // URL trả về wrap qua /api/d để bypass landing page "Heads up".
+    name: 'Filebin Direct',
+    method: 'POST',
+    rawBody: true,
+    maxBytes: 5 * 1024 * 1024 * 1024, // ~5GB Filebin limit
+    expiryMs: 6 * 24 * 60 * 60 * 1000,
+    expiryLabel: '6 ngày',
+    buildUrl: function(file) {
+      return 'https://filebin.net/' + getOrCreateFilebinId(file) + '/' + encodeURIComponent(safeFilebinName(file.name));
+    },
+    build: function() { /* not used for rawBody */ },
+    parser: function(text, file) {
+      try {
+        var obj = JSON.parse(text);
+        if (obj && obj.bin && obj.file) {
+          var directUrl = 'https://filebin.net/' + obj.bin.id + '/' + encodeURIComponent(obj.file.filename);
+          return {
+            url: buildShareUrlFromFilebin(directUrl),
+            providerName: 'Filebin',
+            expiryMs: 6 * 24 * 60 * 60 * 1000,
+            expiryLabel: '6 ngày'
+          };
+        }
+      } catch (_) {}
+      return null;
+    }
+  },
   {
     name: 'VTP Proxy',
     url: '/api/upload',
@@ -1200,26 +1244,12 @@ function zipAndUploadFiles(files, options) {
   var zipFileName = folderName + '.zip';
   var totalBytes = files.reduce(function(sum, f) { return sum + f.size; }, 0);
   var useStore = totalBytes > 20 * 1024 * 1024;
-  var zip = new JSZip();
-  var folder = zip.folder(folderName);
-
-  files.forEach(function(file) {
-    folder.file(safeZipFileName(file.name), file);
-  });
 
   var modeTxt = useStore ? '(không nén để upload nhanh hơn)' : '(nén DEFLATE)';
   showProgress(true, 'Đang đóng gói ' + files.length + ' file...', '🗜️ Đóng gói ZIP ' + modeTxt + '...', 0);
   showToast('🗜️ Đóng gói ' + files.length + ' file → ' + zipFileName, 'info');
 
-  zip.generateAsync(
-    useStore
-      ? { type: 'blob', compression: 'STORE' }
-      : { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } },
-    function(meta) {
-      var pct = Math.round(meta.percent || 0);
-      showProgress(true, 'Đang đóng gói ' + files.length + ' file...', '🗜️ Tiến trình đóng gói: ' + pct + '%', pct);
-    }
-  ).then(function(blob) {
+  function onZipDone(blob) {
     var zipFile = new File([blob], zipFileName, { type: 'application/zip' });
     if (zipFile.size > 100 * 1024 * 1024) {
       showProgress(false, '', '');
@@ -1227,7 +1257,6 @@ function zipAndUploadFiles(files, options) {
       document.getElementById('file-input').value = '';
       return;
     }
-
     uploadFile(zipFile, {
       displayName: zipFileName,
       originalCount: files.length,
@@ -1236,12 +1265,68 @@ function zipAndUploadFiles(files, options) {
       isZipBundle: true,
       replaceEntryId: options.replaceEntryId || null
     });
-  }).catch(function(err) {
-    console.error('zip failed:', err);
+  }
+  function onZipError(msg) {
+    console.error('zip failed:', msg);
     showProgress(false, '', '');
-    showToast('❌ Lỗi khi đóng gói ZIP: ' + (err && err.message ? err.message : 'Không xác định'), 'error');
+    showToast('❌ Lỗi khi đóng gói ZIP: ' + (msg || 'Không xác định'), 'error');
     document.getElementById('file-input').value = '';
-  });
+  }
+  function onZipProgress(pct) {
+    showProgress(true, 'Đang đóng gói ' + files.length + ' file...', '🗜️ Tiến trình đóng gói: ' + pct + '%', pct);
+  }
+
+  // Thử dùng Web Worker để không freeze UI khi nén — fallback main thread nếu Worker fail
+  if (typeof Worker !== 'undefined') {
+    try {
+      var worker = new Worker('assets/js/zip-worker.js');
+      // File → ArrayBuffer (trong main thread, vì Worker không read được Blob qua structured clone reliably)
+      Promise.all(files.map(function(f) {
+        return f.arrayBuffer().then(function(buf) {
+          return { name: safeZipFileName(f.name), data: buf };
+        });
+      })).then(function(entries) {
+        var transferables = entries.map(function(e) { return e.data; });
+        worker.onmessage = function(e) {
+          var msg = e.data;
+          if (msg.type === 'progress') onZipProgress(msg.percent);
+          else if (msg.type === 'done') { worker.terminate(); onZipDone(msg.blob); }
+          else if (msg.type === 'error') { worker.terminate(); onZipError(msg.message); }
+        };
+        worker.onerror = function(err) {
+          worker.terminate();
+          onZipError(err && err.message);
+        };
+        worker.postMessage({
+          type: 'zip',
+          folderName: folderName,
+          files: entries,
+          useStore: useStore
+        }, transferables);
+      }).catch(function(err) {
+        worker.terminate();
+        zipAndUploadOnMainThread(); // fallback
+      });
+      return;
+    } catch (e) {
+      // Worker constructor fail (CSP, file://, ...) → fallback main thread
+    }
+  }
+  zipAndUploadOnMainThread();
+
+  function zipAndUploadOnMainThread() {
+    var zip = new JSZip();
+    var folder = zip.folder(folderName);
+    files.forEach(function(file) {
+      folder.file(safeZipFileName(file.name), file);
+    });
+    zip.generateAsync(
+      useStore
+        ? { type: 'blob', compression: 'STORE' }
+        : { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } },
+      function(meta) { onZipProgress(Math.round(meta.percent || 0)); }
+    ).then(onZipDone).catch(function(err) { onZipError(err && err.message); });
+  }
 }
 
 function uploadFile(file, meta) {
@@ -1255,6 +1340,17 @@ function uploadFile(file, meta) {
   }
 
   showProgress(true, file.name, '⬆️ Chuẩn bị tải lên máy chủ...', 0);
+
+  // Eager QR: dự đoán URL Filebin Direct (binId tự sinh client-side) và render QR
+  // ngay lập tức trong khi upload chạy nền — user thấy QR sau ~50ms thay vì 2-5s.
+  // Nếu Filebin Direct fail và phải fallback provider khác, showQrResult sẽ regenerate QR.
+  try {
+    var displayName = meta.displayName || file.name;
+    var binId = getOrCreateFilebinId(file);
+    var predictedDirect = 'https://filebin.net/' + binId + '/' + encodeURIComponent(safeFilebinName(displayName));
+    var predictedShare = buildShareUrlFromFilebin(predictedDirect);
+    showQrPlaceholder(displayName, file.size, predictedShare);
+  } catch (_) { /* placeholder fail không sao, vẫn chạy upload */ }
 
   function handleSuccess(dlUrl, provider) {
     showProgress(false, '', '');
@@ -1335,7 +1431,7 @@ function uploadWithFallback(file, onSuccess, onError) {
 
     uploadViaXhr(provider, body, file,
       function(text) {
-        var parsed = provider.parser ? provider.parser(text) : null;
+        var parsed = provider.parser ? provider.parser(text, file) : null;
         var dlUrl, providerOverride = null;
         if (parsed && typeof parsed === 'object') {
           dlUrl = parsed.url;
@@ -1472,6 +1568,44 @@ function updateProgressPercent(percent) {
 /* ================================================================
    QR RESULT
 ================================================================ */
+// Sinh QR placeholder ngay lập tức khi upload bắt đầu — UX thấy QR sau ~50ms
+// thay vì phải chờ upload xong (2-5s). URL được dự đoán trước (Filebin Direct),
+// đa số trường hợp trùng URL thật → không cần regenerate khi upload xong.
+function showQrPlaceholder(name, size, predictedShareUrl) {
+  document.getElementById('qr-empty').style.display = 'none';
+  var wrap = document.getElementById('qr-result-wrap');
+  wrap.classList.add('show');
+
+  var qrEl = document.getElementById('qr-code-el');
+  qrEl.innerHTML = '';
+  // requestAnimationFrame để không block UI thread khi sinh QR
+  requestAnimationFrame(function() {
+    new QRCode(qrEl, {
+      text: predictedShareUrl,
+      width: 200, height: 200,
+      colorDark: '#9CA3AF', // xám nhạt để báo "chưa sẵn sàng"
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    qrEl.style.position = 'relative';
+    qrEl.insertAdjacentHTML('beforeend', '<img src="assets/icons/icon128.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:#fff;padding:3px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);opacity:0.6;">');
+  });
+
+  document.getElementById('qr-name-text').textContent = name;
+  document.getElementById('qr-file-size').textContent = formatSize(size) + ' · ⏳ Đang upload...';
+  currentLink = predictedShareUrl;
+  currentEntry = null;
+
+  // Tắt countdown nếu có
+  clearInterval(countdownInterval);
+  var cdEl = document.getElementById('qr-countdown');
+  var timerEl = document.getElementById('qr-timer-text');
+  if (cdEl && timerEl) {
+    cdEl.classList.remove('expired');
+    timerEl.textContent = '⏳ Đang upload, QR sẽ sẵn sàng ngay...';
+  }
+}
+
 function showQrResult(entry) {
   currentEntry = entry;
   document.getElementById('qr-empty').style.display = 'none';
