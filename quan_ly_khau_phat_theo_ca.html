@@ -1578,7 +1578,7 @@ function showQrModal() {
     fd.append('reqtype', 'fileupload');
     fd.append('time', '1h');
     fd.append('fileToUpload', blob, 'BieuDo.png');
-    fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd })
+    fetch('/api/upload?format=text', { method: 'POST', body: fd })
     .then(function(r) { return r.text(); })
     .then(function(text) {
       container.innerHTML = '';
@@ -1805,7 +1805,7 @@ function captureScreenshot() {
         fd.append('reqtype', 'fileupload');
         fd.append('time', '1h');
         fd.append('fileToUpload', blob, 'BaoCao.png');
-        fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd })
+        fetch('/api/upload?format=text', { method: 'POST', body: fd })
         .then(function(r) { return r.text(); })
         .then(function(text) {
           qrContainer.innerHTML = '';

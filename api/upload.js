@@ -209,6 +209,13 @@ export default async function handler(req, res) {
   for (const upstream of UPSTREAMS) {
     try {
       const result = await upstream.fn(file);
+      // ?format=text → trả plain URL (tương thích client cũ dùng Litterbox);
+      // mặc định trả JSON đầy đủ {url, provider, expiryMs, expiryLabel}
+      const url = new URL(req.url, 'http://x');
+      if (url.searchParams.get('format') === 'text') {
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        return res.status(200).send(result.url);
+      }
       return res.status(200).json(result);
     } catch (e) {
       failures.push(upstream.name + ': ' + (e.message || 'unknown'));

@@ -1061,18 +1061,6 @@ var UPLOAD_PROVIDERS = [
     }
   },
   {
-    name: 'Litterbox',
-    url: 'https://litterbox.catbox.moe/resources/internals/api.php',
-    build: function(fd, file) {
-      fd.append('reqtype', 'fileupload');
-      fd.append('time', '1h');
-      fd.append('fileToUpload', file, file.name);
-    },
-    maxBytes: 1024 * 1024 * 1024,
-    expiryMs: 60 * 60 * 1000,
-    expiryLabel: '1 giờ'
-  },
-  {
     name: 'uguu.se',
     url: 'https://uguu.se/upload.php',
     build: function(fd, file) {
