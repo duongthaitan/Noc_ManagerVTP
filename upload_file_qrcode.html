@@ -895,6 +895,9 @@ html.in-iframe .container { padding-top: 12px; }
               <button class="qr-btn purple" onclick="copyCurrentLink()">
                 <i class="fa-solid fa-copy"></i> Copy link tải
               </button>
+              <button class="qr-btn purple" onclick="shareCurrentLink()" id="btn-share-current">
+                <i class="fa-solid fa-share-nodes"></i> Chia sẻ
+              </button>
               <button class="qr-btn outline-gray" onclick="triggerUploadNew()">
                 <i class="fa-solid fa-cloud-arrow-up"></i> Upload file khác
               </button>
@@ -1479,45 +1482,6 @@ function updateProgressPercent(percent) {
 }
 
 /* ================================================================
-   SHARE URL — encode payload vào URL hash để share.html render
-================================================================ */
-function buildShareUrl(entry) {
-  // Schema gọn: keys 1 ký tự để giảm size URL & QR
-  var p = {
-    v: 1,
-    n: entry.name,
-    s: entry.size,
-    u: entry.url,
-    p: entry.providerName || '',
-    e: entry.expiry,            // timestamp ms hoặc 0
-    em: entry.expiryMs,         // 0 = vĩnh viễn (để share.html biết)
-    z: !!entry.isZipBundle
-  };
-  // Thêm danh sách file con nếu là ZIP bundle, bỏ size 0/undefined để gọn hơn
-  if (entry.isZipBundle && entry.originalFiles && entry.originalFiles.length) {
-    p.f = entry.originalFiles.map(function(f) { return { n: f.name, s: f.size }; });
-  }
-  var json = JSON.stringify(p);
-
-  // Nếu payload quá lớn (QR level H ~ 2KB max), bỏ danh sách file con và đánh dấu truncated
-  function encode(obj) {
-    var s = JSON.stringify(obj);
-    var b64 = btoa(unescape(encodeURIComponent(s)));
-    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
-  var encoded = encode(p);
-  if (encoded.length > 1500 && p.f) {
-    delete p.f;
-    p.t = 1; // truncated marker
-    encoded = encode(p);
-  }
-
-  var origin = location.protocol + '//' + location.host;
-  var basePath = location.pathname.replace(/\/[^\/]*$/, '/');
-  return origin + basePath + 'share.html#' + encoded;
-}
-
-/* ================================================================
    QR RESULT
 ================================================================ */
 function showQrResult(entry) {
@@ -1526,13 +1490,11 @@ function showQrResult(entry) {
   var wrap = document.getElementById('qr-result-wrap');
   wrap.classList.add('show');
 
-  var shareUrl = buildShareUrl(entry);
-
-  // Generate QR
+  // Generate QR — encode link upstream trực tiếp; user quét sẽ mở thẳng file
   var qrEl = document.getElementById('qr-code-el');
   qrEl.innerHTML = '';
   new QRCode(qrEl, {
-    text: shareUrl,
+    text: entry.url,
     width: 200, height: 200,
     colorDark: '#C9002B',
     colorLight: '#ffffff',
@@ -1544,8 +1506,8 @@ function showQrResult(entry) {
   // File info
   document.getElementById('qr-name-text').textContent = entry.name;
   var providerSuffix = entry.providerName ? ' · ' + entry.providerName : '';
-  document.getElementById('qr-file-size').textContent = getEntryMetaText(entry) + providerSuffix + ' · Quét QR để xem & tải về điện thoại';
-  currentLink = shareUrl;
+  document.getElementById('qr-file-size').textContent = getEntryMetaText(entry) + providerSuffix + ' · Tải về điện thoại bằng cách quét QR';
+  currentLink = entry.url;
 
   // Provider badge ở header
   var pBadge = document.getElementById('h-provider-badge');
@@ -1846,6 +1808,29 @@ function copyCurrentLink() {
   } else {
     fallback();
   }
+}
+
+function shareCurrentLink() {
+  if (!currentLink) return;
+  var link = currentLink;
+  var title = currentEntry && currentEntry.name ? currentEntry.name : 'File ViettelPost';
+  var data = {
+    title: 'ViettelPost: ' + title,
+    text: 'File ViettelPost HBCTVT — ' + title,
+    url: link
+  };
+  if (navigator.share) {
+    navigator.share(data).catch(function(err) {
+      // user cancel → không thông báo gì cả
+      if (err && err.name === 'AbortError') return;
+      // share fail → fallback copy
+      copyCurrentLink();
+    });
+    return;
+  }
+  // Trình duyệt không hỗ trợ Web Share (Firefox desktop, một số WebView cũ) → fallback copy
+  showToast('⚠️ Trình duyệt không hỗ trợ chia sẻ — đã copy link thay vào', 'warning');
+  copyCurrentLink();
 }
 
 /* ================================================================

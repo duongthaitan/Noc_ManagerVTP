@@ -168,8 +168,11 @@ async function uploadToCatbox(file) {
 }
 
 const UPSTREAMS = [
-  { name: 'Gofile', fn: uploadToGofile },
+  // Filebin redirect 302 thẳng tới file → quét QR mở file luôn (không landing page)
   { name: 'Filebin', fn: uploadToFilebin },
+  // Gofile có landing page nhưng đáng dùng cho file lớn / khi Filebin fail
+  { name: 'Gofile', fn: uploadToGofile },
+  // Catbox vĩnh viễn — fallback cuối; thường bị block IP datacenter
   { name: 'Catbox', fn: uploadToCatbox },
 ];
 
