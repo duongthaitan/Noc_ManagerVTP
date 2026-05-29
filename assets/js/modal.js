@@ -225,6 +225,15 @@ function loadTabContent(idx) {
     `<i class="fa-brands fa-rocketchat" style="color:var(--zalo);"></i> Gửi cảnh báo Zalo — ${escHtml(group.name)}`;
   document.getElementById('modal-textarea').value  = buildMessage(group.name, group.rows);
   document.getElementById('btn-open-zalo').disabled = !group.phone;
+
+  // Ẩn nút "Copy đặc thù" khi tin nhắn dùng template DO (không có khối ⚡ TikTok/Shopee/Nội tỉnh).
+  // Khớp đúng điều kiện hasDO trong buildMessage — nếu group có phiếu DO selected → template DO.
+  const hasDOInGroup = selectedModes.do && group.rows.some(r => {
+    const c = classifyRow(r);
+    return c.isDO9 || c.isDO8 || c.isDO7;
+  });
+  const btnSpecial = document.getElementById('btn-copy-special');
+  if (btnSpecial) btnSpecial.style.display = hasDOInGroup ? 'none' : '';
 }
 
 // ================================================================
