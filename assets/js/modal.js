@@ -4,6 +4,35 @@
  */
 
 // ================================================================
+// HELPER PHÂN LOẠI PHIẾU ĐẶC THÙ (TikTok/Shopee/Nội tỉnh)
+// Dùng chung cho buildMessage và copySpecialSection — phải nhất quán.
+// ================================================================
+
+/** Phiếu đặc thù: TikTok (VTPVN...), Shopee (SHOPEEVTPVN...) hoặc Nội tỉnh (CTO) */
+function isSpecialRow(r) {
+  const ma   = String(r['MA_PHIEUGUI'] || '').toUpperCase();
+  const tinh = String(r['TINH_NHAN']   || '').trim().toUpperCase();
+  return ma.startsWith('VTPVN') || ma.startsWith('SHOPEEVTPVN') || tinh === 'CTO';
+}
+
+/** Build dòng "- MÃ | COD | Chưa phát | QUÁ HẠN/ĐÚNG HẠN" cho template TT500 thuần */
+function tt500RowLineShort(r) {
+  const ma  = r['MA_PHIEUGUI'] || '';
+  const cod = parseFloat(r['TIEN_COD'])    || 0;
+  const lp  = r['LAN_PHAT'];
+  const tqd = parseFloat(r['TG_QUYDINH']) || 0;
+  const ttt = parseFloat(r['TG_TT_LUYKE'])|| 0;
+  const chuaPhat = (lp === 0 || lp === '0' || lp === '');
+  const status   = ttt > tqd ? 'QUÁ HẠN' : 'ĐÚNG HẠN';
+
+  const parts = [`- ${ma}`];
+  parts.push(cod > 0 ? `COD: ${formatMoney(cod)}đ` : '');
+  if (chuaPhat) parts.push('Chưa phát');
+  parts.push(status);
+  return parts.join(' | ');
+}
+
+// ================================================================
 // BUILD TIN NHẮN
 // ================================================================
 
@@ -78,41 +107,17 @@ function buildMessage(groupName, rows) {
   }
 
   // --- Template TT500 thuần ---
-  // Phân loại: TikTok/Shopee (mã VTPVN.../SHOPEEVTPVN...) hoặc Nội tỉnh (CTO) → nhóm đặc biệt
-  function isSpecial(r) {
-    const ma   = String(r['MA_PHIEUGUI'] || '').toUpperCase();
-    const tinh = String(r['TINH_NHAN']   || '').trim().toUpperCase();
-    return ma.startsWith('VTPVN') || ma.startsWith('SHOPEEVTPVN') || tinh === 'CTO';
-  }
-
-  const specialRows = tt500rows.filter(r =>  isSpecial(r));
-  const normalRows  = tt500rows.filter(r => !isSpecial(r));
-
-  function rowLine(r) {
-    const ma  = r['MA_PHIEUGUI'] || '';
-    const cod = parseFloat(r['TIEN_COD'])    || 0;
-    const lp  = r['LAN_PHAT'];
-    const tqd = parseFloat(r['TG_QUYDINH']) || 0;
-    const ttt = parseFloat(r['TG_TT_LUYKE'])|| 0;
-    const chuaPhat = (lp === 0 || lp === '0' || lp === '');
-    const status   = ttt > tqd ? 'QUÁ HẠN' : 'ĐÚNG HẠN';
-
-    // Ghép các phần bằng " | ", bỏ phần rỗng ở giữa
-    const parts = [`- ${ma}`];
-    parts.push(cod > 0 ? `COD: ${formatMoney(cod)}đ` : '');
-    if (chuaPhat) parts.push('Chưa phát');
-    parts.push(status);
-    return parts.join(' | ');
-  }
+  const specialRows = tt500rows.filter(r =>  isSpecialRow(r));
+  const normalRows  = tt500rows.filter(r => !isSpecialRow(r));
 
   let body = '';
   if (normalRows.length > 0) {
-    body += `ĐƠN THƯỜNG\n` + normalRows.map(rowLine).join('\n');
+    body += `ĐƠN THƯỜNG\n` + normalRows.map(tt500RowLineShort).join('\n');
   }
   if (specialRows.length > 0) {
     if (body) body += '\n\n';
     body += `⚡ TIKTOK - SHOPEE - NỘI TỈNH - CẦN TRẢ TRẠNG THÁI 500 SỚM\n`;
-    body += specialRows.map(rowLine).join('\n');
+    body += specialRows.map(tt500RowLineShort).join('\n');
     body += `\n\n⚠️ Các phiếu tiktok shopee và nội tỉnh CTO cần được xử lý TRẢ TT500 SỚM để đảm bảo chỉ tiêu nội tỉnh.`;
   }
 
@@ -248,6 +253,42 @@ function copyModal() {
       ta.select();
       document.execCommand('copy');
       showToast('✅ Đã copy nội dung!', 'success');
+    });
+}
+
+/**
+ * Copy CHỈ khối đặc thù (TikTok/Shopee/Nội tỉnh) — không lời chào/kết.
+ * Hoạt động độc lập với template đang hiển thị (DO hay TT500-thuần).
+ */
+function copySpecialSection() {
+  const group = currentModalGroups[currentModalIdx];
+  if (!group) return;
+
+  const specialRows = group.rows.filter(r =>
+    classifyRow(r).isTT500 && selectedModes.tt500 && isSpecialRow(r)
+  );
+  if (specialRows.length === 0) {
+    showToast('⚠️ Bưu tá này không có phiếu đặc thù (TikTok/Shopee/Nội tỉnh).', 'warning');
+    return;
+  }
+
+  let text = '⚡ TIKTOK - SHOPEE - NỘI TỈNH - CẦN TRẢ TRẠNG THÁI 500 SỚM\n';
+  text += specialRows.map(tt500RowLineShort).join('\n');
+  text += '\n\n⚠️ Các phiếu tiktok shopee và nội tỉnh CTO cần được xử lý TRẢ TT500 SỚM để đảm bảo chỉ tiêu nội tỉnh.';
+
+  navigator.clipboard.writeText(text)
+    .then(() => showToast('✅ Đã copy ' + specialRows.length + ' phiếu đặc thù!', 'success'))
+    .catch(() => {
+      // Fallback execCommand qua textarea ẩn
+      const tmp = document.createElement('textarea');
+      tmp.value = text;
+      tmp.style.position = 'fixed';
+      tmp.style.opacity = '0';
+      document.body.appendChild(tmp);
+      tmp.select();
+      try { document.execCommand('copy'); showToast('✅ Đã copy nội dung đặc thù!', 'success'); }
+      catch (_) { showToast('❌ Không copy được, thử lại.', 'error'); }
+      document.body.removeChild(tmp);
     });
 }
 
