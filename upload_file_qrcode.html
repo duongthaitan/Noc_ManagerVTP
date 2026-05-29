@@ -1243,7 +1243,9 @@ function zipAndUploadFiles(files, options) {
   var folderName = options.zipBaseName || buildZipFolderName();
   var zipFileName = folderName + '.zip';
   var totalBytes = files.reduce(function(sum, f) { return sum + f.size; }, 0);
-  var useStore = totalBytes > 20 * 1024 * 1024;
+  // STORE (no compression) khi >5MB — file lớn thường đã nén sẵn (PDF/JPG/Excel),
+  // DEFLATE level 3 tốn 2-5s mà tỉ lệ nén <15% → STORE upload nhanh hơn.
+  var useStore = totalBytes > 5 * 1024 * 1024;
 
   var modeTxt = useStore ? '(không nén để upload nhanh hơn)' : '(nén DEFLATE)';
   showProgress(true, 'Đang đóng gói ' + files.length + ' file...', '🗜️ Đóng gói ZIP ' + modeTxt + '...', 0);
@@ -1407,6 +1409,18 @@ function uploadWithFallback(file, onSuccess, onError) {
   var idx = 0;
   var failedProviders = [];
 
+  // Lỗi transient (TCP reset, DNS hiccup) thường tự fix sau 1-2s.
+  // Retry cùng provider 1 lần với 1.5s backoff trước khi fallback sang provider khác —
+  // tránh mất thời gian thử provider nước ngoài chậm hơn khi lỗi chỉ là tạm thời.
+  var TRANSIENT_ERRORS = ['lỗi mạng', 'không kết nối được', 'mạng đứng giữa chừng', 'timeout'];
+  function isTransient(errMsg) {
+    if (!errMsg) return false;
+    for (var i = 0; i < TRANSIENT_ERRORS.length; i++) {
+      if (errMsg.indexOf(TRANSIENT_ERRORS[i]) >= 0) return true;
+    }
+    return false;
+  }
+
   function tryNext() {
     if (idx >= candidates.length) {
       var detail = failedProviders.join(', ');
@@ -1418,12 +1432,18 @@ function uploadWithFallback(file, onSuccess, onError) {
       return;
     }
     var provider = candidates[idx++];
-    showProgress(true, file.name, '🔄 Thử upload qua ' + provider.name + '...', 0);
-    showToast('🔄 Thử upload qua ' + provider.name, 'info');
+    attemptProvider(provider, 0);
+  }
+
+  function attemptProvider(provider, attempt) {
+    var attemptLabel = attempt > 0 ? ' (thử lại ' + attempt + ')' : '';
+    showProgress(true, file.name, '🔄 Thử upload qua ' + provider.name + attemptLabel + '...', 0);
+    if (attempt === 0) showToast('🔄 Thử upload qua ' + provider.name, 'info');
+    else showToast('🔁 Thử lại ' + provider.name + ' lần ' + (attempt + 1), 'info');
 
     var body;
     if (provider.rawBody) {
-      body = file; // PUT raw file (transfer.sh)
+      body = file;
     } else {
       body = new FormData();
       provider.build(body, file);
@@ -1435,7 +1455,7 @@ function uploadWithFallback(file, onSuccess, onError) {
         var dlUrl, providerOverride = null;
         if (parsed && typeof parsed === 'object') {
           dlUrl = parsed.url;
-          providerOverride = parsed; // {url, providerName?, expiryMs?, expiryLabel?}
+          providerOverride = parsed;
         } else if (typeof parsed === 'string') {
           dlUrl = parsed;
         }
@@ -1456,8 +1476,13 @@ function uploadWithFallback(file, onSuccess, onError) {
         onSuccess(dlUrl, effectiveProvider);
       },
       function(errMsg) {
-        failedProviders.push(provider.name + ' (' + errMsg + ')');
-        tryNext();
+        if (attempt < 1 && isTransient(errMsg)) {
+          // Retry cùng provider sau 1.5s — đa số transient error tự fix
+          setTimeout(function() { attemptProvider(provider, attempt + 1); }, 1500);
+        } else {
+          failedProviders.push(provider.name + ' (' + errMsg + ')');
+          tryNext();
+        }
       }
     );
   }
@@ -1485,19 +1510,35 @@ function uploadViaXhr(provider, body, file, onSuccess, onError) {
 
   var lastTick = Date.now();
   var lastLoaded = 0;
+  var lastProgressAt = Date.now();
   var sawProgress = false;
 
-  // Stall detection: nếu 15s không có progress event nào → coi như mạng chặn endpoint, fallback ngay
-  var stallTimer = setTimeout(function() {
+  // Stall detection 2 tầng:
+  //  • Initial: 5s không có progress event đầu tiên → coi như endpoint bị chặn (firewall),
+  //    fallback ngay (giảm từ 15s xuống 5s — đủ buffer cho 4G chậm vì progress đầu về <2s).
+  //  • Mid-upload: nếu đang upload mà 12s không có progress event nào → mạng đứng,
+  //    abort để fallback hoặc retry (case file 50MB stuck giữa chừng).
+  var STALL_INITIAL_MS = 5000;
+  var STALL_MID_MS = 12000;
+  var stallTimer = setInterval(function() {
+    var now = Date.now();
     if (!sawProgress) {
+      if (now - lastProgressAt >= STALL_INITIAL_MS) {
+        clearInterval(stallTimer);
+        try { xhr.abort(); } catch (_) {}
+        onError('không kết nối được');
+      }
+    } else if (now - lastProgressAt >= STALL_MID_MS) {
+      clearInterval(stallTimer);
       try { xhr.abort(); } catch (_) {}
-      onError('không kết nối được');
+      onError('mạng đứng giữa chừng');
     }
-  }, 15000);
+  }, 1000);
 
   xhr.upload.onprogress = function(ev) {
     if (!ev.lengthComputable) return;
     sawProgress = true;
+    lastProgressAt = Date.now();
     var pct = Math.round((ev.loaded / ev.total) * 100);
     var now = Date.now();
     var dt = (now - lastTick) / 1000;
@@ -1519,7 +1560,7 @@ function uploadViaXhr(provider, body, file, onSuccess, onError) {
   };
 
   xhr.onload = function() {
-    clearTimeout(stallTimer);
+    clearInterval(stallTimer);
     if (xhr.status >= 200 && xhr.status < 300) {
       showProgress(true, '', '✅ ' + provider.name + ' upload xong, đang tạo QR...', 100);
       setTimeout(function() { onSuccess(xhr.responseText); }, 200);
@@ -1528,14 +1569,14 @@ function uploadViaXhr(provider, body, file, onSuccess, onError) {
     }
   };
   xhr.onerror = function() {
-    clearTimeout(stallTimer);
+    clearInterval(stallTimer);
     onError('lỗi mạng');
   };
   xhr.ontimeout = function() {
-    clearTimeout(stallTimer);
+    clearInterval(stallTimer);
     onError('timeout');
   };
-  xhr.onabort = function() { clearTimeout(stallTimer); };
+  xhr.onabort = function() { clearInterval(stallTimer); };
   xhr.send(body);
 }
 
@@ -1570,7 +1611,7 @@ function updateProgressPercent(percent) {
 ================================================================ */
 // Sinh QR placeholder ngay lập tức khi upload bắt đầu — UX thấy QR sau ~50ms
 // thay vì phải chờ upload xong (2-5s). URL được dự đoán trước (Filebin Direct),
-// đa số trường hợp trùng URL thật → không cần regenerate khi upload xong.
+// đa số trường hợp trùng URL thật → showQrResult chỉ đổi màu thay vì regenerate.
 function showQrPlaceholder(name, size, predictedShareUrl) {
   document.getElementById('qr-empty').style.display = 'none';
   var wrap = document.getElementById('qr-result-wrap');
@@ -1578,17 +1619,21 @@ function showQrPlaceholder(name, size, predictedShareUrl) {
 
   var qrEl = document.getElementById('qr-code-el');
   qrEl.innerHTML = '';
-  // requestAnimationFrame để không block UI thread khi sinh QR
+  // Vẽ QR thẳng MÀU ĐỎ ngay từ đầu — dùng CSS opacity để báo "chưa sẵn sàng",
+  // tránh phải regenerate canvas khi upload xong (tiết kiệm 30-80ms render time).
+  qrEl.dataset.predictedUrl = predictedShareUrl;
+  qrEl.style.opacity = '0.55';
+  qrEl.style.transition = 'opacity .25s ease';
   requestAnimationFrame(function() {
     new QRCode(qrEl, {
       text: predictedShareUrl,
       width: 200, height: 200,
-      colorDark: '#9CA3AF', // xám nhạt để báo "chưa sẵn sàng"
+      colorDark: '#C9002B',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.H
     });
     qrEl.style.position = 'relative';
-    qrEl.insertAdjacentHTML('beforeend', '<img src="assets/icons/icon128.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:#fff;padding:3px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);opacity:0.6;">');
+    qrEl.insertAdjacentHTML('beforeend', '<img src="assets/icons/icon128.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:#fff;padding:3px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);">');
   });
 
   document.getElementById('qr-name-text').textContent = name;
@@ -1612,18 +1657,27 @@ function showQrResult(entry) {
   var wrap = document.getElementById('qr-result-wrap');
   wrap.classList.add('show');
 
-  // Generate QR — encode link upstream trực tiếp; user quét sẽ mở thẳng file
   var qrEl = document.getElementById('qr-code-el');
-  qrEl.innerHTML = '';
-  new QRCode(qrEl, {
-    text: entry.url,
-    width: 200, height: 200,
-    colorDark: '#C9002B',
-    colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.H
-  });
-  qrEl.style.position = 'relative';
-  qrEl.insertAdjacentHTML('beforeend', '<img src="assets/icons/icon128.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:#fff;padding:3px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);">');
+  // Optimization: nếu placeholder đã vẽ QR cho URL này (predicted trùng URL thật)
+  // thì chỉ cần fade-in opacity từ 0.55 → 1, không regenerate canvas (~30-80ms tiết kiệm).
+  // Nếu URL khác (provider fallback đổi → URL mới) thì redraw với màu đỏ chuẩn.
+  var predicted = qrEl.dataset.predictedUrl;
+  if (predicted === entry.url && qrEl.children.length > 0) {
+    qrEl.style.opacity = '1';
+  } else {
+    qrEl.innerHTML = '';
+    qrEl.style.opacity = '1';
+    new QRCode(qrEl, {
+      text: entry.url,
+      width: 200, height: 200,
+      colorDark: '#C9002B',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    qrEl.style.position = 'relative';
+    qrEl.insertAdjacentHTML('beforeend', '<img src="assets/icons/icon128.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:#fff;padding:3px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);">');
+  }
+  qrEl.dataset.predictedUrl = entry.url;
 
   // File info
   document.getElementById('qr-name-text').textContent = entry.name;
@@ -1984,30 +2038,64 @@ function closeHelpPopup(event) {
    HISTORY STORAGE
 ================================================================ */
 function persistHistory() {
-  try {
-    var serializable = uploadHistory.map(function(e) {
-      return {
-        id: e.id,
-        name: e.name,
-        size: e.size,
-        url: e.url,
-        ts: e.ts,
-        expiry: e.expiry,
-        expiryMs: typeof e.expiryMs === 'number' ? e.expiryMs : 60 * 60 * 1000,
-        expiryLabel: e.expiryLabel || '',
-        providerName: e.providerName || '',
-        isZipBundle: !!e.isZipBundle,
-        originalCount: e.originalCount || 1,
-        originalSize: e.originalSize || e.size,
-        originalFileMeta: (e.originalFiles || []).map(function(f) {
-          return { name: f && f.name ? f.name : 'file', size: f && typeof f.size === 'number' ? f.size : 0 };
-        })
-      };
-    });
-    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(serializable));
-  } catch (err) {
-    console.warn('persist history failed:', err);
+  var serializable = uploadHistory.map(function(e) {
+    return {
+      id: e.id,
+      name: e.name,
+      size: e.size,
+      url: e.url,
+      ts: e.ts,
+      expiry: e.expiry,
+      expiryMs: typeof e.expiryMs === 'number' ? e.expiryMs : 60 * 60 * 1000,
+      expiryLabel: e.expiryLabel || '',
+      providerName: e.providerName || '',
+      isZipBundle: !!e.isZipBundle,
+      originalCount: e.originalCount || 1,
+      originalSize: e.originalSize || e.size,
+      originalFileMeta: (e.originalFiles || []).map(function(f) {
+        return { name: f && f.name ? f.name : 'file', size: f && typeof f.size === 'number' ? f.size : 0 };
+      })
+    };
+  });
+
+  // Khi history nhiều entry ZIP → originalFileMeta có thể đẩy localStorage qua quota 5MB.
+  // Strategy:
+  //  1. Thử lưu full
+  //  2. Nếu QuotaExceeded: drop originalFileMeta của entry cũ nhất, retry
+  //  3. Nếu vẫn fail: chỉ giữ 20 entry mới nhất, retry
+  //  4. Cuối cùng fail: log warn, không crash app
+  function trySave(payload) {
+    try {
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(payload));
+      return true;
+    } catch (err) {
+      return false;
+    }
   }
+
+  if (trySave(serializable)) return;
+
+  // Strategy 2: drop originalFileMeta để giảm size (giữ lại record nhưng mất file list trong ZIP)
+  var trimmed = serializable.map(function(e, i) {
+    if (i === 0) return e; // entry mới nhất giữ nguyên
+    var clone = {};
+    for (var k in e) if (k !== 'originalFileMeta') clone[k] = e[k];
+    clone.originalFileMeta = [];
+    return clone;
+  });
+  if (trySave(trimmed)) {
+    console.warn('persist history: dropped originalFileMeta of old entries (quota)');
+    return;
+  }
+
+  // Strategy 3: chỉ giữ 20 entry mới nhất
+  var capped = trimmed.slice(0, 20);
+  if (trySave(capped)) {
+    console.warn('persist history: capped to 20 entries (quota)');
+    return;
+  }
+
+  console.warn('persist history failed even after trim — localStorage may be full');
 }
 
 function loadPersistedHistory() {
