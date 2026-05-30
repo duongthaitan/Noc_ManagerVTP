@@ -303,6 +303,7 @@ function copySpecialSection() {
 
 function openZalo() {
   const group = currentModalGroups[currentModalIdx];
+  if (!group) return;
   if (!group.phone) { showToast('⚠️ Bưu tá này chưa có số điện thoại', 'warning'); return; }
   window.open('https://zalo.me/' + group.phone, '_blank');
 }

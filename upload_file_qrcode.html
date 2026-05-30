@@ -1341,6 +1341,14 @@ function uploadFile(file, meta) {
     return;
   }
 
+  // Race guard: nếu user upload file mới khi xhr cũ chưa xong (eager-QR mở wrap
+  // sớm khiến nút "Upload file khác" clickable), abort xhr cũ để callback của nó
+  // không ghi đè state file mới (currentEntry, qrEl, history, badge).
+  if (window._currentUploadXhr) {
+    try { window._currentUploadXhr.abort(); } catch (_) {}
+    window._currentUploadXhr = null;
+  }
+
   showProgress(true, file.name, '⬆️ Chuẩn bị tải lên máy chủ...', 0);
 
   // Eager QR: dự đoán URL Filebin Direct (binId tự sinh client-side) và render QR
@@ -1500,6 +1508,7 @@ function parseUploadResponse(text) {
 
 function uploadViaXhr(provider, body, file, onSuccess, onError) {
   var xhr = new XMLHttpRequest();
+  window._currentUploadXhr = xhr;
   var url = provider.buildUrl ? provider.buildUrl(file) : provider.url;
   var method = provider.method || 'POST';
   xhr.open(method, url);
@@ -1540,6 +1549,13 @@ function uploadViaXhr(provider, body, file, onSuccess, onError) {
     sawProgress = true;
     lastProgressAt = Date.now();
     var pct = Math.round((ev.loaded / ev.total) * 100);
+    // Đã gửi xong byte cuối → server đang xử lý response. Tắt stall mid-upload
+    // (xhr.timeout 180s đã đủ guard cho phần response). Tránh false-positive khi
+    // server fallback chain xử lý 15-30s.
+    if (ev.loaded >= ev.total && stallTimer) {
+      clearInterval(stallTimer);
+      stallTimer = null;
+    }
     var now = Date.now();
     var dt = (now - lastTick) / 1000;
     var speedTxt = '';

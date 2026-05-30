@@ -36,7 +36,7 @@ function handleFileChange(e) {
  * Đọc file Excel, parse dữ liệu, cập nhật state và giao diện
  */
 function processFile(file) {
-  if (!file.name.endsWith('.xlsx')) {
+  if (!file.name.toLowerCase().endsWith('.xlsx')) {
     showToast('⚠️ Vui lòng chọn file .xlsx', 'error');
     return;
   }

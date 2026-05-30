@@ -16,8 +16,17 @@ var _buutaList = [];
 
 /** Tải danh sách bưu tá từ localStorage khi khởi động */
 function loadBuuta() {
-  const saved = localStorage.getItem('buuta_list');
-  _buutaList = saved ? JSON.parse(saved) : [];
+  try {
+    const saved = localStorage.getItem('buuta_list');
+    _buutaList = saved ? JSON.parse(saved) : [];
+    if (!Array.isArray(_buutaList)) _buutaList = [];
+  } catch (e) {
+    // localStorage corrupted (user sửa DevTools, đồng bộ tab race, v.v.)
+    // → fallback an toàn, xóa key hỏng để lần sau không lặp lại
+    console.warn('loadBuuta: parse fail, reset to []', e);
+    _buutaList = [];
+    try { localStorage.removeItem('buuta_list'); } catch (_) {}
+  }
 }
 
 /** Lưu danh sách bưu tá hiện tại vào localStorage */
