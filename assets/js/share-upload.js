@@ -86,4 +86,24 @@
       return uploadViaProxy(blob, filename);
     });
   };
+
+  // Race guard: khi user spam mở/đóng modal QR/Screenshot, nhiều upload song song
+  // có thể fire .then() lệch nhau, ghi đè container của upload mới bằng QR cũ.
+  // vtpUploadBlobScoped(blob, name, scope) sinh token mỗi lần gọi cùng scope —
+  // callback nào không khớp token mới nhất sẽ throw 'cancelled' để caller silent.
+  // Cách dùng:
+  //   vtpUploadBlobScoped(blob, 'BieuDo.png', 'chart')
+  //     .then(url => render QR)
+  //     .catch(err => { if (err === 'cancelled') return; show error });
+  var _scopeTokens = {};
+  global.vtpUploadBlobScoped = function(blob, filename, scope) {
+    scope = scope || 'default';
+    var token = (_scopeTokens[scope] = (_scopeTokens[scope] || 0) + 1);
+    return global.vtpUploadBlob(blob, filename).then(function(url) {
+      if (token !== _scopeTokens[scope]) {
+        throw 'cancelled';
+      }
+      return url;
+    });
+  };
 })(window);

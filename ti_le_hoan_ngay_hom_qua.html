@@ -1328,7 +1328,7 @@ function showQrModal() {
   document.getElementById('qr-overlay').classList.add('open');
 
   canvas.toBlob(function(blob) {
-    vtpUploadBlob(blob, 'BieuDo.png')
+    vtpUploadBlobScoped(blob, 'BieuDo.png', 'chart')
     .then(function(dlUrl) {
       container.innerHTML = '';
       qrInstance = new QRCode(container, { text: dlUrl, width: 220, height: 220, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
@@ -1339,7 +1339,8 @@ function showQrModal() {
         '<span style="font-weight:500;">(Link l\u01b0u 6 ng\u00e0y)</span>';
       if (urlEl) urlEl.style.display = 'none';
     })
-    .catch(function() {
+    .catch(function(err) {
+      if (err === 'cancelled') return;
       container.innerHTML = '';
       qrInstance = new QRCode(container, { text: getPageLanUrl(), width: 220, height: 220, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
       container.style.position = 'relative';
@@ -1486,7 +1487,7 @@ function captureScreenshot() {
       infoEl.innerHTML = '';
 
       canvas.toBlob(function(blob) {
-        vtpUploadBlob(blob, 'BaoCao.png')
+        vtpUploadBlobScoped(blob, 'BaoCao.png', 'report')
         .then(function(dlUrl) {
           qrContainer.innerHTML = '';
           new QRCode(qrContainer, { text: dlUrl, width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
@@ -1494,7 +1495,8 @@ function captureScreenshot() {
           qrContainer.insertAdjacentHTML('beforeend', '<img src="assets/icons/icon128.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:#fff;padding:3px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);">');
           infoEl.innerHTML = '<span style="color:#059669;font-weight:800;"><i class="fa-solid fa-cloud-arrow-down"></i> Quét để tải ảnh 16:9!</span><br><span style="color:#6B7280;">(Link lưu 6 ngày)</span>';
         })
-        .catch(function() {
+        .catch(function(err) {
+          if (err === 'cancelled') return;
           qrContainer.innerHTML = '';
           new QRCode(qrContainer, { text: getPageLanUrl(), width: 200, height: 200, colorDark: '#1e3a5f', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
           qrContainer.style.position = 'relative';
