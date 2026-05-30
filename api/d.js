@@ -12,6 +12,24 @@ export const config = {
 
 const ALLOWED_HOSTS = new Set(['filebin.net']);
 
+// Whitelist host đích Filebin có thể redirect tới (S3 pre-signed URL).
+// Tránh open-redirect: nếu Filebin một ngày trả Location lạ → reject thay vì
+// redirect mù. Pattern check: hostname kết thúc bằng một trong các suffix này.
+const ALLOWED_REDIRECT_SUFFIXES = [
+  '.filebin.net',
+  'filebin.net',
+  '.amazonaws.com',
+  '.your-objectstorage.com',  // Hetzner Object Storage (Filebin backend)
+];
+
+function isAllowedRedirect(loc) {
+  let dest;
+  try { dest = new URL(loc); } catch (_) { return false; }
+  if (dest.protocol !== 'https:' && dest.protocol !== 'http:') return false;
+  const host = dest.hostname.toLowerCase();
+  return ALLOWED_REDIRECT_SUFFIXES.some(suf => host === suf || host.endsWith(suf));
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     return res.status(405).send('method not allowed');
@@ -58,6 +76,14 @@ export default async function handler(req, res) {
   const loc = upstream.headers.get('location');
   if (!loc) {
     return res.status(502).send('upstream did not redirect (status ' + upstream.status + ')');
+  }
+
+  // Validate Location host trước khi redirect — chống open-redirect:
+  // nếu Filebin compromise hoặc đổi pattern, reject thay vì redirect mù tới
+  // bất kỳ đâu. Domain ViettelPost không thể bị dùng làm phishing surface.
+  if (!isAllowedRedirect(loc)) {
+    console.warn('blocked redirect to unexpected host:', loc);
+    return res.status(502).send('upstream redirect host not allowed');
   }
 
   res.setHeader('Cache-Control', 'no-store');
