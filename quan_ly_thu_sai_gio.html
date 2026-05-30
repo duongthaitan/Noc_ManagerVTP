@@ -20,6 +20,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.2/dist/html2canvas-pro.min.js"></script>
 <script src="assets/js/share-upload.js"></script>
+<script src="assets/js/common.js"></script>
 
 <style>
 /* ================================================================
@@ -474,7 +475,7 @@ html.in-iframe .excel-table-wrap { overflow: visible !important; }
           <i class="fa-solid fa-magnifying-glass"></i>
           <input type="text" id="search-input" class="search-input"
                  placeholder="🔍 Tìm kiếm mã vận đơn / tên KH / bưu tá..."
-                 oninput="onFilterChange()">
+                 oninput="onSearchInput()">
         </div>
       </div>
       <div class="toolbar-row-2">
@@ -740,11 +741,7 @@ function formatDate(val) {
   return str;
 }
 
-function escHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-                  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+// escHtml/debounce: xem assets/js/common.js
 
 /* ================================================================
    RIPPLE
@@ -892,14 +889,42 @@ function resetUpload() {
    COLUMN AUTO-DETECT & MAP UI
 ================================================================ */
 function autoDetectColumns() {
-  const lowerHeaders = allHeaders.map(h => h.toLowerCase().trim());
+  // Chuẩn hoá: lowercase + bỏ dấu + bỏ khoảng trắng/_/- để khớp được "TUYEN_BUU_TA" với "tuyến bưu tá".
+  const norm = s => String(s).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[\s_\-]+/g, '');
+  const normHeaders = allHeaders.map(norm);
+
+  // Tránh map cùng 1 header cho 2 field khác nhau (vd "Mã" thắng cả 'code' lẫn 'custName').
+  const usedHeaders = new Set();
 
   for (const [key, hints] of Object.entries(COL_HINTS)) {
     colMap[key] = '';
+    let bestIdx = -1, bestScore = 0;
+
     for (const hint of hints) {
-      const lh = hint.toLowerCase();
-      const idx = lowerHeaders.findIndex(h => h.includes(lh) || lh.includes(h));
-      if (idx >= 0) { colMap[key] = allHeaders[idx]; break; }
+      const nh = norm(hint);
+      if (!nh) continue;
+      for (let i = 0; i < normHeaders.length; i++) {
+        if (usedHeaders.has(allHeaders[i])) continue;
+        const h = normHeaders[i];
+        if (!h) continue;
+
+        let score = 0;
+        if (h === nh) score = 1000;                         // khớp tuyệt đối
+        else if (h.includes(nh)) score = 500 + nh.length;   // header chứa hint → ổn nếu hint dài
+        // Bỏ chiều `hint.includes(h)` của bản cũ — gây false positive khi header ngắn ("Mã").
+        // Chỉ chấp nhận khi header == hint (đã cover ở nhánh equals).
+
+        if (score > bestScore) { bestScore = score; bestIdx = i; }
+      }
+    }
+
+    // Ngưỡng min: hint phải đủ dài (≥ 3 ký tự đã chuẩn hoá) để tránh match rác.
+    if (bestIdx >= 0 && bestScore >= 503) {
+      colMap[key] = allHeaders[bestIdx];
+      usedHeaders.add(allHeaders[bestIdx]);
     }
   }
 }
@@ -984,6 +1009,9 @@ function getCell(row, key) { return String(row[colMap[key]] ?? '').trim(); }
 
 function onFilterChange() { currentPage = 1; filterAndRender(); }
 
+// Debounce 200ms để khỏi filter+render mỗi keystroke khi gõ nhanh.
+const onSearchInput = debounce(onFilterChange, 200);
+
 function filterAndRender() {
   const search = document.getElementById('search-input').value.toLowerCase().trim();
   const buuta  = document.getElementById('filter-buuta').value;
@@ -1026,13 +1054,24 @@ function compareDateCells(a, b, key) {
 }
 
 // Parse cell ngày sang timestamp ms. Hỗ trợ:
-// - serial number Excel
+// - serial number Excel (qua XLSX.SSF để xử lý đúng bug "1900 leap year" của Excel)
 // - chuỗi "DD/MM/YYYY" hoặc "DD/MM/YYYY HH:MM[:SS]"
 // - ISO fallback
 // Trả 0 nếu không parse được (rỗng/NaN) — sort về đầu.
 function parseDateCell(v) {
   if (v == null || v === '') return 0;
-  if (typeof v === 'number') return v;
+  if (typeof v === 'number') {
+    if (typeof XLSX !== 'undefined' && XLSX.SSF) {
+      const o = XLSX.SSF.parse_date_code(v);
+      if (o) {
+        const t = Date.UTC(o.y, o.m - 1, o.d, o.H || 0, o.M || 0, o.S || 0);
+        return isNaN(t) ? 0 : t;
+      }
+    }
+    // Fallback: serial → ms (25569 = ngày từ 1900-01-01 epoch tới 1970-01-01)
+    const t = (v - 25569) * 86400000;
+    return isNaN(t) ? 0 : t;
+  }
   const s = String(v).trim();
   // DD/MM/YYYY [HH:MM[:SS]]
   const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
@@ -1045,9 +1084,18 @@ function parseDateCell(v) {
 }
 
 function sortRows(rows, col, dir) {
+  // Map key TH (data-sort) → key colMap
+  const keyMap = { 'date-create': 'dateCreate', 'date-pickup': 'datePickup' };
+  const mapKey = keyMap[col] || col;
+  const isDate = col === 'date-create' || col === 'date-pickup';
   return [...rows].sort((a, b) => {
-    const va = getCell(a, col); const vb = getCell(b, col);
-    const cmp = va.localeCompare(vb, 'vi', { numeric: true });
+    let cmp;
+    if (isDate) {
+      cmp = parseDateCell(a[colMap[mapKey]]) - parseDateCell(b[colMap[mapKey]]);
+    } else {
+      const va = getCell(a, mapKey); const vb = getCell(b, mapKey);
+      cmp = va.localeCompare(vb, 'vi', { numeric: true });
+    }
     return dir === 'asc' ? cmp : -cmp;
   });
 }

@@ -17,6 +17,7 @@
 
 <!-- ===== QR CODE & ZIP ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="assets/js/common.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
@@ -930,9 +931,10 @@ html.in-iframe .container { padding-top: 12px; }
     </div>
     <div class="help-popup-body">
       <div class="help-note-list">
-        <div class="help-note-item">⏱ <span>Thời hạn link tuỳ provider — xem badge "<strong>Qua: …</strong>" sau khi upload (Litterbox 1h, 0x0.st ~30 ngày, Catbox vĩnh viễn).</span></div>
-        <div class="help-note-item">🔁 <span>Hệ thống tự fallback qua provider khác nếu 1 endpoint bị mạng chặn.</span></div>
+        <div class="help-note-item">⏱ <span>Thời hạn link tuỳ provider — xem badge "<strong>Qua: …</strong>" sau khi upload (Filebin 6 ngày, uguu.se 3 giờ, Catbox vĩnh viễn).</span></div>
+        <div class="help-note-item">🔁 <span>Hệ thống tự fallback qua provider khác nếu 1 endpoint bị mạng chặn: Filebin Direct → VTP Proxy → uguu.se → Catbox.</span></div>
         <div class="help-note-item">📦 <span>Kích thước upload tối đa <strong>100MB</strong>.</span></div>
+        <div class="help-note-item">🛰 <span>VTP Proxy chỉ nhận file <strong>≤ 4.5MB</strong> (giới hạn Vercel). File lớn hơn buộc đi thẳng Filebin/uguu/Catbox — nếu mạng nội bộ chặn các domain này, upload sẽ fail.</span></div>
         <div class="help-note-item">🗜️ <span>Chọn nhiều file sẽ tự nén thành <strong>1 file ZIP</strong>.</span></div>
         <div class="help-note-item">📱 <span>Mở được bằng bất kỳ trình duyệt nào trên điện thoại.</span></div>
       </div>
@@ -2190,9 +2192,7 @@ function formatTimeAgo(ts) {
   return Math.floor(min / 60) + ' giờ trước';
 }
 
-function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+// escHtml/debounce: xem assets/js/common.js
 
 function buildZipFolderName() {
   var d = new Date();

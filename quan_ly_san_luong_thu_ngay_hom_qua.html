@@ -22,6 +22,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.2/dist/html2canvas-pro.min.js"></script>
 <script src="assets/js/share-upload.js"></script>
+<script src="assets/js/common.js"></script>
 
 <style>
 /* ================================================================
@@ -392,7 +393,7 @@ html.in-iframe .excel-table-wrap { overflow: visible !important; }
       <div class="toolbar-row">
         <div class="search-wrap">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="search-input" class="search-input" placeholder="🔍 Tìm kiếm tuyến bưu tá..." oninput="onFilterChange()">
+          <input type="text" id="search-input" class="search-input" placeholder="🔍 Tìm kiếm tuyến bưu tá..." oninput="onSearchInput()">
         </div>
         <div class="row-count-badge"><i class="fa-solid fa-list-ol"></i> Hiển thị <span id="display-count">0</span> bưu tá</div>
         <div class="toolbar-spacer"></div>
@@ -645,7 +646,7 @@ function padZ(n) { return String(n).padStart(2, '0'); }
 function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 function fmtPct(v) { var n = num(v); return n === 0 ? '0' : n.toFixed(3).replace(/\.?0+$/, ''); }
 function fmtNum(v) { var n = num(v); return n === 0 ? '' : String(n); }
-function escHtml(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// escHtml/debounce: xem assets/js/common.js
 
 // Color code: TTC cao = xanh (tốt), thấp = đỏ (xấu)
 function pctClass(v) {
@@ -705,10 +706,12 @@ function processFile(file) {
           return r.length >= 10 && r[COL.TUYEN] && String(r[COL.TUYEN]).trim() !== '';
         });
 
-        // Remove "TỔNG" row if present
+        // Loại dòng "TỔNG" cuối file VTP xuất ra (cột STT chứa text "TỔNG"/"TỔNG CỘNG")
+        // — nếu để lọt, tổng SL/PCP cộng dồn 2 lần. Đồng bộ với pattern ở
+        // quan_ly_san_luong_phat_ngay_hom_qua.html.
         dataRows = dataRows.filter(function(r) {
           var stt = String(r[COL.STT] || '').trim().toUpperCase();
-          return stt !== 'TỔNG';
+          return stt !== 'TỔNG' && stt !== 'TỔNG CỘNG' && stt !== 'TONG' && stt !== 'TONG CONG';
         });
 
         totalBuutaGoc = dataRows.length;
@@ -769,6 +772,9 @@ function onFilterChange() {
   updateStats();
 }
 
+// Debounce 200ms để khỏi filter+render mỗi keystroke khi gõ nhanh.
+var onSearchInput = debounce(onFilterChange, 200);
+
 function applySort() {
   var col = currentSort.col, dir = currentSort.dir;
   var map = {
@@ -821,19 +827,23 @@ function renderTable() {
   }
 
   // Calculate totals
-  var tYC = 0, tYCM = 0, tYCLK = 0, tTTC = 0, tTTCM = 0, tTTCLK = 0, tCKSL = 0;
+  var tYC = 0, tYCM = 0, tYCLK = 0, tTTC = 0, tTTCM = 0, tTTCLK = 0, tCKSL = 0, tCKYC = 0;
   rows.forEach(function(r) {
     tYC += num(r[COL.YC_NGAY]); tYCM += num(r[COL.YC_NGAYMOI]); tYCLK += num(r[COL.YC_LUYKE]);
     tTTC += num(r[COL.TTC_NGAY]); tTTCM += num(r[COL.TTC_NGAYMOI]); tTTCLK += num(r[COL.TTC_LUYKE]);
-    tCKSL += num(r[COL.CK_SL]);
+    var ckSl = num(r[COL.CK_SL]); var ckPct = num(r[COL.CK_PCT]);
+    tCKSL += ckSl;
+    // Suy ra YC kỳ trước từ CK_SL/CK_PCT để tính weighted: YC_CK = CK_SL / (CK_PCT/100).
+    // Nếu CK_PCT = 0 (không có hoạt động kỳ trước) thì bỏ qua dòng đó khỏi mẫu số,
+    // tránh chia cho 0 và không kéo lệch trung bình.
+    if (ckPct > 0) tCKYC += ckSl * 100 / ckPct;
   });
   var tPctN = tYC > 0 ? (tTTC / tYC * 100) : 0;
   var tPctNM = tYCM > 0 ? (tTTCM / tYCM * 100) : 0;
   var tPctLK = tYCLK > 0 ? (tTTCLK / tYCLK * 100) : 0;
-  // CK tỷ lệ: sum of CK_SL TTC / total doesn't aggregate easily, average it
-  var tCKPct = 0; var countCK = 0;
-  rows.forEach(function(r) { var v = num(r[COL.CK_PCT]); if (v > 0) { tCKPct += v; countCK++; } });
-  tCKPct = countCK > 0 ? tCKPct / countCK : 0;
+  // Weighted-avg tỷ lệ kỳ trước: tổng TTC_CK / tổng YC_CK (suy từ mỗi dòng).
+  // Cũ là simple average → tuyến nhỏ kéo tỷ lệ chung sai khi khối lượng chênh lệch.
+  var tCKPct = tCKYC > 0 ? (tCKSL / tCKYC * 100) : 0;
   var tDeltaSL = tTTCLK - tCKSL;
   var tDeltaPct = tPctLK - tCKPct;
 
@@ -1143,26 +1153,34 @@ function renderChart(type) {
 var qrInstance = null;
 var qrUrl = '';
 var detectedLanIp = '';
+var _lanIpStarted = false;
 
-// Detect LAN IP via WebRTC
-(function detectLanIp() {
+// Probe LAN IP qua WebRTC — chỉ gọi khi user mở modal QR (lazy), tránh
+// leak IP/khởi RTCPeerConnection trên mọi page load. Lần đầu thường chưa
+// kịp resolve nên getPageLanUrl fallback hostname; lần sau đã có cache.
+function detectLanIp() {
+  if (_lanIpStarted) return;
+  _lanIpStarted = true;
   try {
     var rtc = new RTCPeerConnection({iceServers:[]});
     rtc.createDataChannel('');
     rtc.createOffer().then(function(offer) { rtc.setLocalDescription(offer); });
     rtc.onicecandidate = function(e) {
-      if (e && e.candidate && e.candidate.candidate) {
-        var match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
-        if (match && match[1] && match[1] !== '0.0.0.0' && match[1].indexOf('127.') !== 0) {
-          detectedLanIp = match[1];
-          rtc.close();
-        }
+      if (!e || !e.candidate || !e.candidate.candidate) {
+        if (e && !e.candidate) { try { rtc.close(); } catch(_){} }
+        return;
+      }
+      var match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
+      if (match && match[1] && match[1] !== '0.0.0.0' && match[1].indexOf('127.') !== 0) {
+        detectedLanIp = match[1];
+        try { rtc.close(); } catch(_){}
       }
     };
   } catch(e) {}
-})();
+}
 
 function getPageLanUrl() {
+  detectLanIp(); // lazy — chỉ start probe lần đầu, no-op các lần sau
   var loc = window.location;
   var host = loc.hostname;
   // Public domains (GitHub Pages, Vercel) — use full URL directly

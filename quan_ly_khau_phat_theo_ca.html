@@ -22,6 +22,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.2/dist/html2canvas-pro.min.js"></script>
 <script src="assets/js/share-upload.js"></script>
+<script src="assets/js/common.js"></script>
 
 <style>
 /* ================================================================
@@ -581,7 +582,7 @@ html.in-iframe .excel-table tbody td.col-percent { font-size: 13px; }
       <div class="toolbar-row">
         <div class="search-wrap">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="search-input" class="search-input" placeholder="🔍 Tìm kiếm tuyến bưu tá..." oninput="onFilterChange()">
+          <input type="text" id="search-input" class="search-input" placeholder="🔍 Tìm kiếm tuyến bưu tá..." oninput="onSearchInput()">
         </div>
         <div class="row-count-badge"><i class="fa-solid fa-list-ol"></i> Hiển thị <span id="display-count">0</span> bưu tá</div>
         <div class="toolbar-spacer"></div>
@@ -803,7 +804,7 @@ var currentSort = { col: 'sl_ptc', dir: 'desc' };
 function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 function fmtPct(v) { var n = num(v); return n === 0 ? '0' : n.toFixed(2).replace(/\.?0+$/, ''); }
 function fmtNum(v) { var n = num(v); return n === 0 ? '0' : String(Math.round(n)); }
-function escHtml(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// escHtml/debounce: xem assets/js/common.js
 function padZ(n) { return String(n).padStart(2, '0'); }
 
 function pctClass(v) {
@@ -1122,6 +1123,9 @@ function onFilterChange() {
   renderTable();
   updateStats();
 }
+
+// Debounce 200ms để khỏi filter+render mỗi keystroke khi gõ nhanh.
+var onSearchInput = debounce(onFilterChange, 200);
 
 function applySort() {
   var col = currentSort.col, dir = currentSort.dir;
@@ -1527,25 +1531,35 @@ function renderChart(type) {
 var qrInstance = null;
 var qrUrl = '';
 var detectedLanIp = '';
+var _lanIpStarted = false;
 
-(function detectLanIp() {
+// Probe LAN IP qua WebRTC — chỉ gọi khi user mở modal QR (lazy), tránh
+// leak IP/khởi RTCPeerConnection trên mọi page load. Lần đầu thường chưa
+// kịp resolve nên getPageLanUrl fallback hostname; lần sau đã có cache.
+function detectLanIp() {
+  if (_lanIpStarted) return;
+  _lanIpStarted = true;
   try {
     var rtc = new RTCPeerConnection({iceServers:[]});
     rtc.createDataChannel('');
     rtc.createOffer().then(function(offer) { rtc.setLocalDescription(offer); });
     rtc.onicecandidate = function(e) {
-      if (e && e.candidate && e.candidate.candidate) {
-        var match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
-        if (match && match[1] && match[1] !== '0.0.0.0' && match[1].indexOf('127.') !== 0) {
-          detectedLanIp = match[1];
-          rtc.close();
-        }
+      if (!e || !e.candidate || !e.candidate.candidate) {
+        // Hết candidate → close để khỏi leak object
+        if (e && !e.candidate) { try { rtc.close(); } catch(_){} }
+        return;
+      }
+      var match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
+      if (match && match[1] && match[1] !== '0.0.0.0' && match[1].indexOf('127.') !== 0) {
+        detectedLanIp = match[1];
+        try { rtc.close(); } catch(_){}
       }
     };
   } catch(e) {}
-})();
+}
 
 function getPageLanUrl() {
+  detectLanIp(); // lazy — chỉ start probe lần đầu, no-op các lần sau
   var loc = window.location;
   var host = loc.hostname;
   // Public domains (GitHub Pages, Vercel) — use full URL directly
@@ -1599,32 +1613,6 @@ function showQrModal() {
   }, 'image/png');
 }
 
-
-function closeQrModal() { document.getElementById('qr-overlay').classList.remove('open'); }
-
-function shareChartImage() {
-  var canvas = document.getElementById('chart-canvas');
-  if (!canvas) return;
-  canvas.toBlob(function(blob) {
-    var file = new File([blob], 'bieu_do_khau_phat.png', { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ title: 'Bi\u1ec3u \u0111\u1ed3 Kh\u1ea9u Ph\u00e1t', files: [file] })
-        .then(function() { showToast('\u2705 \u0110\u00e3 chia s\u1ebb!', 'success'); }).catch(function(){});
-    } else { showToast('\u26a0\ufe0f Kh\u00f4ng h\u1ed7 tr\u1ee3 Share API', 'warning'); }
-  }, 'image/png');
-}
-
-function copyQrUrl() {
-  var url = getPageLanUrl();
-  navigator.clipboard.writeText(url).then(function() {
-    showToast('\u2705 \u0110\u00e3 copy: ' + url, 'success');
-  }).catch(function() {
-    var ta = document.createElement('textarea');
-    ta.value = url; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    showToast('\u2705 \u0110\u00e3 copy link!', 'success');
-  });
-}
 
 function closeQrModal() { document.getElementById('qr-overlay').classList.remove('open'); }
 

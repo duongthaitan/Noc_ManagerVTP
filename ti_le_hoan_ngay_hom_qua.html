@@ -24,6 +24,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.2/dist/html2canvas-pro.min.js"></script>
 <script src="assets/js/share-upload.js"></script>
+<script src="assets/js/common.js"></script>
 
 <style>
 /* ================================================================
@@ -410,7 +411,7 @@ html.in-iframe .excel-table-wrap { overflow: visible !important; }
           <i class="fa-solid fa-magnifying-glass"></i>
           <input type="text" id="search-input" class="search-input"
                  placeholder="🔍 Tìm kiếm tuyến bưu tá..."
-                 oninput="onFilterChange()">
+                 oninput="onSearchInput()">
         </div>
         <div class="row-count-badge">
           <i class="fa-solid fa-list-ol"></i>
@@ -686,10 +687,7 @@ function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
 function fmtPct(v) { const n = num(v); return n === 0 ? '0' : n.toFixed(3).replace(/\.?0+$/, ''); }
 function fmtNum(v) { const n = num(v); return n === 0 ? '' : String(n); }
 
-function escHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+// escHtml/debounce: xem assets/js/common.js
 
 function pctClass(v) {
   const n = num(v);
@@ -813,6 +811,9 @@ function onFilterChange() {
   renderTable();
   updateStats();
 }
+
+// Debounce 200ms để khỏi filter+render mỗi keystroke khi gõ nhanh.
+const onSearchInput = debounce(onFilterChange, 200);
 
 function applySort() {
   const { col, dir } = currentSort;
@@ -1282,25 +1283,31 @@ function renderChart(type) {
 var qrInstance = null;
 var qrUrl = '';
 var detectedLanIp = '';
+var _lanIpStarted = false;
 
-(function detectLanIp() {
+function detectLanIp() {
+  if (_lanIpStarted) return;
+  _lanIpStarted = true;
   try {
     var rtc = new RTCPeerConnection({iceServers:[]});
     rtc.createDataChannel('');
     rtc.createOffer().then(function(offer) { rtc.setLocalDescription(offer); });
     rtc.onicecandidate = function(e) {
-      if (e && e.candidate && e.candidate.candidate) {
-        var match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
-        if (match && match[1] && match[1] !== '0.0.0.0' && match[1].indexOf('127.') !== 0) {
-          detectedLanIp = match[1];
-          rtc.close();
-        }
+      if (!e || !e.candidate || !e.candidate.candidate) {
+        if (e && !e.candidate) { try { rtc.close(); } catch(_){} }
+        return;
+      }
+      var match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
+      if (match && match[1] && match[1] !== '0.0.0.0' && match[1].indexOf('127.') !== 0) {
+        detectedLanIp = match[1];
+        try { rtc.close(); } catch(_){}
       }
     };
   } catch(e) {}
-})();
+}
 
 function getPageLanUrl() {
+  detectLanIp(); // lazy — chỉ start probe lần đầu, no-op các lần sau
   var loc = window.location;
   var host = loc.hostname;
   if (host.indexOf('github.io') >= 0 || host.indexOf('vercel.app') >= 0) {
