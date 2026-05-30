@@ -668,6 +668,13 @@ function processFile(file) {
         var raw = XLSX.utils.sheet_to_json(ws, { range: 0, defval: '', header: 1 });
 
         var dataRows = raw.slice(2).filter(function(r) { return r.length >= 10 && r[COL.TUYEN]; });
+        // Loại dòng "TỔNG" cuối file VTP xuất ra (cột STT chứa text "TỔNG"/"TỔNG CỘNG")
+        // — nếu để lọt, totalSl/totalPcp bị cộng dồn 2 lần. Đồng bộ với pattern ở
+        // quan_ly_san_luong_thu_ngay_hom_qua.html.
+        dataRows = dataRows.filter(function(r) {
+          var stt = String(r[COL.STT] || '').trim().toUpperCase();
+          return stt !== 'TỔNG' && stt !== 'TỔNG CỘNG' && stt !== 'TONG' && stt !== 'TONG CONG';
+        });
         totalBuutaGoc = dataRows.length;
         allDataRows = dataRows;
 

@@ -1022,9 +1022,26 @@ function filterAndRender() {
 
 function compareDateCells(a, b, key) {
   const va = a[colMap[key]]; const vb = b[colMap[key]];
-  const na = typeof va==='number' ? va : new Date(String(va||0)).getTime();
-  const nb = typeof vb==='number' ? vb : new Date(String(vb||0)).getTime();
-  return na - nb;
+  return parseDateCell(va) - parseDateCell(vb);
+}
+
+// Parse cell ngày sang timestamp ms. Hỗ trợ:
+// - serial number Excel
+// - chuỗi "DD/MM/YYYY" hoặc "DD/MM/YYYY HH:MM[:SS]"
+// - ISO fallback
+// Trả 0 nếu không parse được (rỗng/NaN) — sort về đầu.
+function parseDateCell(v) {
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number') return v;
+  const s = String(v).trim();
+  // DD/MM/YYYY [HH:MM[:SS]]
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
+  if (m) {
+    const dt = Date.UTC(+m[3], +m[2] - 1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0));
+    return isNaN(dt) ? 0 : dt;
+  }
+  const t = new Date(s).getTime();
+  return isNaN(t) ? 0 : t;
 }
 
 function sortRows(rows, col, dir) {
@@ -1200,14 +1217,13 @@ function updateHeaderBadges(total, buuta) {
   document.getElementById('h-total-saigio').textContent = total;
   document.getElementById('h-total-buuta').textContent  = buuta;
 
-  // Tính kỳ báo cáo từ ngày thu đầu/cuối
+  // Tính kỳ báo cáo từ ngày thu đầu/cuối — dùng parseDateCell để hỗ trợ
+  // cả serial number Excel lẫn chuỗi "DD/MM/YYYY HH:MM" (trước fix bị ép về 0).
   if (filteredRows.length > 0 && colMap.datePickup) {
     const dates = filteredRows
-      .map(r => r[colMap.datePickup])
-      .filter(Boolean)
-      .map(v => typeof v==='number' ? v : 0)
+      .map(r => parseDateCell(r[colMap.datePickup]))
       .filter(v => v > 0)
-      .sort();
+      .sort((a, b) => a - b);
     if (dates.length > 0) {
       const minD = formatDate(dates[0]).slice(0,10);
       const maxD = formatDate(dates[dates.length-1]).slice(0,10);

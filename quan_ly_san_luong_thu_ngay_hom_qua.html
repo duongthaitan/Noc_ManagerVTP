@@ -940,8 +940,8 @@ function exportExcel() {
 
       var wsData = [h1, h2];
 
-      // Total row first (like the output file)
-      wsData.push(['', tYC, tYCM, tYCLK, tTTC, tTTCM, tTTCLK, tPctN, tPctNM, tPctLK, '', '', '', '']);
+      // Total row first (like the output file) — cell đầu là "TỔNG" để khớp UI
+      wsData.push(['TỔNG', tYC, tYCM, tYCLK, tTTC, tTTCM, tTTCLK, tPctN, tPctNM, tPctLK, '', '', '', '']);
 
       // Data rows
       displayRows.forEach(function(r) {
