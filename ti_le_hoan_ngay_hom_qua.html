@@ -7,22 +7,20 @@
 <meta name="description" content="Báo cáo tỉ lệ hoàn đơn ngày hôm qua — ViettelPost">
 
 <!-- ===== FONTS & ICONS ===== -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="assets/library/fonts/be-vietnam-pro.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/library/font-awesome/css/all.min.css">
 
 <!-- ===== SHARED STYLESHEET ===== -->
 <link rel="stylesheet" href="assets/css/style.css">
 
 <!-- ===== SHEETJS ===== -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="assets/library/js/xlsx.full.min.js"></script>
 
-<!-- ===== CHART.JS + QR + html2canvas ===== -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.2/dist/html2canvas-pro.min.js"></script>
+<!-- ===== ECHARTS + QR + html2canvas ===== -->
+<script src="assets/library/js/echarts.min.js"></script>
+<script src="assets/library/js/qrcode.min.js"></script>
+<script src="assets/library/js/html2canvas-pro.min.js"></script>
+<script src="assets/js/vtp-charts.js"></script>
 <script src="assets/js/share-upload.js"></script>
 <script src="assets/js/common.js"></script>
 
@@ -246,9 +244,9 @@
 .chart-tab.active { background: #2563EB; color: white; border-color: #2563EB; }
 .chart-body {
   padding: 20px; overflow-y: auto; flex: 1;
-  display: flex; align-items: center; justify-content: center;
+  display: block;
 }
-.chart-body canvas { max-height: 520px; width: 100% !important; }
+.chart-canvas-host { width: 100%; min-height: 360px; height: 480px; }
 
 /* ── Iframe mode — co bảng cho fit width khi nhúng trong hub ── */
 html.in-iframe .container { padding-top: 12px; }
@@ -536,7 +534,7 @@ html.in-iframe .excel-table-wrap { overflow: visible !important; }
       </button>
     </div>
     <div class="chart-body">
-      <canvas id="chart-canvas"></canvas>
+      <div id="chart-canvas" class="chart-canvas-host"></div>
     </div>
   </div>
 </div>
@@ -746,7 +744,14 @@ function processFile(file) {
         const raw = XLSX.utils.sheet_to_json(ws, { range: 0, defval: '', header: 1 });
 
         // Skip 2 header rows → dữ liệu từ row index 2 trở đi
-        const dataRows = raw.slice(2).filter(r => r.length >= 10 && r[COL.TUYEN]);
+        const dataRows = raw.slice(2)
+          .filter(r => r.length >= 10 && r[COL.TUYEN])
+          // Loại dòng "TỔNG"/"TỔNG CỘNG" cuối file VTP — nếu lọt sẽ tạo bưu tá giả
+          // và làm sai thống kê (count, avgPct). Đồng bộ với 2 trang sản lượng.
+          .filter(r => {
+            const stt = String(r[COL.STT] || '').trim().toUpperCase();
+            return stt !== 'TỔNG' && stt !== 'TỔNG CỘNG' && stt !== 'TONG' && stt !== 'TONG CONG';
+          });
 
         totalBuutaGoc = dataRows.length;
         allDataRows = dataRows;
@@ -1003,18 +1008,6 @@ function exportExcel() {
 /* ================================================================
    CHART MODAL
 ================================================================ */
-// Register datalabels plugin
-Chart.register(ChartDataLabels);
-Chart.defaults.set('plugins.datalabels', {
-  anchor: 'end',
-  align: 'end',
-  font: { family: "'Be Vietnam Pro', sans-serif", size: 10, weight: 'bold' },
-  color: '#374151',
-  padding: { left: 4, right: 4 },
-  clamp: true,
-  display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] !== 0; },
-});
-
 let chartInstance = null;
 
 function openChartModal() {
@@ -1028,12 +1021,11 @@ function openChartModal() {
 
 function closeChartModal() {
   document.getElementById('chart-overlay').classList.remove('open');
-  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  VTPCharts.dispose(chartInstance); chartInstance = null;
 }
 
 function downloadChart() {
-  const canvas = document.getElementById('chart-canvas');
-  if (!canvas || !chartInstance) { showToast('⚠️ Chưa có biểu đồ!', 'warning'); return; }
+  if (!chartInstance) { showToast('⚠️ Chưa có biểu đồ!', 'warning'); return; }
 
   const tabMap = {
     'bar-pct': 'TyLeHoan_Ngay',
@@ -1048,17 +1040,11 @@ function downloadChart() {
   const ds = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
   const fileName = 'BieuDo_TiLeHoan_' + chartLabel + '_' + ds + '.png';
 
-  canvas.toBlob(function(blob) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function() { URL.revokeObjectURL(url); }, 100);
+  if (VTPCharts.download(chartInstance, fileName)) {
     showToast('✅ Đã tải ảnh: ' + fileName, 'success');
-  }, 'image/png');
+  } else {
+    showToast('⚠️ Chưa có biểu đồ!', 'warning');
+  }
 }
 
 function switchChart(type, btn) {
@@ -1075,206 +1061,113 @@ function shortenName(name) {
 }
 
 function renderChart(type) {
-  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  VTPCharts.dispose(chartInstance);
+  chartInstance = null;
 
-  const canvas = document.getElementById('chart-canvas');
-  const ctx = canvas.getContext('2d');
   const rows = displayRows;
   const labels = rows.map(r => shortenName(r[COL.TUYEN]));
+  const C = VTPCharts.C;
 
-  const fontFamily = "'Be Vietnam Pro', sans-serif";
+  let option;
 
   if (type === 'bar-pct') {
-    // ── Biểu đồ 1: Cột ngang — TL Hoàn Ngày (%) ──
+    // ── Biểu đồ 1: Cột ngang — TL Hoàn Ngày (%) — thấp = tốt ──
     const values = rows.map(r => num(r[COL.PCT_NGAY]));
-    const colors = values.map(v => v >= 10 ? '#DC2626' : v >= 5 ? '#D97706' : '#059669');
-
-    chartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Tỷ lệ Hoàn Ngày (%)',
-          data: values,
-          backgroundColor: colors,
-          borderColor: colors.map(c => c + 'CC'),
-          borderWidth: 1,
-          borderRadius: 4,
-          barPercentage: 0.7,
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => `${ctx.parsed.x.toFixed(3)}%`
-            },
-            titleFont: { family: fontFamily, size: 12 },
-            bodyFont: { family: fontFamily, size: 13, weight: 'bold' },
-          },
-          datalabels: {
-            anchor: 'end', align: 'end', color: '#1F2937',
-            font: { family: fontFamily, size: 10, weight: 'bold' },
-            formatter: v => v.toFixed(3) + '%'
-          }
-        },
-        scales: {
-          x: {
-            title: { display: true, text: 'Tỷ lệ Hoàn (%)', font: { family: fontFamily, size: 12, weight: 'bold' } },
-            ticks: { font: { family: fontFamily, size: 11 }, callback: v => v + '%' },
-            grid: { color: '#f0f0f0' },
-          },
-          y: {
-            ticks: { font: { family: fontFamily, size: 10.5 }, autoSkip: false },
-            grid: { display: false },
-          }
-        },
-        layout: { padding: { right: 80 } },
-      }
-    });
+    option = {
+      grid: { left: 8, right: 90, top: 16, bottom: 8, containLabel: true },
+      tooltip: VTPCharts.tooltip({
+        formatter: function (ps) {
+          const p = ps[0];
+          return '<b>' + p.name + '</b><br/>Tỷ lệ hoàn: <b style="color:' +
+            VTPCharts.statusColor(p.value, false) + '">' + Number(p.value).toFixed(3) + '%</b>';
+        }
+      }),
+      xAxis: VTPCharts.valueAxis({ name: 'Tỷ lệ hoàn (%)', percent: true }),
+      yAxis: VTPCharts.categoryAxis(labels, { inverse: true, fontSize: 11 }),
+      series: [{
+        type: 'bar',
+        data: values.map(function (v) {
+          const c = VTPCharts.statusColor(v, false);
+          return { value: v, itemStyle: { color: VTPCharts.grad(c, c + '99', true) } };
+        }),
+        barMaxWidth: 22,
+        itemStyle: { borderRadius: [0, 6, 6, 0], shadowColor: 'rgba(0,0,0,.12)', shadowBlur: 6, shadowOffsetY: 2 },
+        label: VTPCharts.labelStyle({ position: 'right', formatter: function (p) { return Number(p.value).toFixed(2) + '%'; } }),
+        emphasis: { focus: 'self', itemStyle: { shadowBlur: 14 } }
+      }]
+    };
 
   } else if (type === 'bar-vol') {
     // ── Biểu đồ 2: Cột đôi — PCP Ngày vs SL Hoàn Ngày ──
     const pcpValues = rows.map(r => num(r[COL.PCP_NGAY]));
     const slValues  = rows.map(r => num(r[COL.SL_NGAY]));
-
-    chartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Phân công phát (Ngày)',
-            data: pcpValues,
-            backgroundColor: '#3B82F6',
-            borderRadius: 4,
-            barPercentage: 0.8,
-            categoryPercentage: 0.7,
-          },
-          {
-            label: 'Sản lượng Hoàn (Ngày)',
-            data: slValues,
-            backgroundColor: '#EF4444',
-            borderRadius: 4,
-            barPercentage: 0.8,
-            categoryPercentage: 0.7,
-          }
-        ]
+    option = {
+      grid: { left: 8, right: 16, top: 48, bottom: 8, containLabel: true },
+      legend: {
+        top: 8, icon: 'roundRect', itemWidth: 14, itemHeight: 10,
+        textStyle: { fontFamily: VTPCharts.FONT, fontWeight: 700, color: C.slate }
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: { font: { family: fontFamily, size: 12, weight: 'bold' }, usePointStyle: true, pointStyle: 'rectRounded' }
-          },
-          tooltip: {
-            titleFont: { family: fontFamily, size: 12 },
-            bodyFont: { family: fontFamily, size: 13 },
-          },
-          datalabels: {
-            anchor: 'end', align: 'end', color: '#1F2937',
-            font: { family: fontFamily, size: 9, weight: 'bold' }
-          }
+      tooltip: VTPCharts.tooltip(),
+      xAxis: VTPCharts.categoryAxis(labels, { rotate: 38, fontSize: 10 }),
+      yAxis: VTPCharts.valueAxis({ name: 'Số đơn' }),
+      series: [
+        {
+          name: 'Phân công phát', type: 'bar', data: pcpValues,
+          barMaxWidth: 26, itemStyle: { color: VTPCharts.grad(C.blue, C.blueSoft), borderRadius: [6, 6, 0, 0] },
+          emphasis: { focus: 'series' }
         },
-        scales: {
-          x: {
-            ticks: { font: { family: fontFamily, size: 9.5 }, maxRotation: 45, minRotation: 30, autoSkip: false },
-            grid: { display: false },
-          },
-          y: {
-            title: { display: true, text: 'Số đơn', font: { family: fontFamily, size: 12, weight: 'bold' } },
-            ticks: { font: { family: fontFamily, size: 11 } },
-            grid: { color: '#f0f0f0' },
-            beginAtZero: true,
-          }
+        {
+          name: 'Sản lượng hoàn', type: 'bar', data: slValues,
+          barMaxWidth: 26, itemStyle: { color: VTPCharts.grad(C.red, C.redSoft), borderRadius: [6, 6, 0, 0] },
+          emphasis: { focus: 'series' }
         }
-      }
-    });
+      ]
+    };
 
-  } else if (type === 'combo') {
+  } else {
     // ── Biểu đồ 3: Combo — Bar TL Hoàn Ngày + Line TL Hoàn Lũy kế ──
     const pctNgay  = rows.map(r => num(r[COL.PCT_NGAY]));
     const pctLuyke = rows.map(r => num(r[COL.PCT_LUYKE]));
-
-    chartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          {
-            type: 'bar',
-            label: 'TL Hoàn Ngày (%)',
-            data: pctNgay,
-            backgroundColor: pctNgay.map(v => v >= 10 ? 'rgba(220,38,38,0.7)' : v >= 5 ? 'rgba(217,119,6,0.7)' : 'rgba(5,150,105,0.6)'),
-            borderRadius: 4,
-            barPercentage: 0.6,
-            yAxisID: 'y',
-            order: 2,
-          },
-          {
-            type: 'line',
-            label: 'TL Hoàn Lũy kế (%)',
-            data: pctLuyke,
-            borderColor: '#2563EB',
-            backgroundColor: 'rgba(37,99,235,0.1)',
-            borderWidth: 2.5,
-            pointBackgroundColor: '#2563EB',
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            tension: 0.3,
-            fill: true,
-            yAxisID: 'y',
-            order: 1,
-          }
-        ]
+    option = {
+      grid: { left: 8, right: 16, top: 48, bottom: 8, containLabel: true },
+      legend: {
+        top: 8, icon: 'roundRect', itemWidth: 14, itemHeight: 10,
+        textStyle: { fontFamily: VTPCharts.FONT, fontWeight: 700, color: C.slate }
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: { font: { family: fontFamily, size: 12, weight: 'bold' }, usePointStyle: true }
-          },
-          tooltip: {
-            callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}%` },
-            titleFont: { family: fontFamily, size: 12 },
-            bodyFont: { family: fontFamily, size: 13 },
-          },
-          datalabels: {
-            anchor: 'end', align: 'end', color: '#1F2937',
-            font: { family: fontFamily, size: 9, weight: 'bold' },
-            formatter: v => v.toFixed(1) + '%'
-          }
-        },
-        scales: {
-          x: {
-            ticks: { font: { family: fontFamily, size: 9.5 }, maxRotation: 45, minRotation: 30, autoSkip: false },
-            grid: { display: false },
-          },
-          y: {
-            title: { display: true, text: 'Tỷ lệ (%)', font: { family: fontFamily, size: 12, weight: 'bold' } },
-            ticks: { font: { family: fontFamily, size: 11 }, callback: v => v + '%' },
-            grid: { color: '#f0f0f0' },
-            beginAtZero: true,
-          }
+      tooltip: VTPCharts.tooltip({
+        formatter: function (ps) {
+          let s = '<b>' + ps[0].name + '</b>';
+          ps.forEach(function (p) { s += '<br/>' + p.marker + p.seriesName + ': <b>' + Number(p.value).toFixed(3) + '%</b>'; });
+          return s;
         }
-      }
-    });
+      }),
+      xAxis: VTPCharts.categoryAxis(labels, { rotate: 38, fontSize: 10 }),
+      yAxis: VTPCharts.valueAxis({ name: 'Tỷ lệ (%)', percent: true }),
+      series: [
+        {
+          name: 'TL Hoàn Ngày (%)', type: 'bar', data: pctNgay,
+          barMaxWidth: 28,
+          itemStyle: { color: VTPCharts.grad('rgba(220,38,38,.85)', 'rgba(251,146,60,.7)'), borderRadius: [6, 6, 0, 0] },
+          z: 2, emphasis: { focus: 'series' }
+        },
+        {
+          name: 'TL Hoàn Lũy kế (%)', type: 'line', data: pctLuyke,
+          smooth: true, symbol: 'circle', symbolSize: 7,
+          lineStyle: { width: 3, color: C.blue },
+          itemStyle: { color: C.blue, borderColor: '#fff', borderWidth: 2 },
+          areaStyle: { color: VTPCharts.grad('rgba(37,99,235,.22)', 'rgba(37,99,235,.01)') },
+          z: 3, emphasis: { focus: 'series' }
+        }
+      ]
+    };
   }
 
-  // Resize canvas height based on data
-  if (type === 'bar-pct') {
-    canvas.style.height = Math.max(350, rows.length * 28) + 'px';
-  } else {
-    canvas.style.height = '480px';
-  }
+  // Chiều cao động: cột ngang dài theo số bưu tá; còn lại cố định.
+  const host = document.getElementById('chart-canvas');
+  if (type === 'bar-pct') host.style.height = Math.max(360, rows.length * 30) + 'px';
+  else host.style.height = '480px';
+
+  chartInstance = VTPCharts.render('chart-canvas', option, { filename: 'BieuDo_TiLeHoan' });
 }
 
 /* ================================================================
@@ -1320,8 +1213,7 @@ function getPageLanUrl() {
 }
 
 function showQrModal() {
-  var canvas = document.getElementById('chart-canvas');
-  if (!canvas || !chartInstance) { showToast('\u26a0\ufe0f Ch\u01b0a c\u00f3 bi\u1ec3u \u0111\u1ed3!', 'warning'); return; }
+  if (!chartInstance) { showToast('\u26a0\ufe0f Ch\u01b0a c\u00f3 bi\u1ec3u \u0111\u1ed3!', 'warning'); return; }
   var container = document.getElementById('qr-container');
   var infoEl = document.getElementById('qr-mode-info');
   var urlEl = document.getElementById('qr-url-display');
@@ -1334,7 +1226,8 @@ function showQrModal() {
   if (navigator.share && navigator.canShare) { shareBtn.style.display = 'inline-flex'; }
   document.getElementById('qr-overlay').classList.add('open');
 
-  canvas.toBlob(function(blob) {
+  VTPCharts.toBlob(chartInstance, function(blob) {
+    if (!blob) { showToast('\u26a0\ufe0f Kh\u00f4ng t\u1ea1o \u0111\u01b0\u1ee3c \u1ea3nh bi\u1ec3u \u0111\u1ed3', 'warning'); return; }
     vtpUploadBlobScoped(blob, 'BieuDo.png', 'chart')
     .then(function(dlUrl) {
       container.innerHTML = '';
@@ -1356,22 +1249,22 @@ function showQrModal() {
           'Qu\u00e9t QR \u0111\u1ec3 m\u1edf trang web (Upload b\u1ecb l\u1ed7i)';
       if (urlEl) { urlEl.textContent = getPageLanUrl(); urlEl.style.display = 'block'; }
     });
-  }, 'image/png');
+  });
 }
 
 
 function closeQrModal() { document.getElementById('qr-overlay').classList.remove('open'); }
 
 function shareChartImage() {
-  var canvas = document.getElementById('chart-canvas');
-  if (!canvas) return;
-  canvas.toBlob(function(blob) {
+  if (!chartInstance) return;
+  VTPCharts.toBlob(chartInstance, function(blob) {
+    if (!blob) { showToast('\u26a0\ufe0f Kh\u00f4ng t\u1ea1o \u0111\u01b0\u1ee3c \u1ea3nh', 'warning'); return; }
     var file = new File([blob], 'bieu_do_ti_le_hoan.png', { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       navigator.share({ title: 'Bi\u1ec3u \u0111\u1ed3 T\u1ec9 L\u1ec7 Ho\u00e0n', files: [file] })
         .then(function() { showToast('\u2705 \u0110\u00e3 chia s\u1ebb!', 'success'); }).catch(function(){});
     } else { showToast('\u26a0\ufe0f Kh\u00f4ng h\u1ed7 tr\u1ee3 Share API', 'warning'); }
-  }, 'image/png');
+  });
 }
 
 function copyQrUrl() {

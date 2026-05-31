@@ -45,7 +45,7 @@ Zalo "send" actions don't actually send — they `window.open('https://zalo.me/'
 ## Shared third-party libraries (loaded from CDN)
 
 - **SheetJS** (`xlsx.full.min.js`) — Excel parsing/export, used by every report
-- **Chart.js 4.x + chartjs-plugin-datalabels** — used by report pages with charts (sản lượng, tỉ lệ hoàn, khẩu phát theo ca)
+- **Apache ECharts 5.5.1** (`echarts.min.js`) — biểu đồ cho các report có chart (sản lượng phát, sản lượng thu, tỉ lệ hoàn, khẩu phát theo ca). Vendor local để chạy offline trong Electron. Lớp adapter dùng chung là [assets/js/vtp-charts.js](assets/js/vtp-charts.js) (global `VTPCharts`): theme thương hiệu VTP, `render()/dispose()/toBlob()/download()` + helper trục/tooltip/toolbox. Thay thế Chart.js + chartjs-plugin-datalabels (đã gỡ bỏ).
 - **qrcodejs** — generates QR codes for the file-transfer feature in [upload_file_qrcode.html](upload_file_qrcode.html) and the QR widget on the hub
 - **html2canvas-pro** — used to export chart/report sections as PNG
 - **JSZip** — used in upload_file_qrcode.html

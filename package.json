@@ -1,5 +1,47 @@
 {
+  "name": "viettelpost-hbctvt-baocao",
+  "productName": "ViettelPost HBCTVT - Báo cáo",
+  "version": "1.0.0",
+  "description": "Bộ công cụ báo cáo nội bộ ViettelPost HBCTVT",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable",
+    "build:installer": "electron-builder --win nsis"
+  },
   "dependencies": {
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "sharp": "^0.34.5"
+  },
+  "build": {
+    "appId": "vn.viettelpost.hbctvt.baocao",
+    "productName": "ViettelPost HBCTVT - Báo cáo",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron-main.js",
+      "*.html",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icons/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "ViettelPost-HBCTVT-BaoCao-${version}-portable.exe"
+    }
   }
 }

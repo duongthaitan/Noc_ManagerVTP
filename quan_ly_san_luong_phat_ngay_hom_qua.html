@@ -7,20 +7,18 @@
 <meta name="description" content="Báo cáo sản lượng phát thành công ngày hôm qua — ViettelPost">
 
 <!-- ===== FONTS & ICONS ===== -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="assets/library/fonts/be-vietnam-pro.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/library/font-awesome/css/all.min.css">
 
 <!-- ===== SHARED STYLESHEET ===== -->
 <link rel="stylesheet" href="assets/css/style.css">
 
-<!-- ===== SHEETJS + CHART.JS + QR + html2canvas ===== -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.2/dist/html2canvas-pro.min.js"></script>
+<!-- ===== SHEETJS + ECHARTS + QR + html2canvas ===== -->
+<script src="assets/library/js/xlsx.full.min.js"></script>
+<script src="assets/library/js/echarts.min.js"></script>
+<script src="assets/library/js/qrcode.min.js"></script>
+<script src="assets/library/js/html2canvas-pro.min.js"></script>
+<script src="assets/js/vtp-charts.js"></script>
 <script src="assets/js/share-upload.js"></script>
 <script src="assets/js/common.js"></script>
 
@@ -202,8 +200,8 @@
 }
 .chart-tab:hover { border-color: #059669; color: #059669; }
 .chart-tab.active { background: #059669; color: white; border-color: #059669; }
-.chart-body { padding: 20px; overflow-y: auto; flex: 1; display: flex; align-items: center; justify-content: center; }
-.chart-body canvas { max-height: 520px; width: 100% !important; }
+.chart-body { padding: 20px; overflow-y: auto; flex: 1; display: block; }
+.chart-canvas-host { width: 100%; min-height: 360px; height: 480px; }
 
 /* ── Print ── */
 @media print {
@@ -474,7 +472,7 @@ html.in-iframe .excel-table-wrap { overflow: visible !important; }
         <i class="fa-solid fa-chart-line"></i> PCP vs PTC
       </button>
     </div>
-    <div class="chart-body"><canvas id="chart-canvas"></canvas></div>
+    <div class="chart-body"><div id="chart-canvas" class="chart-canvas-host"></div></div>
   </div>
 </div>
 
@@ -886,18 +884,6 @@ function exportExcel() {
 /* ================================================================
    CHART MODAL
 ================================================================ */
-// Register datalabels plugin
-Chart.register(ChartDataLabels);
-Chart.defaults.set('plugins.datalabels', {
-  anchor: 'end',
-  align: 'end',
-  font: { family: "'Be Vietnam Pro', sans-serif", size: 10, weight: 'bold' },
-  color: '#374151',
-  padding: { left: 4, right: 4 },
-  clamp: true,
-  display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] !== 0; },
-});
-
 var chartInstance = null;
 
 function openChartModal() {
@@ -910,12 +896,11 @@ function openChartModal() {
 
 function closeChartModal() {
   document.getElementById('chart-overlay').classList.remove('open');
-  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  VTPCharts.dispose(chartInstance); chartInstance = null;
 }
 
 function downloadChart() {
-  var canvas = document.getElementById('chart-canvas');
-  if (!canvas || !chartInstance) { showToast('⚠️ Chưa có biểu đồ!', 'warning'); return; }
+  if (!chartInstance) { showToast('⚠️ Chưa có biểu đồ!', 'warning'); return; }
   var tabMap = { 'bar-sl': 'SL_PTC_Ngay', 'bar-pct': 'TyLe_PTC_Ngay', 'combo': 'PCP_vs_PTC' };
   var activeTab = document.querySelector('.chart-tab.active');
   var chartLabel = tabMap[activeTab ? activeTab.dataset.chart : ''] || 'BieuDo';
@@ -923,14 +908,11 @@ function downloadChart() {
   var ds = padZ(now.getDate()) + '-' + padZ(now.getMonth()+1) + '-' + now.getFullYear();
   var fileName = 'BieuDo_SanLuongPhat_' + chartLabel + '_' + ds + '.png';
 
-  canvas.toBlob(function(blob) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = fileName;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function() { URL.revokeObjectURL(url); }, 100);
+  if (VTPCharts.download(chartInstance, fileName)) {
     showToast('✅ Đã tải ảnh: ' + fileName, 'success');
-  }, 'image/png');
+  } else {
+    showToast('⚠️ Chưa có biểu đồ!', 'warning');
+  }
 }
 
 function switchChart(type, btn) {
@@ -946,106 +928,78 @@ function shortenName(name) {
 }
 
 function renderChart(type) {
-  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-  var canvas = document.getElementById('chart-canvas');
-  var ctx = canvas.getContext('2d');
+  VTPCharts.dispose(chartInstance); chartInstance = null;
   var rows = displayRows;
   var labels = rows.map(function(r) { return shortenName(r[COL.TUYEN]); });
-  var ff = "'Be Vietnam Pro', sans-serif";
+  var C = VTPCharts.C;
+  var option;
 
   if (type === 'bar-sl') {
     // Cột ngang — SL PTC Ngày
     var values = rows.map(function(r) { return num(r[COL.SL_NGAY]); });
-    chartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'SL PTC Ngày (đơn)',
-          data: values,
-          backgroundColor: '#3B82F6',
-          borderRadius: 4, barPercentage: 0.7,
-        }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false },
-          tooltip: { titleFont: { family: ff, size: 12 }, bodyFont: { family: ff, size: 13, weight: 'bold' } },
-          datalabels: { anchor: 'end', align: 'end', color: '#1F2937', font: { family: ff, size: 10, weight: 'bold' } }
-        },
-        scales: {
-          x: { title: { display: true, text: 'Số đơn PTC', font: { family: ff, size: 12, weight: 'bold' } },
-               ticks: { font: { family: ff, size: 11 } }, grid: { color: '#f0f0f0' } },
-          y: { ticks: { font: { family: ff, size: 10.5 }, autoSkip: false }, grid: { display: false } }
-        },
-        layout: { padding: { right: 60 } }
-      }
-    });
+    option = {
+      grid: { left: 8, right: 70, top: 16, bottom: 8, containLabel: true },
+      tooltip: VTPCharts.tooltip(),
+      xAxis: VTPCharts.valueAxis({ name: 'Số đơn PTC' }),
+      yAxis: VTPCharts.categoryAxis(labels, { inverse: true }),
+      series: [{
+        type: 'bar', name: 'SL PTC Ngày', data: values,
+        barMaxWidth: 22,
+        itemStyle: { color: VTPCharts.grad(C.blue, C.blueSoft, true), borderRadius: [0, 6, 6, 0], shadowColor: 'rgba(37,99,235,.18)', shadowBlur: 6, shadowOffsetY: 2 },
+        label: VTPCharts.labelStyle({ position: 'right' }),
+        emphasis: { focus: 'self', itemStyle: { shadowBlur: 14 } }
+      }]
+    };
 
   } else if (type === 'bar-pct') {
-    // Cột ngang — TL PTC Ngày (%)
+    // Cột ngang — TL PTC Ngày (%) — cao = tốt
     var pctValues = rows.map(function(r) { return num(r[COL.PCT_NGAY]); });
-    var colors = pctValues.map(function(v) { return v >= 85 ? '#059669' : v >= 70 ? '#D97706' : '#DC2626'; });
-    chartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Tỷ lệ PTC Ngày (%)', data: pctValues,
-          backgroundColor: colors, borderRadius: 4, barPercentage: 0.7,
-        }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false },
-          tooltip: { callbacks: { label: function(ctx) { return ctx.parsed.x.toFixed(3) + '%'; } },
-                     titleFont: { family: ff, size: 12 }, bodyFont: { family: ff, size: 13, weight: 'bold' } },
-          datalabels: { anchor: 'end', align: 'end', color: '#1F2937', font: { family: ff, size: 10, weight: 'bold' },
-            formatter: function(v) { return v.toFixed(1) + '%'; } }
-        },
-        scales: {
-          x: { title: { display: true, text: 'Tỷ lệ PTC (%)', font: { family: ff, size: 12, weight: 'bold' } },
-               ticks: { font: { family: ff, size: 11 }, callback: function(v) { return v + '%'; } },
-               grid: { color: '#f0f0f0' } },
-          y: { ticks: { font: { family: ff, size: 10.5 }, autoSkip: false }, grid: { display: false } }
-        },
-        layout: { padding: { right: 70 } }
-      }
-    });
+    option = {
+      grid: { left: 8, right: 80, top: 16, bottom: 8, containLabel: true },
+      tooltip: VTPCharts.tooltip({
+        formatter: function (ps) {
+          var p = ps[0];
+          return '<b>' + p.name + '</b><br/>Tỷ lệ PTC: <b style="color:' +
+            VTPCharts.statusColor(p.value, true) + '">' + Number(p.value).toFixed(3) + '%</b>';
+        }
+      }),
+      xAxis: VTPCharts.valueAxis({ name: 'Tỷ lệ PTC (%)', percent: true }),
+      yAxis: VTPCharts.categoryAxis(labels, { inverse: true }),
+      series: [{
+        type: 'bar', name: 'Tỷ lệ PTC Ngày', barMaxWidth: 22,
+        data: pctValues.map(function (v) {
+          var c = VTPCharts.statusColor(v, true);
+          return { value: v, itemStyle: { color: VTPCharts.grad(c, c + '99', true) } };
+        }),
+        itemStyle: { borderRadius: [0, 6, 6, 0], shadowColor: 'rgba(0,0,0,.12)', shadowBlur: 6, shadowOffsetY: 2 },
+        label: VTPCharts.labelStyle({ position: 'right', formatter: function (p) { return Number(p.value).toFixed(1) + '%'; } }),
+        emphasis: { focus: 'self', itemStyle: { shadowBlur: 14 } }
+      }]
+    };
 
-  } else if (type === 'combo') {
+  } else {
     // Combo — Bar PCP Ngày + Bar SL PTC Ngày
     var pcpV = rows.map(function(r) { return num(r[COL.PCP_NGAY]); });
     var slV = rows.map(function(r) { return num(r[COL.SL_NGAY]); });
-    chartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [
-          { label: 'Phân công phát (Ngày)', data: pcpV, backgroundColor: '#3B82F6',
-            borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.7 },
-          { label: 'SL PTC (Ngày)', data: slV, backgroundColor: '#059669',
-            borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.7 }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'top', labels: { font: { family: ff, size: 12, weight: 'bold' }, usePointStyle: true, pointStyle: 'rectRounded' } },
-          tooltip: { titleFont: { family: ff, size: 12 }, bodyFont: { family: ff, size: 13 } },
-          datalabels: { anchor: 'end', align: 'end', color: '#1F2937', font: { family: ff, size: 9, weight: 'bold' } }
-        },
-        scales: {
-          x: { ticks: { font: { family: ff, size: 9.5 }, maxRotation: 45, minRotation: 30, autoSkip: false }, grid: { display: false } },
-          y: { title: { display: true, text: 'Số đơn', font: { family: ff, size: 12, weight: 'bold' } },
-               ticks: { font: { family: ff, size: 11 } }, grid: { color: '#f0f0f0' }, beginAtZero: true }
-        },
-        layout: { padding: { top: 20 } }
-      }
-    });
+    option = {
+      grid: { left: 8, right: 16, top: 48, bottom: 8, containLabel: true },
+      legend: { top: 8, icon: 'roundRect', itemWidth: 14, itemHeight: 10, textStyle: { fontFamily: VTPCharts.FONT, fontWeight: 700, color: C.slate } },
+      tooltip: VTPCharts.tooltip(),
+      xAxis: VTPCharts.categoryAxis(labels, { rotate: 38, fontSize: 10 }),
+      yAxis: VTPCharts.valueAxis({ name: 'Số đơn' }),
+      series: [
+        { name: 'Phân công phát', type: 'bar', data: pcpV, barMaxWidth: 26,
+          itemStyle: { color: VTPCharts.grad(C.blue, C.blueSoft), borderRadius: [6, 6, 0, 0] }, emphasis: { focus: 'series' } },
+        { name: 'SL PTC', type: 'bar', data: slV, barMaxWidth: 26,
+          itemStyle: { color: VTPCharts.grad(C.green, C.greenSoft), borderRadius: [6, 6, 0, 0] }, emphasis: { focus: 'series' } }
+      ]
+    };
   }
 
-  canvas.style.height = (type === 'combo') ? '480px' : Math.max(350, rows.length * 28) + 'px';
+  var host = document.getElementById('chart-canvas');
+  host.style.height = (type === 'combo') ? '480px' : Math.max(360, rows.length * 30) + 'px';
+
+  chartInstance = VTPCharts.render('chart-canvas', option, { filename: 'BieuDo_SanLuongPhat' });
 }
 
 /* ================================================================
@@ -1091,8 +1045,7 @@ function getPageLanUrl() {
 }
 
 function showQrModal() {
-  var canvas = document.getElementById('chart-canvas');
-  if (!canvas || !chartInstance) { showToast('\u26a0\ufe0f Ch\u01b0a c\u00f3 bi\u1ec3u \u0111\u1ed3!', 'warning'); return; }
+  if (!chartInstance) { showToast('\u26a0\ufe0f Ch\u01b0a c\u00f3 bi\u1ec3u \u0111\u1ed3!', 'warning'); return; }
   var container = document.getElementById('qr-container');
   var infoEl = document.getElementById('qr-mode-info');
   var urlEl = document.getElementById('qr-url-display');
@@ -1105,7 +1058,8 @@ function showQrModal() {
   if (navigator.share && navigator.canShare) { shareBtn.style.display = 'inline-flex'; }
   document.getElementById('qr-overlay').classList.add('open');
 
-  canvas.toBlob(function(blob) {
+  VTPCharts.toBlob(chartInstance, function(blob) {
+    if (!blob) { showToast('\u26a0\ufe0f Kh\u00f4ng t\u1ea1o \u0111\u01b0\u1ee3c \u1ea3nh bi\u1ec3u \u0111\u1ed3', 'warning'); return; }
     vtpUploadBlobScoped(blob, 'BieuDo.png', 'chart')
     .then(function(dlUrl) {
       container.innerHTML = '';
@@ -1127,22 +1081,22 @@ function showQrModal() {
           'Qu\u00e9t QR \u0111\u1ec3 m\u1edf trang web (Upload b\u1ecb l\u1ed7i)';
       if (urlEl) { urlEl.textContent = getPageLanUrl(); urlEl.style.display = 'block'; }
     });
-  }, 'image/png');
+  });
 }
 
 
 function closeQrModal() { document.getElementById('qr-overlay').classList.remove('open'); }
 
 function shareChartImage() {
-  var canvas = document.getElementById('chart-canvas');
-  if (!canvas) return;
-  canvas.toBlob(function(blob) {
+  if (!chartInstance) return;
+  VTPCharts.toBlob(chartInstance, function(blob) {
+    if (!blob) { showToast('\u26a0\ufe0f Kh\u00f4ng t\u1ea1o \u0111\u01b0\u1ee3c \u1ea3nh', 'warning'); return; }
     var file = new File([blob], 'bieu_do_san_luong_phat.png', { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       navigator.share({ title: 'Bi\u1ec3u \u0111\u1ed3 S\u1ea3n L\u01b0\u1ee3ng Ph\u00e1t', files: [file] })
         .then(function() { showToast('\u2705 \u0110\u00e3 chia s\u1ebb!', 'success'); }).catch(function(){});
     } else { showToast('\u26a0\ufe0f Kh\u00f4ng h\u1ed7 tr\u1ee3 Share API', 'warning'); }
-  }, 'image/png');
+  });
 }
 
 function copyQrUrl() {
